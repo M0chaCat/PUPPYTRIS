@@ -12,7 +12,7 @@ import os
 # DISPLAY_HEIGHT = 1440 # implement this later!!!
 
 BOARD_EXTRA_HEIGHT = 10
-BOARD_WIDTH = 5
+BOARD_WIDTH = 10
 BOARD_HEIGHT = 20 + BOARD_EXTRA_HEIGHT
 
 WINDOW_WIDTH = 1600
@@ -22,7 +22,8 @@ MAX_FRAMERATE = 60
 #if BOARD_WIDTH / WINDOW_WIDTH < BOARD_HEIGHT / WINDOW_HEIGHT:
 CELL_SIZE = WINDOW_HEIGHT//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 5) # +2 so its not too zoomed in
 #else: # if the board is REALLY wide # kity note: dis seems useless?
-    #CELL_SIZE = WINDOW_WIDTH//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 2)    
+    #CELL_SIZE = WINDOW_WIDTH//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 2)
+    
 
 # --- Config / constants ---
 PIECE_TYPES_TETRA = 7
@@ -59,4 +60,5 @@ DRAW_COLOR = (205, 214, 244)
 UI_COLOR = (203, 166, 247)
 USE_SKIN = False
 WALLPAPER = None  # will hold the loaded surface after pygame.init()
+
 
