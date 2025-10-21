@@ -12,8 +12,6 @@ import engine, settings
 
 BLOCK_SIZE = engine.BOARD_WIDTH_PX // settings.BOARD_WIDTH
 
-#width changing makes da sections wide!!!!!!
-
 def draw_background():
     """Fill the screen with a wallpaper if set, else fallback to BACKGROUND_COLOR."""
     if hasattr(settings, "WALLPAPER") and settings.WALLPAPER:
@@ -260,9 +258,8 @@ def draw_board_extension(text="SCORE: 0"):
     padding = 5
     font_size = height - 2 * padding
     try:
-        font = pygame.font.Font("./Konstruktor.otf", font_size)
-    except Exception as e:
-        print("Font load failed:", e)
+        font = pygame.font.Font(settings.font_dir, font_size)
+    except:
         font = pygame.font.SysFont(None, font_size)
         
     # Render text
@@ -287,7 +284,7 @@ def draw_left_panel():
     # Text (top-right)
     font_size = 24
     try:
-        font = pygame.font.Font("./Konstruktor.otf", font_size)
+        font = pygame.font.Font(settings.font_dir, font_size)
     except:
         font = pygame.font.SysFont(None, font_size)
         
@@ -312,7 +309,7 @@ def draw_right_panel():
     # Text (top-left)
     font_size = 24
     try:
-        font = pygame.font.Font("./Konstruktor.otf", font_size)
+        font = pygame.font.Font(settings.font_dir, font_size)
     except:
         font = pygame.font.SysFont(None, font_size)
         
