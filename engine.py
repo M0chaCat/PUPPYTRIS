@@ -63,7 +63,7 @@ softdrop_overrides = True
 
 last_move_dir = 0
 gravity_timer = 0
-current_gravity = 0.0 # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency))
+current_gravity = settings.STARTING_GRAVITY # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency))
 spawn_new_piece = True
 
 current_bag = []
@@ -116,46 +116,9 @@ def spawn_piece(current_bag):
         for col in range(piece_width):
             if current_shape[row][col] != 0:
                 piece_board[piece_y + row][piece_x + col] = current_bag[0]
-                
-def check_collisions(target_move_x, target_move_y, target_rotation):
-    target_shape = pieces_dict[current_bag[0]]["shapes"][target_rotation]
-    print(target_shape)
-    touched_ground = False
-    collision_happened = False
     
-    new_x = target_move_x + piece_x
-    new_y = target_move_y + piece_y
-    #THIS MAX MIN SHIT MEANS SOME COLLISIONS JUST DONT GET CHECKED IF THEIR OLD POSITION IS INVALID BUT THEIR NEW ONE IS VALID
-    # make sure positions aren't out of bounds first
-    for coords in numpy.argwhere(target_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
-        #print("coords[0]:", coords[0], " piece_y:", piece_y, " new_y:", new_y, " coords[1]:", coords[1], " piece_x:", piece_x, " new_x:", new_x)
-        if (coords[0] + max(new_y, piece_y) > settings.BOARD_HEIGHT - 1): # check for collision with the bottom of the board
-            print("collided with bottom of board. target y, piece y, coords[0]: ", target_move_y, ",", piece_y)
-            touched_ground = True
-            collision_happened = True
-            continue
-
-        if (coords[1] + min(new_x, piece_x) < 0 or coords[1] + max(new_x, piece_x) > settings.BOARD_WIDTH - 1): # check for collision with the sides of the board
-            print("collided with side of board. target x, piece x, coords[1]: ", target_move_x, ",", piece_x)
-            collision_happened = True
-            continue
-        
-        if (game_board[coords[0] + new_y, coords[1] + piece_x]): # check for collision with minos below the piece
-            print("collided with minos vertically")
-            touched_ground = True
-            collision_happened = True
-            continue
-            
-        elif (game_board[coords[0] + piece_y, coords[1] + new_x]): # check for collision with minos on the side
-            print("collided with minos horizontally")
-            collision_happened = True
-
-        if touched_ground: # break early if we already know the piece touched the ground
-            handle_piece_lockdown()
-            return True
-        
-    if collision_happened: return True
-    else: return False # return false if no collisions were found
+    if check_collisions(0, 0, piece_rotation):
+        top_out()
 
 def check_collisions(target_move_x, target_move_y, target_rotation):
     target_shape = pieces_dict[current_bag[0]]["shapes"][target_rotation]
@@ -193,20 +156,46 @@ def check_touching_ground():
 
 def rotate_piece(amount):
     global piece_rotation, piece_board
-    
-    kick_list = [(0, 0), (-1, 0), (1, 0), (0, 1), (-1, 1), (1, 1), (0, -1), (-1, -1), (1, -1)]
-    
+    kick_list = []
+
     new_rotation = (piece_rotation + amount) % 4
-    
+    new_shape = pieces_dict[current_bag[0]]["shapes"][new_rotation]
+    print(new_rotation, piece_rotation)
+
+    # offset pieces rotating from state 4 to make them kick more symetrically 
+    # for example, think 180ing a state 4 z piece, will behave as if nothing happened
+
+    # a problem with the bias system is that if an unbiased (state 2) rotation would collide and allow a kick to be performed,
+    # and an biased (state 4) rotation simply won't collide at all when rotating, then it will perform asymmetrically 
+    if piece_rotation == 4 and current_bag[0] in (1, 3, 4, 5): # covers pieces Z, S, O, I
+        bias = -1
+    else:
+        bias = 0
+
+    kick_list_right = [(0, 0), (0, 1), (-1, 1), (1, 1), (-1, 0), (1, 0), (-2, 0), (2, 0), (0, -1)] # checks left to right if kicking right
+    kick_list_left = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)] # checks right to left if kicking left
+
+    # there are some rotation states where using the biased lists wouldn't make sense, for example rotating a state 4 I piece to a state 1 or 3. 
+    # it should be fine though because it only affects kick order, and if anything gives advanced players more control.
+
+    # slightly weird i kick behaviour on edge with hole underneath platform like this iiii
+    #                                                                                  ---
+    if new_rotation == 4 and current_bag[0] in (1, 3, 4, 5): # ensures the kick order is symmetrical for Z, S, O, I
+        kick_list = kick_list_left
+    else:
+        kick_list = kick_list_right
+
     for kick in kick_list:
-        x, y = kick
-        #print("PIECE COORDS:", x, y, piece_x, piece_y)
-        if not check_collisions(x, y, new_rotation): # continue if no collisions found
-            #print(piece_rotation, new_rotation)
+        kick_x, kick_y = kick
+        if not check_collisions(kick_x + bias, kick_y + bias, new_rotation): # continue if no collisions found
             piece_rotation = new_rotation
-            move_piece(x, y)
+            # move the piece
+            piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
+            for coords in numpy.argwhere(new_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
+                piece_board[kick_y + piece_y + coords[0]][kick_x + bias + piece_x + coords[1]] = current_bag[0]
             return
-            
+    
+    
 def mirror_piece():
     global piece_board, current_bag
     
@@ -237,7 +226,7 @@ def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece
 
             for coords in numpy.argwhere(current_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
                 piece_board[piece_y + coords[0]][piece_x + coords[1]] = current_bag[0]
-        else:
+        else: # when first collision happens, return false. this only makes sense if a single collision is being checked.
             return False
     return True
     
@@ -344,9 +333,13 @@ def handle_movement(keys):
     
         arr_timer = 0 # reset the ARR timer only to keep things clean
         arr_timer_started = False
+
+def top_out():
+    # can add extra functionality later like displaying a score panel at the end
+    reset_game()
     
 def reset_game():
-    global game_board, piece_board, current_bag
+    global game_board, piece_board, current_bag, bag_counter
     global piece_x, piece_y, piece_rotation
     global das_timer, arr_timer, sdr_timer, das_reset_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
@@ -368,8 +361,7 @@ def reset_game():
     gravity_timer = 0
     softdrop_overrides = True
     spawn_new_piece = True
-    
-    bag_count = 0
+    bag_counter = 0
     
     # Reset piece bag
     current_bag = generate_bag()
@@ -377,7 +369,7 @@ def reset_game():
 def handle_soft_drop(keys):
     global sdr_timer, sdr_timer_started, softdrop_overrides
     if current_gravity > 0.001:
-        softdrop_overrides = (settings.RESHOLD <= 16.666667 / settings.current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
+        softdrop_overrides = (settings.SDR_THRESHOLD <= 16.666667 / current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
     elif keys[settings.MOVE_SOFTDROP]:
         softdrop_overrides = True # returns true always if gravity is 0 (prevents divide by 0)
     else:
@@ -436,7 +428,7 @@ def handle_events():
             
 def handle_gravity():
     global gravity_timer, current_gravity
-    if current_gravity == 20: # make instant drop at 20g regardless of framerate
+    if current_gravity >= 19.8: # make instant drop at 20g regardless of framerate
         move_piece(0, settings.BOARD_HEIGHT + 10) 
     elif current_gravity <= 0.0001: # disable gravity if too low
         return  
