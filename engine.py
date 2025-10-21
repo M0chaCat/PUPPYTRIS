@@ -75,7 +75,6 @@ piece_inversions = pieces.tetra_inversions
 if skinloader.has_penta and settings.is_penta:
     settings.pieces_dict = pieces.penta_dict
     settings.piece_inversions = pieces.penta_inversions
-    
 
 PIECE_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
 PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECE_WIDTH//2) # dynamically calculate starting position based on board and piece size.
@@ -85,13 +84,6 @@ PIECE_STARTING_ROTATION = 0
 piece_x = PIECE_STARTING_X
 piece_y = PIECE_STARTING_Y
 piece_rotation = PIECE_STARTING_ROTATION
-
-
-
-
-
-
-
 
 def generate_bag():
     global bag_counter
@@ -125,49 +117,95 @@ def spawn_piece(current_bag):
             if current_shape[row][col] != 0:
                 piece_board[piece_y + row][piece_x + col] = current_bag[0]
                 
-# this implementation has a very small edge case, where if one mino touches the wall
-# and another mino touches the ground in the same collision check, it might not register that the ground was touched.
 def check_collisions(target_move_x, target_move_y, target_rotation):
     target_shape = pieces_dict[current_bag[0]]["shapes"][target_rotation]
-    #print(target_shape)
+    print(target_shape)
     touched_ground = False
     collision_happened = False
     
     new_x = target_move_x + piece_x
     new_y = target_move_y + piece_y
-    
+    #THIS MAX MIN SHIT MEANS SOME COLLISIONS JUST DONT GET CHECKED IF THEIR OLD POSITION IS INVALID BUT THEIR NEW ONE IS VALID
+    # make sure positions aren't out of bounds first
+    for coords in numpy.argwhere(target_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
+        #print("coords[0]:", coords[0], " piece_y:", piece_y, " new_y:", new_y, " coords[1]:", coords[1], " piece_x:", piece_x, " new_x:", new_x)
+        if (coords[0] + max(new_y, piece_y) > settings.BOARD_HEIGHT - 1): # check for collision with the bottom of the board
+            print("collided with bottom of board. target y, piece y, coords[0]: ", target_move_y, ",", piece_y)
+            touched_ground = True
+            collision_happened = True
+            continue
+
+        if (coords[1] + min(new_x, piece_x) < 0 or coords[1] + max(new_x, piece_x) > settings.BOARD_WIDTH - 1): # check for collision with the sides of the board
+            print("collided with side of board. target x, piece x, coords[1]: ", target_move_x, ",", piece_x)
+            collision_happened = True
+            continue
+        
+        if (game_board[coords[0] + new_y, coords[1] + piece_x]): # check for collision with minos below the piece
+            print("collided with minos vertically")
+            touched_ground = True
+            collision_happened = True
+            continue
+            
+        elif (game_board[coords[0] + piece_y, coords[1] + new_x]): # check for collision with minos on the side
+            print("collided with minos horizontally")
+            collision_happened = True
+
+        if touched_ground: # break early if we already know the piece touched the ground
+            handle_piece_lockdown()
+            return True
+        
+    if collision_happened: return True
+    else: return False # return false if no collisions were found
+
+def check_collisions(target_move_x, target_move_y, target_rotation):
+    target_shape = pieces_dict[current_bag[0]]["shapes"][target_rotation]
+    new_x = target_move_x + piece_x
+    new_y = target_move_y + piece_y
+    collided = False
     # make sure positions aren't out of bounds first
     for coords in numpy.argwhere(target_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
         if (coords[0] + new_y > settings.BOARD_HEIGHT - 1): # check for collision with the bottom of the board
-            #print("collided with bottom of board", coords[0], "target y, piece y: ", target_move_y, ",", piece_y)
-            touched_ground = True
-            collision_happened = True
-        elif (coords[1] + new_x < 0 or coords[1] + new_x > settings.BOARD_WIDTH - 1): # check for collision with the sides of the board
-            #print("collided with side of board", coords[1], "target x, piece x: ", target_move_x, ",", piece_x)
-            collision_happened = True
-        elif (game_board[coords[0] + new_y, coords[1] + piece_x]): # check for collision with minos below the piece
-            #print("collided with minos vertically")
-            touched_ground = True
-            collision_happened = True
-        elif (game_board[coords[0] + piece_y, coords[1] + new_x]): # check for collision with minos on the side
-            #print("collided with minos horizontally")
-            collision_happened = True
-        if touched_ground: handle_piece_lockdown()
-        if collision_happened: return True
-    return False # return false if no collisions were found
+            collided = True
+            break
+        if (coords[1] + new_x < 0 or coords[1] + new_x > settings.BOARD_WIDTH - 1): # check for collision with the sides of the board
+            collided = True
+            break
+        if (game_board[coords[0] + new_y, coords[1] + new_x]): # check for collision with minos below the piece
+            collided = True
+            break
+
+    check_touching_ground()
+    if collided: return True
+    else: return False
+
+def check_touching_ground():
+    piece_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+
+    for coords in numpy.argwhere(piece_shape != 0):
+        if coords[0] + 1 > settings.BOARD_HEIGHT: # check if its touching the bottom of the board
+            handle_piece_lockdown()
+            return True # return true if it IS touching the ground
+        elif game_board[coords[0] - 1, coords[1]]: # check if its touching any minos below it
+            handle_piece_lockdown()
+            return True
+        
+    return False # return false if nothing found
 
 def rotate_piece(amount):
     global piece_rotation, piece_board
     
-    new_rotation = (piece_rotation + amount) % 4
-    new_shape = pieces_dict[current_bag[0]]["shapes"][new_rotation]
+    kick_list = [(0, 0), (-1, 0), (1, 0), (0, 1), (-1, 1), (1, 1), (0, -1), (-1, -1), (1, -1)]
     
-    if not check_collisions(0, 0, new_rotation):
-        piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
-        
-        for coords in numpy.argwhere(new_shape != 0):
-            piece_board[piece_y + coords[0]][piece_x + coords[1]] = current_bag[0] # update the board with the new shape
+    new_rotation = (piece_rotation + amount) % 4
+    
+    for kick in kick_list:
+        x, y = kick
+        #print("PIECE COORDS:", x, y, piece_x, piece_y)
+        if not check_collisions(x, y, new_rotation): # continue if no collisions found
+            #print(piece_rotation, new_rotation)
             piece_rotation = new_rotation
+            move_piece(x, y)
+            return
             
 def mirror_piece():
     global piece_board, current_bag
@@ -185,23 +223,23 @@ def mirror_piece():
         current_bag[0] = piece_inversions[current_bag[0]] # revert it back if collision
         
 def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece. could be streamlined?
-    global piece_x, piece_y, piece_board
-    
+    global piece_x, piece_y, piece_rotation, piece_board
     current_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
     move_dir_x = int((move_x > 0) - (move_x < 0))
     move_dir_y = int((move_y > 0) - (move_y < 0))
     
-    for each in range(max(abs(move_x), abs(move_y))): # loops over whichever number is farther from 0 (the most moves)
+    for each in range(max(abs(move_x), abs(move_y), 1)): # loops over whichever number is farther from 0 (the most moves), min 1
         if not check_collisions(move_dir_x, move_dir_y, piece_rotation): # only goes through with the movement if no collisions occur
             piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
             piece_y = move_dir_y + piece_y
     
             piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
-    
+
             for coords in numpy.argwhere(current_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
                 piece_board[piece_y + coords[0]][piece_x + coords[1]] = current_bag[0]
         else:
-            break # break early if collision happens
+            return False
+    return True
     
 def find_completed_lines():
     # returns a 1d array of booleans for each line, true if its completed, false if not
@@ -399,7 +437,7 @@ def handle_events():
 def handle_gravity():
     global gravity_timer, current_gravity
     if current_gravity == 20: # make instant drop at 20g regardless of framerate
-        move_piece(0, BOARD_HEIGHT + 10) 
+        move_piece(0, settings.BOARD_HEIGHT + 10) 
     elif current_gravity <= 0.0001: # disable gravity if too low
         return  
     elif not softdrop_overrides: # only process gravity this frame if user isn't pressing the softdrop key
@@ -425,5 +463,3 @@ def handle_swap_mode():
         piece_inversions = pieces.penta_inversions
         
     reset_game()
-    
-    
