@@ -15,8 +15,8 @@ BOARD_EXTRA_HEIGHT = 10
 BOARD_WIDTH = 10
 BOARD_HEIGHT = 20 + BOARD_EXTRA_HEIGHT
 
-WINDOW_WIDTH = 1600
-WINDOW_HEIGHT = 1200
+WINDOW_WIDTH = 1400
+WINDOW_HEIGHT = 1000
 MAX_FRAMERATE = 60
 
 #if BOARD_WIDTH / WINDOW_WIDTH < BOARD_HEIGHT / WINDOW_HEIGHT:
@@ -33,7 +33,7 @@ is_penta = False
 
 DAS_THRESHOLD = 150
 ARR_THRESHOLD = 33
-SDR_THRESHOLD = 0 # SDR = soft drop rate
+SDR_THRESHOLD = 33 # SDR = soft drop rate
 DAS_RESET_THRESHOLD = 0
 
 LOCKDOWN_THRESHOLD = 2000 # not a user variable
@@ -67,4 +67,5 @@ try:
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
 except Exception as e:
     print("Font load failed:", e)
+
 
