@@ -61,4 +61,10 @@ UI_COLOR = (203, 166, 247)
 USE_SKIN = False
 WALLPAPER = None  # will hold the loaded surface after pygame.init()
 
+# load the font
+try:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    font_dir = os.path.join(script_dir, "Konstruktor.otf")
+except Exception as e:
+    print("Font load failed:", e)
 
