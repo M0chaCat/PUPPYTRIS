@@ -33,9 +33,9 @@ while engine.running:
     if not engine.current_bag: # generate the first bag
         engine.current_bag = engine.generate_bag()
     
-    engine.handle_soft_drop(keys) # soft drop handled before gravity, because it has to override it
+    engine.handle_soft_drop(keys, frametime) # soft drop handled before gravity, because it has to override it
     engine.handle_events()
-    engine.handle_gravity()
+    engine.handle_gravity(frametime)
     engine.handle_movement(keys) # horizontal movement handled after gravity, because tetrio does it this way and it kinda makes sense
     
     if engine.spawn_new_piece:
@@ -61,4 +61,5 @@ while engine.running:
     pygame.display.flip()
     
     if not engine.running: # wait for the main loop to finish running to quit properly
+
         pygame.quit()
