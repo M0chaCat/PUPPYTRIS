@@ -12,11 +12,21 @@ import engine, ui, settings, skinloader
 
 pygame.init()
 
+pygame.display.set_caption("puppytris!!!!!")
+
 if settings.WALLPAPER_PATH:
     settings.WALLPAPER = pygame.image.load(settings.WALLPAPER_PATH).convert_alpha()
 
+# Text (top-left)
+font_size = 24
+try:
+    font = pygame.font.Font(settings.font_dir, font_size)
+except:
+    font = pygame.font.SysFont(None, font_size)
+    
+
 while engine.running:
-    #frametime_clock.tick(MAX_FRAMERATE)
+    engine.frametime_clock.tick(settings.MAX_FRAMERATE)
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
     
@@ -41,11 +51,14 @@ while engine.running:
     ui.draw_board(engine.piece_board)
     ui.draw_grid_lines()
     
-    pygame.display.flip()
-    #fps = int(engine.frametime_clock.get_fps())
+    fps = str(int(engine.frametime_clock.get_fps()))
     #pygame.display.set_caption(f"FPS: {fps}")
     
-    pygame.display.set_caption("puppytris!!!!!")
+    fps_surf = font.render(fps, True, settings.TEXT_COLOR)
+    ui.draw_rect(0, 0, 60, 40, settings.BOARD_COLOR, cut_corners=['bottom-right'], cut_size=10)
+    engine.MAIN_SCREEN.blit(fps_surf, (10, 10))
+    
+    pygame.display.flip()
     
     if not engine.running: # wait for the main loop to finish running to quit properly
         pygame.quit()

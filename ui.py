@@ -34,8 +34,6 @@ def draw_background():
         engine.MAIN_SCREEN.blit(scaled_wp, (-offset_x, -offset_y))
     else:
         engine.MAIN_SCREEN.fill(settings.BACKGROUND_COLOR)
-        
-import pygame
 
 def draw_board(current_board):
     """

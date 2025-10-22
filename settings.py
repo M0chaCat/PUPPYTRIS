@@ -33,8 +33,9 @@ is_penta = False
 
 DAS_THRESHOLD = 150
 ARR_THRESHOLD = 33
-SDR_THRESHOLD = 33 # SDR = soft drop rate
+SDR_THRESHOLD = 0 # SDR = soft drop rate
 DAS_RESET_THRESHOLD = 0
+STARTING_GRAVITY = 0
 
 LOCKDOWN_THRESHOLD = 2000 # not a user variable
 
