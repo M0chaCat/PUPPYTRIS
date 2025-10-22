@@ -61,5 +61,4 @@ while engine.running:
     pygame.display.flip()
     
     if not engine.running: # wait for the main loop to finish running to quit properly
-
         pygame.quit()
