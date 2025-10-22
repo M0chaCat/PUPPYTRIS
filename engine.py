@@ -67,6 +67,7 @@ current_gravity = settings.STARTING_GRAVITY # measured in G (1g = 1 fall/frame, 
 spawn_new_piece = True
 
 current_bag = []
+hold_pieces = []
 
 pieces_dict = pieces.tetra_dict
 piece_inversions = pieces.tetra_inversions
@@ -100,8 +101,7 @@ def generate_bag():
     random.shuffle(generated_bag)
     return generated_bag
 
-
-def spawn_piece(current_bag):
+def spawn_piece():
     global piece_x, piece_y, piece_rotation
     
     piece_x = PIECE_STARTING_X
@@ -136,7 +136,6 @@ def check_collisions(target_move_x, target_move_y, target_rotation):
         if (game_board[coords[0] + new_y, coords[1] + new_x]): # check for collision with minos below the piece
             collided = True
             break
-
     if collided: return True
     else: return False
 
@@ -156,7 +155,6 @@ def rotate_piece(amount):
 
     new_rotation = (piece_rotation + amount) % 4
     new_shape = pieces_dict[current_bag[0]]["shapes"][new_rotation]
-    print(new_rotation, piece_rotation)
 
     # offset pieces rotating from state 4 to make them kick more symetrically 
     # for example, think 180ing a state 4 z piece, will behave as if nothing happened
@@ -186,13 +184,10 @@ def rotate_piece(amount):
         if not check_collisions(kick_x, kick_y, new_rotation): # continue if no collisions found
             piece_rotation = new_rotation
             # move the piece
-            piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
-            for coords in numpy.argwhere(new_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
-                piece_board[kick_y + piece_y + coords[0]][kick_x + piece_x + coords[1]] = current_bag[0]
             piece_x = piece_x + kick_x # update the position variables
             piece_y = piece_y + kick_y
+            refresh_piece_board(new_shape)
             return
-    
     
 def mirror_piece():
     global piece_board, current_bag
@@ -200,14 +195,20 @@ def mirror_piece():
     current_bag[0] = piece_inversions[current_bag[0]]
     
     if not check_collisions(0, 0, piece_rotation):
-        piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
-        
         new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
-        
-        for coords in numpy.argwhere(new_shape != 0):
-            piece_board[piece_y + coords[0]][piece_x + coords[1]] = current_bag[0] # update the board with the new shape
+        refresh_piece_board()
     else:
         current_bag[0] = piece_inversions[current_bag[0]] # revert it back if collision
+
+def hold_piece():
+    global current_bag, hold_pieces
+    print("HOLD QUEUE: ", hold_pieces)
+    print("\nNEXT QUEUE: ", current_bag)
+    hold_pieces.append(current_bag[0])
+    current_bag.pop(0) # pop shifts array automatically
+    if len(hold_pieces) > settings.HOLD_PIECES: # if the hold queue is full (should happen after the first couple uses)
+        current_bag.insert(0, hold_pieces[0])
+        hold_pieces.pop(0)
         
 def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece. could be streamlined?
     global piece_x, piece_y, piece_rotation, piece_board
@@ -220,14 +221,19 @@ def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece
             piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
             piece_y = move_dir_y + piece_y
     
-            piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
-
-            for coords in numpy.argwhere(current_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
-                piece_board[piece_y + coords[0]][piece_x + coords[1]] = current_bag[0]
+            refresh_piece_board(current_shape)
         else: # when first collision happens, return false. this only makes sense if a single collision is being checked.
             return False
     return True
     
+def refresh_piece_board(piece_shape):
+    global piece_board
+
+    piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
+
+    for coords in numpy.argwhere(piece_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
+        piece_board[piece_y + coords[0]][piece_x + coords[1]] = current_bag[0]
+
 def find_completed_lines():
     # returns a 1d array of booleans for each line, true if its completed, false if not
     lines_to_clear = numpy.all(game_board != 0, axis=1)
@@ -407,6 +413,8 @@ def handle_events():
     global running
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
+            if event.key == settings.KEY_HOLD:
+                hold_piece()
             if event.key == settings.ROTATE_180:
                 rotate_piece(2)
             if event.key == settings.ROTATE_CW:
