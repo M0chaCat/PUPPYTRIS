@@ -137,7 +137,6 @@ def check_collisions(target_move_x, target_move_y, target_rotation):
             collided = True
             break
 
-    check_touching_ground()
     if collided: return True
     else: return False
 
@@ -145,17 +144,14 @@ def check_touching_ground():
     piece_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
 
     for coords in numpy.argwhere(piece_shape != 0):
-        if coords[0] + 1 > settings.BOARD_HEIGHT: # check if its touching the bottom of the board
-            handle_piece_lockdown()
+        if coords[0] + piece_y + 1 > settings.BOARD_HEIGHT - 1: # check if its touching the bottom of the board
             return True # return true if it IS touching the ground
-        elif game_board[coords[0] - 1, coords[1]]: # check if its touching any minos below it
-            handle_piece_lockdown()
+        elif game_board[coords[0] + piece_y + 1, piece_x + coords[1]]: # check if its touching any minos below it
             return True
-        
     return False # return false if nothing found
 
 def rotate_piece(amount):
-    global piece_rotation, piece_board
+    global piece_rotation, piece_board, piece_x, piece_y
     kick_list = []
 
     new_rotation = (piece_rotation + amount) % 4
@@ -167,7 +163,7 @@ def rotate_piece(amount):
 
     # a problem with the bias system is that if an unbiased (state 2) rotation would collide and allow a kick to be performed,
     # and an biased (state 4) rotation simply won't collide at all when rotating, then it will perform asymmetrically 
-    if piece_rotation == 4 and current_bag[0] in (1, 3, 4, 5): # covers pieces Z, S, O, I
+    if piece_rotation == 0 and current_bag[0] in (1, 3, 4, 5): # covers pieces Z, S, O, I
         bias = -1
     else:
         bias = 0
@@ -180,19 +176,21 @@ def rotate_piece(amount):
 
     # slightly weird i kick behaviour on edge with hole underneath platform like this iiii
     #                                                                                  ---
-    if new_rotation == 4 and current_bag[0] in (1, 3, 4, 5): # ensures the kick order is symmetrical for Z, S, O, I
+    if new_rotation == 0 and current_bag[0] in (1, 3, 4, 5): # ensures the kick order is symmetrical for Z, S, O, I
         kick_list = kick_list_left
     else:
         kick_list = kick_list_right
 
     for kick in kick_list:
         kick_x, kick_y = kick
-        if not check_collisions(kick_x + bias, kick_y + bias, new_rotation): # continue if no collisions found
+        if not check_collisions(kick_x, kick_y, new_rotation): # continue if no collisions found
             piece_rotation = new_rotation
             # move the piece
             piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
             for coords in numpy.argwhere(new_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
-                piece_board[kick_y + piece_y + coords[0]][kick_x + bias + piece_x + coords[1]] = current_bag[0]
+                piece_board[kick_y + piece_y + coords[0]][kick_x + piece_x + coords[1]] = current_bag[0]
+            piece_x = piece_x + kick_x # update the position variables
+            piece_y = piece_y + kick_y
             return
     
     
@@ -366,7 +364,7 @@ def reset_game():
     # Reset piece bag
     current_bag = generate_bag()
     
-def handle_soft_drop(keys):
+def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
     if current_gravity > 0.001:
         softdrop_overrides = (settings.SDR_THRESHOLD <= 16.666667 / current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
@@ -426,14 +424,14 @@ def handle_events():
         if event.type == pygame.QUIT:
             running = False
             
-def handle_gravity():
+def handle_gravity(frametime):
     global gravity_timer, current_gravity
     if current_gravity >= 19.8: # make instant drop at 20g regardless of framerate
         move_piece(0, settings.BOARD_HEIGHT + 10) 
     elif current_gravity <= 0.0001: # disable gravity if too low
         return  
     elif not softdrop_overrides: # only process gravity this frame if user isn't pressing the softdrop key
-        gravity_timer += frametime_clock.get_time() # use frametime clock because precision is not necessary, only consistent pacing is
+        gravity_timer += frametime # use frametime clock because precision is not necessary, only consistent pacing is
         if (gravity_timer >= 16.666667 / current_gravity):
             steps_to_move = int(gravity_timer / (16.666667 / current_gravity))
             move_piece(0, steps_to_move)
