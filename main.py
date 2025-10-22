@@ -54,11 +54,12 @@ while engine.running:
     fps = str(int(engine.frametime_clock.get_fps()))
     #pygame.display.set_caption(f"FPS: {fps}")
     
-    fps_surf = font.render(fps, True, settings.TEXT_COLOR)
-    ui.draw_rect(0, 0, 60, 40, settings.BOARD_COLOR, cut_corners=['bottom-right'], cut_size=10)
+    fps_surf = font.render(fps+" FPS", True, settings.TEXT_COLOR)
+    ui.draw_rect(0, 0, 110, 40, settings.BOARD_COLOR, cut_corners=['bottom-right'], cut_size=10)
     engine.MAIN_SCREEN.blit(fps_surf, (10, 10))
     
     pygame.display.flip()
     
     if not engine.running: # wait for the main loop to finish running to quit properly
         pygame.quit()
+    
