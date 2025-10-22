@@ -23,7 +23,6 @@ try:
     font = pygame.font.Font(settings.font_dir, font_size)
 except:
     font = pygame.font.SysFont(None, font_size)
-    
 
 while engine.running:
     engine.frametime_clock.tick(settings.MAX_FRAMERATE)
@@ -39,7 +38,7 @@ while engine.running:
     engine.handle_movement(keys) # horizontal movement handled after gravity, because tetrio does it this way and it kinda makes sense
     
     if engine.spawn_new_piece:
-        engine.spawn_piece(engine.current_bag)
+        engine.spawn_piece()
         engine.spawn_new_piece = False
         
     ui.draw_background()
@@ -62,4 +61,3 @@ while engine.running:
     
     if not engine.running: # wait for the main loop to finish running to quit properly
         pygame.quit()
-    
