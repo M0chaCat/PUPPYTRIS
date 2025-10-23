@@ -111,13 +111,8 @@ def spawn_piece():
     piece_rotation = PIECE_STARTING_ROTATION
     
     current_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
-    piece_height = current_shape.shape[0]
-    piece_width = current_shape.shape[1]
-    
-    for row in range(piece_height):
-        for col in range(piece_width):
-            if current_shape[row][col] != 0:
-                piece_board[piece_y + row][piece_x + col] = current_bag[0]
+
+    refresh_piece_board(current_shape)
     
     if check_collisions(0, 0, piece_rotation):
         top_out()
@@ -163,10 +158,10 @@ def rotate_piece(amount):
 
     # a problem with the bias system is that if an unbiased (state 2) rotation would collide and allow a kick to be performed,
     # and an biased (state 4) rotation simply won't collide at all when rotating, then it will perform asymmetrically 
-    if piece_rotation == 0 and current_bag[0] in (1, 3, 4, 5): # covers pieces Z, S, O, I
-        bias = -1
-    else:
-        bias = 0
+    # if piece_rotation == 0 and current_bag[0] in (1, 3, 4, 5): # covers pieces Z, S, O, I
+    #     bias = -1
+    # else:
+    #     bias = 0
 
     kick_list_right = [(0, 0), (0, 1), (-1, 1), (1, 1), (-1, 0), (1, 0), (-2, 0), (2, 0), (0, -1)] # checks left to right if kicking right
     kick_list_left = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)] # checks right to left if kicking left
