@@ -360,6 +360,7 @@ def reset_game():
     global das_timer, arr_timer, sdr_timer, das_reset_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
     global last_move_dir, gravity_timer, softdrop_overrides, spawn_new_piece
+    global hold_boards, hold_pieces
     
     # Clear boards
     game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
@@ -378,6 +379,10 @@ def reset_game():
     softdrop_overrides = True
     spawn_new_piece = True
     bag_counter = 0
+    
+    # Reset hold
+    hold_boards = numpy.zeros((hold_pieces_amount, 5, 5), dtype=int)
+    hold_pieces = []
     
     # Reset piece bag
     current_bag = generate_bag()
@@ -476,4 +481,5 @@ def handle_swap_mode():
         hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_PENTA
         
     reset_game()
+    
     
