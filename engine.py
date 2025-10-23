@@ -71,11 +71,13 @@ hold_pieces = []
 
 pieces_dict = pieces.tetra_dict
 piece_inversions = pieces.tetra_inversions
+hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_TETRA
 
 # if pentas exist and should be active, switch
 if skinloader.has_penta and settings.is_penta:
-    settings.pieces_dict = pieces.penta_dict
-    settings.piece_inversions = pieces.penta_inversions
+    pieces_dict = pieces.penta_dict
+    piece_inversions = pieces.penta_inversions
+    hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_PENTA
 
 PIECE_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
 PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECE_WIDTH//2) # dynamically calculate starting position based on board and piece size.
@@ -202,13 +204,13 @@ def mirror_piece():
 
 def hold_piece():
     global current_bag, hold_pieces
-    print("HOLD QUEUE: ", hold_pieces)
-    print("\nNEXT QUEUE: ", current_bag)
     hold_pieces.append(current_bag[0])
     current_bag.pop(0) # pop shifts array automatically
-    if len(hold_pieces) > settings.HOLD_PIECES: # if the hold queue is full (should happen after the first couple uses)
+    if len(hold_pieces) > hold_pieces_amount: # if the hold queue is full (should happen after the first couple uses)
         current_bag.insert(0, hold_pieces[0])
         hold_pieces.pop(0)
+    new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+    refresh_piece_board(new_shape)
         
 def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece. could be streamlined?
     global piece_x, piece_y, piece_rotation, piece_board
@@ -446,6 +448,7 @@ def handle_gravity(frametime):
             gravity_timer = gravity_timer % (16.666667 / current_gravity)
             
 def handle_swap_mode():
+    global pieces_dict, piece_inversions, hold_pieces_amount
     if skinloader.has_penta == False:
         print("Your skin does not support pentaminos!")
         return
@@ -454,10 +457,12 @@ def handle_swap_mode():
     PIECE_TYPES = 18 if settings.is_penta else 7
     pieces_dict = pieces.tetra_dict
     piece_inversions = pieces.tetra_inversions
+    hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_TETRA
     
     # if pentas exist and should be active, switch
     if skinloader.has_penta and settings.is_penta:
         pieces_dict = pieces.penta_dict
         piece_inversions = pieces.penta_inversions
+        hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_PENTA
         
     reset_game()
