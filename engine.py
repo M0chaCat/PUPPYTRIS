@@ -196,7 +196,7 @@ def mirror_piece():
     
     if not check_collisions(0, 0, piece_rotation):
         new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
-        refresh_piece_board()
+        refresh_piece_board(new_shape)
     else:
         current_bag[0] = piece_inversions[current_bag[0]] # revert it back if collision
 

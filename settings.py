@@ -49,6 +49,7 @@ ROTATE_180 = pygame.K_c
 ROTATE_MIRROR = pygame.K_a
 KEY_RESET = pygame.K_r
 KEY_SWAP = pygame.K_q
+KEY_HOLD = pygame.K_v
 
 BOARD_COLOR = (30, 30, 46)
 BACKGROUND_COLOR = (24, 24, 37)
