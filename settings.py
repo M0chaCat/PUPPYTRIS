@@ -21,13 +21,15 @@ MAX_FRAMERATE = 60
 
 #if BOARD_WIDTH / WINDOW_WIDTH < BOARD_HEIGHT / WINDOW_HEIGHT:
 CELL_SIZE = WINDOW_HEIGHT//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 5) # +2 so its not too zoomed in
-#else: # if the board is REALLY wide # kity note: dis seems useless?
+#else: # if the board is REALLY wide # kity note: dis seems useless? # pupy note: is not :3 jus need to get it workying
     #CELL_SIZE = WINDOW_WIDTH//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 2)
     
 
 # --- Config / constants ---
 PIECE_TYPES_TETRA = 7
 PIECE_TYPES_PENTA = 18
+HOLD_PIECES_AMOUNT_TETRA = 1
+HOLD_PIECES_AMOUNT_PENTA = 2
 
 is_penta = False
 
@@ -47,9 +49,9 @@ ROTATE_CW = pygame.K_x
 ROTATE_CCW = pygame.K_z
 ROTATE_180 = pygame.K_c
 ROTATE_MIRROR = pygame.K_a
-KEY_RESET = pygame.K_r
-KEY_SWAP = pygame.K_q
 KEY_HOLD = pygame.K_v
+KEY_SWAP = pygame.K_q
+KEY_RESET = pygame.K_r
 
 BOARD_COLOR = (30, 30, 46)
 BACKGROUND_COLOR = (24, 24, 37)
@@ -69,5 +71,6 @@ try:
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
 except Exception as e:
     print("Font load failed:", e)
+
 
 
