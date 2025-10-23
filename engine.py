@@ -78,6 +78,8 @@ if skinloader.has_penta and settings.is_penta:
     pieces_dict = pieces.penta_dict
     piece_inversions = pieces.penta_inversions
     hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_PENTA
+    
+hold_boards = numpy.zeros((hold_pieces_amount, 5, 5), dtype=int)
 
 PIECE_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
 PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECE_WIDTH//2) # dynamically calculate starting position based on board and piece size.
@@ -206,6 +208,15 @@ def hold_piece():
         hold_pieces.pop(0)
     new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
     refresh_piece_board(new_shape)
+    # --- update all hold boards ---
+    hold_boards = []  # clear previous
+    for piece_id in hold_pieces:
+        piece_shape = pieces_dict[piece_id]["shapes"][0]
+        board = numpy.zeros((5, 5), dtype=int)  # 5x5 board for hold piece
+        for coords in numpy.argwhere(piece_shape != 0):
+            board[coords[0], coords[1]] = piece_id
+        hold_boards.append(board)
+        
         
 def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece. could be streamlined?
     global piece_x, piece_y, piece_rotation, piece_board
@@ -461,3 +472,4 @@ def handle_swap_mode():
         hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_PENTA
         
     reset_game()
+    

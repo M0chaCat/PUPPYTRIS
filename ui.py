@@ -271,15 +271,19 @@ def draw_left_panel():
     text = "Next"
     total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
     left_width = int(engine.BOARD_WIDTH_PX * 0.4)
-    left_height = int(total_board_px * 0.6)
+    left_height = int(total_board_px * 0.5)  # or adjust as needed
     
+    # --- Horizontal alignment: stick to the left of the board ---
     left_x = engine.BOARD_PX_OFFSET_X - left_width
-    left_y = engine.BOARD_PX_OFFSET_Y + (total_board_px - left_height) // 1.09
+    
+    # --- Vertical alignment: start at a % down the board ---
+    vertical_pct = 0.4  # 0.0 = top, 1.0 = bottom
+    left_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.OVERLAY_COLOR
     draw_rect(left_x, left_y, left_width, left_height, color=panel_color, cut_corners=['top-left', 'bottom-left'])
     
-    # Text (top-right)
+    # --- Draw label ---
     font_size = 24
     try:
         font = pygame.font.Font(settings.font_dir, font_size)
@@ -296,15 +300,21 @@ def draw_right_panel():
     text = "Hold"
     total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
     right_width = int(engine.BOARD_WIDTH_PX * 0.4)
-    right_height = total_board_px / 7
+    right_height_per_piece = total_board_px / 12
+    right_height_top = total_board_px / 20
+    right_height = (right_height_per_piece * engine.hold_pieces_amount) + right_height_top
     
+    # --- Horizontal alignment: stick to the board ---
     right_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX
-    right_y = engine.BOARD_PX_OFFSET_Y + (total_board_px - right_height) // 2.14
+    
+    # --- Vertical alignment: start at a % down the board ---
+    vertical_pct = 0.4  # change this: 0.0 = top of board, 1.0 = bottom
+    right_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.OVERLAY_COLOR
     draw_rect(right_x, right_y, right_width, right_height, color=panel_color, cut_corners=['top-right', 'bottom-right'])
     
-    # Text (top-left)
+    # --- Draw label ---
     font_size = 24
     try:
         font = pygame.font.Font(settings.font_dir, font_size)
@@ -316,3 +326,47 @@ def draw_right_panel():
     text_rect = text_surf.get_rect(topleft=(right_x + padding, right_y + padding))
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
     
+    # --- Draw held pieces ---
+    if hasattr(engine, "hold_boards") and engine.hold_boards is not None:
+        cell = settings.CELL_SIZE
+        base_scale = 0.8  # original piece scale
+        shrink_factor = 0.95  # shrink entire area by 5%
+        spacing = -40  # space between stacked hold pieces
+        
+        # precompute scaled cell size
+        cell_scaled = int(cell * base_scale * shrink_factor)
+        
+        for i, board in enumerate(engine.hold_boards):
+            board_rows, board_cols = board.shape
+            
+            # x/y of the top-left of this board area (stacked)
+            area_start_x = right_x + (right_width - board_cols * cell_scaled) // 2
+            area_start_y = right_y + 10 + i * (board_rows * cell_scaled + spacing)
+            
+            # compute bounding box of non-zero cells
+            rows_nonzero = numpy.any(board != 0, axis=1)
+            cols_nonzero = numpy.any(board != 0, axis=0)
+            if not rows_nonzero.any() or not cols_nonzero.any():
+                continue  # empty board
+            
+            min_row, max_row = numpy.where(rows_nonzero)[0][[0, -1]]
+            min_col, max_col = numpy.where(cols_nonzero)[0][[0, -1]]
+            
+            piece_rows = max_row - min_row + 1
+            piece_cols = max_col - min_col + 1
+            
+            # offset to center the piece in the board area
+            offset_x = ((board_cols - piece_cols) * cell_scaled) // 2 - min_col * cell_scaled
+            offset_y = ((board_rows - piece_rows) * cell_scaled) // 2 - min_row * cell_scaled
+            
+            for row in range(board_rows):
+                for col in range(board_cols):
+                    val = board[row, col]
+                    if val == 0:
+                        continue
+                    x = area_start_x + col * cell_scaled + offset_x
+                    y = area_start_y + row * cell_scaled + offset_y
+                    piece_skin = engine.pieces_dict[val]["skin"]
+                    piece_skin_scaled = pygame.transform.smoothscale(piece_skin, (cell_scaled, cell_scaled))
+                    engine.MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
+                    
