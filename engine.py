@@ -116,11 +116,10 @@ def spawn_piece():
 
     refresh_piece_board(current_shape)
     
-    if check_collisions(0, 0, piece_rotation):
+    if check_collisions(0, 0, current_shape):
         top_out()
 
-def check_collisions(target_move_x, target_move_y, target_rotation):
-    target_shape = pieces_dict[current_bag[0]]["shapes"][target_rotation]
+def check_collisions(target_move_x, target_move_y, target_shape):
     new_x = target_move_x + piece_x
     new_y = target_move_y + piece_y
     collided = False
@@ -180,7 +179,7 @@ def rotate_piece(amount):
 
     for kick in kick_list:
         kick_x, kick_y = kick
-        if not check_collisions(kick_x, kick_y, new_rotation): # continue if no collisions found
+        if not check_collisions(kick_x, kick_y, new_shape): # continue if no collisions found
             piece_rotation = new_rotation
             # move the piece
             piece_x = piece_x + kick_x # update the position variables
@@ -192,22 +191,27 @@ def mirror_piece():
     global piece_board, current_bag
     
     current_bag[0] = piece_inversions[current_bag[0]]
-    
-    if not check_collisions(0, 0, piece_rotation):
-        new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+    new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+
+    if not check_collisions(0, 0, new_shape):
         refresh_piece_board(new_shape)
     else:
         current_bag[0] = piece_inversions[current_bag[0]] # revert it back if collision
 
-def hold_piece():
-    global current_bag, hold_pieces
+def hold_piece(): # mechanics need rewrite to check collisio, refactoring of current_bag needed first
+    global current_bag, hold_pieces, hold_boards
     hold_pieces.append(current_bag[0])
     current_bag.pop(0) # pop shifts array automatically
-    if len(hold_pieces) > hold_pieces_amount: # if the hold queue is full (should happen after the first couple uses)
+    
+    # enforce max hold pieces
+    if len(hold_pieces) > hold_pieces_amount:
         current_bag.insert(0, hold_pieces[0])
         hold_pieces.pop(0)
+        
+    # refresh current active piece
     new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
     refresh_piece_board(new_shape)
+    
     # --- update all hold boards ---
     hold_boards = []  # clear previous
     for piece_id in hold_pieces:
@@ -225,7 +229,7 @@ def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece
     move_dir_y = int((move_y > 0) - (move_y < 0))
     
     for each in range(max(abs(move_x), abs(move_y), 1)): # loops over whichever number is farther from 0 (the most moves), min 1
-        if not check_collisions(move_dir_x, move_dir_y, piece_rotation): # only goes through with the movement if no collisions occur
+        if not check_collisions(move_dir_x, move_dir_y, current_shape): # only goes through with the movement if no collisions occur
             piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
             piece_y = move_dir_y + piece_y
     
