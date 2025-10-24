@@ -117,7 +117,7 @@ def spawn_piece():
     next_pieces = (piece_bags[0] + piece_bags[1])[:settings.NEXT_PIECES_COUNT] # gets a truncated next_pieces list
 
     refresh_piece_board(current_shape)
-    next_boards = gen_new_ui_boards(next_boards, next_pieces)
+    next_boards = gen_ui_boards(next_boards, next_pieces)
     
     if check_collisions(0, 0, current_shape):
         top_out()
@@ -220,7 +220,7 @@ def hold_piece(): # mechanics need rewrite to check collision
     # refresh current active piece
     new_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
     refresh_piece_board(new_shape)
-    hold_boards = gen_new_ui_boards(hold_boards, hold_pieces)
+    hold_boards = gen_ui_boards(hold_boards, hold_pieces)
         
         
 def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece. could be streamlined?
@@ -247,7 +247,7 @@ def refresh_piece_board(piece_shape):
     for coords in numpy.argwhere(piece_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
         piece_board[piece_y + coords[0]][piece_x + coords[1]] = piece_bags[0][0]
 
-def gen_new_ui_boards(board_list, pieces_list):
+def gen_ui_boards(boards_list, pieces_list):
     boards_list = [] # clear previous
     for piece_id in pieces_list:
         piece_shape = pieces_dict[piece_id]["shapes"][0]
@@ -255,7 +255,7 @@ def gen_new_ui_boards(board_list, pieces_list):
         for coords in numpy.argwhere(piece_shape != 0):
             board[coords[0], coords[1]] = piece_id
         boards_list.append(board)
-    return board_list
+    return boards_list
 
 def find_completed_lines():
     # returns a 1d array of booleans for each line, true if its completed, false if not
@@ -367,12 +367,12 @@ def top_out():
     reset_game()
     
 def reset_game():
-    global game_board, piece_board, piece_bags, bag_counter
+    global game_board, piece_board, piece_bags, hold_pieces, bag_counter
     global piece_x, piece_y, piece_rotation
     global das_timer, arr_timer, sdr_timer, das_reset_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
     global last_move_dir, gravity_timer, softdrop_overrides, spawn_new_piece
-    global hold_boards, hold_pieces
+    global hold_boards, next_boards
     
     # Clear boards
     game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
@@ -399,6 +399,10 @@ def reset_game():
     # Reset piece bag
     piece_bags[0] = generate_bag()
     piece_bags[1] = generate_bag()
+
+    # generate the next boards
+    next_pieces = (piece_bags[0] + piece_bags[1])[:settings.NEXT_PIECES_COUNT] # gets a truncated next_pieces list
+    next_boards = gen_ui_boards(next_boards, next_pieces)
     
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
