@@ -37,102 +37,26 @@ def draw_background():
 
 def draw_board(current_board):
     """
-    Draw pieces clipped to the visible board area (but don't skip the top cells).
+    Draw the full board including the extra hidden rows (no clipping).
     After drawing pieces, call draw_board_corners() to mask triangular cuts.
     """
     cell = settings.CELL_SIZE
-    visible_start_y = engine.BOARD_PX_OFFSET_Y + (settings.BOARD_EXTRA_HEIGHT * cell)
     grid_start_x = engine.BOARD_PX_OFFSET_X
-    width = engine.BOARD_WIDTH_PX
-    height = engine.BOARD_HEIGHT_PX
+    grid_start_y = engine.BOARD_PX_OFFSET_Y
+    total_rows = current_board.shape[0]  # safer than BOARD_HEIGHT + EXTRA_HEIGHT
+    total_cols = current_board.shape[1]
     
-    # draw pieces if they intersect visible area (so partially-visible pieces still draw)
-    for row in range(settings.BOARD_HEIGHT):
-        for col in range(settings.BOARD_WIDTH):
+    for row in range(total_rows):
+        for col in range(total_cols):
             val = current_board[row, col]
             if val == 0:
                 continue
+            
             x = grid_start_x + col * cell
-            y = visible_start_y + (row - settings.BOARD_EXTRA_HEIGHT) * cell
-            # draw if any part of the cell intersects the visible board rectangle
-            if (y + cell > visible_start_y) and (y < visible_start_y + height):
-                engine.MAIN_SCREEN.blit(engine.pieces_dict[val]["skin"], (x, y))
-                
-    # draw the triangular corner overlays (covers only the triangle area)
-    draw_board_corner_masks(cut_size=cell)
-    
-    
-def draw_board_corner_masks(cut_size=None):
-    """
-    Draw only the triangular corner masks (top-left & top-right).
-    If a wallpaper is set, copy the corresponding wallpaper pixels for each triangle;
-    otherwise fill with BACKGROUND_COLOR.
-    """
-    if cut_size is None:
-        cut_size = settings.CELL_SIZE
-        
-    grid_start_x = engine.BOARD_PX_OFFSET_X
-    grid_start_y = engine.BOARD_PX_OFFSET_Y + (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
-    width = engine.BOARD_WIDTH_PX
-    
-    # helper to blit the wallpaper-triangle into screen at (dst_x, dst_y)
-    def blit_wp_triangle(dst_x, dst_y, triangle_points):
-        # Create a temporary surface for the cell area
-        tri_w, tri_h = cut_size, cut_size
-        tri_surf = pygame.Surface((tri_w, tri_h), flags=pygame.SRCALPHA)
-        
-        if hasattr(settings, "WALLPAPER") and settings.WALLPAPER:
-            wp = settings.WALLPAPER
-            wp_w, wp_h = wp.get_size()
-            win_w, win_h = settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT
+            y = grid_start_y + row * cell
             
-            # Map screen rect -> wallpaper source rect (handles wallpapers not equal to window size)
-            src_x = int(dst_x * wp_w / win_w)
-            src_y = int(dst_y * wp_h / win_h)
-            src_w = max(1, int(tri_w * wp_w / win_w))
-            src_h = max(1, int(tri_h * wp_h / win_h))
-            src_rect = pygame.Rect(src_x, src_y, src_w, src_h)
+            engine.MAIN_SCREEN.blit(engine.pieces_dict[val]["skin"], (x, y))
             
-            # Blit the corresponding wallpaper area into tri_surf (scaled if necessary)
-            # If sizes differ, scale to tri_surf so the visual alignment matches screen.
-            tmp = wp.subsurface(src_rect).copy()
-            if (src_w, src_h) != (tri_w, tri_h):
-                tmp = pygame.transform.smoothscale(tmp, (tri_w, tri_h))
-            tri_surf.blit(tmp, (0, 0))
-        else:
-            # no wallpaper: fill with background color (we'll mask to triangle)
-            tri_surf.fill(settings.BACKGROUND_COLOR + (255,))  # ensure alpha present
-            
-        # create a mask surface where only the triangle area is opaque
-        mask = pygame.Surface((tri_w, tri_h), flags=pygame.SRCALPHA)
-        mask.fill((0, 0, 0, 0))
-        # polygon points need to be relative to tri_surf (shifted by dst_x,dst_y)
-        rel_pts = [(px - dst_x, py - dst_y) for (px, py) in triangle_points]
-        pygame.draw.polygon(mask, (255, 255, 255, 255), rel_pts)
-        
-        # multiply tri_surf by mask alpha so only triangle remains
-        tri_surf.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-        
-        # finally blit the triangular surface onto the main screen
-        engine.MAIN_SCREEN.blit(tri_surf, (dst_x, dst_y))
-        
-        
-    # top-left triangle points (screen coords)
-    tl_pts = [
-        (grid_start_x, grid_start_y),
-        (grid_start_x + cut_size, grid_start_y),
-        (grid_start_x, grid_start_y + cut_size),
-    ]
-    blit_wp_triangle(grid_start_x, grid_start_y, tl_pts)
-    
-    # top-right triangle points (screen coords)
-    tr_pts = [
-        (grid_start_x + width, grid_start_y),
-        (grid_start_x + width - cut_size, grid_start_y),
-        (grid_start_x + width, grid_start_y + cut_size),
-    ]
-    blit_wp_triangle(grid_start_x + width - cut_size, grid_start_y, tr_pts)
-    
 def draw_board_background(cut_size=None):
         """Draw board background with top-left & top-right cut by `cut_size`.
                 If cut_size is None, use one full cell (so a full corner cell is cut).
@@ -238,7 +162,6 @@ def draw_rect(x, y, width, height, color=(200, 200, 200), cut_corners=None, cut_
     ]
     
     pygame.draw.polygon(engine.MAIN_SCREEN, color, points)
-    
         
 def draw_board_extension(text="SCORE: 0"):
     """Draw a rectangular section aligned to the bottom of the board with text."""
@@ -253,7 +176,7 @@ def draw_board_extension(text="SCORE: 0"):
     draw_rect(x, y, width, height, settings.CRUST_COLOR, cut_corners=['bottom-left', 'bottom-right'])
     
     # Load font
-    padding = 5
+    padding = 10
     font_size = height - 2 * padding
     try:
         font = pygame.font.Font(settings.font_dir, font_size)
@@ -265,7 +188,6 @@ def draw_board_extension(text="SCORE: 0"):
     text_rect = text_surf.get_rect()
     text_rect.topleft = (x + padding, y + padding)  # Add some padding
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
-    
 
 def draw_next_panel():
     text = "Next"
@@ -340,9 +262,6 @@ def draw_next_panel():
                     piece_skin = engine.pieces_dict[val]["skin"]
                     piece_skin_scaled = pygame.transform.smoothscale(piece_skin, (cell_scaled, cell_scaled))
                     engine.MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
-                    
-                    
-    
     
 def draw_hold_panel():
     text = "Hold"
