@@ -302,7 +302,7 @@ def draw_right_panel():
     right_width = int(engine.BOARD_WIDTH_PX * 0.4)
     right_height_per_piece = total_board_px / 12
     right_height_top = total_board_px / 20
-    right_height = (right_height_per_piece * engine.hold_pieces_amount) + right_height_top
+    right_height = (right_height_per_piece * engine.hold_pieces_count) + right_height_top
     
     # --- Horizontal alignment: stick to the board ---
     right_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX
