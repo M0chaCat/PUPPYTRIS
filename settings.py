@@ -28,8 +28,9 @@ CELL_SIZE = WINDOW_HEIGHT//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 5) # +2 so its n
 # --- Config / constants ---
 PIECE_TYPES_TETRA = 7
 PIECE_TYPES_PENTA = 18
-HOLD_PIECES_AMOUNT_TETRA = 1
-HOLD_PIECES_AMOUNT_PENTA = 2
+HOLD_PIECES_COUNT_TETRA = 1
+HOLD_PIECES_COUNT_PENTA = 2
+NEXT_PIECES_COUNT = 5
 
 is_penta = False
 
@@ -71,6 +72,3 @@ try:
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
 except Exception as e:
     print("Font load failed:", e)
-
-
-
