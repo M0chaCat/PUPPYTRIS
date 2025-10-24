@@ -24,13 +24,16 @@ try:
 except:
     font = pygame.font.SysFont(None, font_size)
 
+#pre game stuff
+engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
+engine.piece_bags[1] = engine.generate_bag()
+next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[:settings.NEXT_PIECES_COUNT] # gets a truncated next_pieces list
+engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
+
 while engine.running:
     engine.frametime_clock.tick(settings.MAX_FRAMERATE)
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
-    
-    if not engine.piece_bags[0]: # generate the first bag
-        engine.piece_bags[0] = engine.generate_bag()
     
     engine.handle_soft_drop(keys, frametime) # soft drop handled before gravity, because it has to override it
     engine.handle_events()
@@ -49,6 +52,7 @@ while engine.running:
     ui.draw_board(engine.game_board)
     ui.draw_board(engine.piece_board)
     ui.draw_grid_lines()
+    print(engine.next_boards)
     
     fps = str(int(engine.frametime_clock.get_fps()))
     #pygame.display.set_caption(f"FPS: {fps}")
