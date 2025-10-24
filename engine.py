@@ -121,21 +121,23 @@ def spawn_piece():
 
     refresh_piece_board(current_shape)
     next_boards = gen_ui_boards(next_boards, next_pieces)
-    fill_topboard(current_shape, next_pieces)
-
-def fill_topboard(current_shape, next_pieces):
-    global topout_board
-    next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][PIECE_STARTING_ROTATION]
-    # --- Check top 5 rows for occupancy ---
-    top_rows = game_board[:settings.BOARD_EXTRA_HEIGHT + 5, :]
-    if numpy.any(top_rows != 0):
-        topout_board = gen_topout_board(next_shape)
-    else:
-        topout_board = None
-        
-    # Normal top-out check
+    gen_topout_board()
+    # top-out check
     if check_collisions(0, 0, current_shape):
         top_out()
+
+def gen_topout_board():
+    global topout_board
+    board_size = PIECE_WIDTH
+    topout_board = numpy.zeros((board_size, board_size), dtype=numpy.int8)
+    next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][PIECE_STARTING_ROTATION]
+
+    # --- Check top 4/5 rows for occupancy ---
+    top_rows = game_board[:settings.BOARD_EXTRA_HEIGHT + PIECE_WIDTH]
+    if numpy.all(top_rows == 0):
+        topout_board = None
+    else:
+        topout_board = next_shape
 
 def check_collisions(target_move_x, target_move_y, target_shape):
     new_x = target_move_x + piece_x
@@ -282,20 +284,6 @@ def gen_ui_boards(boards_list, pieces_list):
             board[coords[0], coords[1]] = piece_id
         boards_list.append(board)
     return boards_list
-
-def gen_topout_board(shape):
-    """Return a 5×5 board with the shape centered."""
-    board_size = PIECE_WIDTH
-    board = numpy.zeros((board_size, board_size), dtype=int)
-    shape_rows, shape_cols = shape.shape
-    off_x = (board_size - shape_cols) // 2
-    off_y = (board_size - shape_rows) // 2
-    for r in range(shape_rows):
-        for c in range(shape_cols):
-            val = shape[r, c]
-            if val:
-                board[off_y + r, off_x + c] = val
-    return board
 
 def find_completed_lines():
     # returns a 1d array of booleans for each line, true if its completed, false if not
