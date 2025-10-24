@@ -50,8 +50,8 @@ while engine.running:
     ui.draw_board_background()
     ui.draw_grid_lines()
     ui.draw_board(engine.game_board)
-    ui.draw_board(engine.piece_board)
     ui.draw_topout_board()
+    ui.draw_board(engine.piece_board)
     
     fps = str(int(engine.frametime_clock.get_fps()))
     
@@ -64,4 +64,3 @@ while engine.running:
     if not engine.running: # wait for the main loop to finish running to quit properly
 
         pygame.quit()
-    
