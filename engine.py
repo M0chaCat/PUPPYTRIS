@@ -64,7 +64,6 @@ softdrop_overrides = True
 last_move_dir = 0
 gravity_timer = 0
 current_gravity = settings.STARTING_GRAVITY # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency))
-spawn_new_piece = True
 
 piece_bags = [[],[]]
 hold_pieces = []
@@ -90,6 +89,8 @@ PIECE_STARTING_ROTATION = 0
 piece_x = PIECE_STARTING_X
 piece_y = PIECE_STARTING_Y
 piece_rotation = PIECE_STARTING_ROTATION
+ghost_piece_x = PIECE_STARTING_X
+ghost_piece_y = PIECE_STARTING_Y
 
 def generate_bag():
     global bag_counter
@@ -233,12 +234,24 @@ def move_piece(move_x, move_y):
         if not check_collisions(move_dir_x, move_dir_y, current_shape): # only goes through with the movement if no collisions occur
             piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
             piece_y = move_dir_y + piece_y
-    
-            refresh_piece_board(current_shape)
         else: # when first collision happens, return false. this only makes sense if a single collision is being checked.
+            refresh_piece_board(current_shape)
             return False
+    refresh_piece_board(current_shape)
+    if move_x != 0: update_ghost_piece()
     return True
     
+def update_ghost_piece():
+    global ghost_piece_x, ghost_piece_y
+    ghost_piece_x = piece_x
+    ghost_piece_y = 0
+    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    for _ in range(settings.BOARD_HEIGHT):
+        if not check_collisions(0, 1, current_shape):
+            ghost_piece_y += 1
+        else:
+            break
+
 def refresh_piece_board(piece_shape):
     global piece_board
 
@@ -280,10 +293,9 @@ def handle_piece_lockdown(): # NEED TO IMPLEMENT PIECE FLASHING
         lock_to_board()
     
 def lock_to_board():
-    global game_board, piece_board, piece_bags, spawn_new_piece
+    global game_board, piece_board, piece_bags
     game_board[piece_board != 0] = piece_board[piece_board != 0]
     piece_board = numpy.zeros_like(piece_board)
-    spawn_new_piece = True
     piece_bags[0].pop(0)
     
     if not piece_bags[0]:
@@ -291,6 +303,7 @@ def lock_to_board():
         piece_bags[1] = generate_bag()
         
     find_completed_lines()
+    spawn_piece()
     
 def handle_movement(keys):
     global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir
@@ -371,7 +384,7 @@ def reset_game():
     global piece_x, piece_y, piece_rotation
     global das_timer, arr_timer, sdr_timer, das_reset_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
-    global last_move_dir, gravity_timer, softdrop_overrides, spawn_new_piece
+    global last_move_dir, gravity_timer, softdrop_overrides
     global hold_boards, next_boards
     
     # Clear boards
@@ -389,7 +402,6 @@ def reset_game():
     last_move_dir = 0
     gravity_timer = 0
     softdrop_overrides = True
-    spawn_new_piece = True
     bag_counter = 0
     
     # Reset hold
@@ -403,6 +415,9 @@ def reset_game():
     # generate the next boards
     next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
     next_boards = gen_ui_boards(next_boards, next_pieces)
+
+    spawn_piece()
+    update_ghost_piece()
     
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
