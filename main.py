@@ -27,7 +27,7 @@ except:
 #pre game stuff
 engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
 engine.piece_bags[1] = engine.generate_bag()
-next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[:settings.NEXT_PIECES_COUNT] # gets a truncated next_pieces list
+next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
 engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
 
 while engine.running:
@@ -55,7 +55,6 @@ while engine.running:
     print(engine.next_boards)
     
     fps = str(int(engine.frametime_clock.get_fps()))
-    #pygame.display.set_caption(f"FPS: {fps}")
     
     fps_surf = font.render(fps+" FPS", True, settings.TEXT_COLOR)
     ui.draw_rect(0, 0, 110, 40, settings.BOARD_COLOR, cut_corners=['bottom-right'], cut_size=10)

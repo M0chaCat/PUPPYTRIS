@@ -114,7 +114,7 @@ def spawn_piece():
     piece_rotation = PIECE_STARTING_ROTATION
     
     current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
-    next_pieces = (piece_bags[0] + piece_bags[1])[:settings.NEXT_PIECES_COUNT] # gets a truncated next_pieces list
+    next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
 
     refresh_piece_board(current_shape)
     next_boards = gen_ui_boards(next_boards, next_pieces)
@@ -223,7 +223,7 @@ def hold_piece(): # mechanics need rewrite to check collision
     hold_boards = gen_ui_boards(hold_boards, hold_pieces)
         
         
-def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece. could be streamlined?
+def move_piece(move_x, move_y):
     global piece_x, piece_y, piece_rotation, piece_board
     current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
     move_dir_x = int((move_x > 0) - (move_x < 0))
@@ -401,7 +401,7 @@ def reset_game():
     piece_bags[1] = generate_bag()
 
     # generate the next boards
-    next_pieces = (piece_bags[0] + piece_bags[1])[:settings.NEXT_PIECES_COUNT] # gets a truncated next_pieces list
+    next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
     next_boards = gen_ui_boards(next_boards, next_pieces)
     
 def handle_soft_drop(keys, frametime):
