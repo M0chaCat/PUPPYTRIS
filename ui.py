@@ -267,23 +267,23 @@ def draw_board_extension(text="SCORE: 0"):
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
     
 
-def draw_left_panel():
+def draw_next_panel():
     text = "Next"
     total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
-    left_width = int(engine.BOARD_WIDTH_PX * 0.4)
-    left_height_per_piece = total_board_px / 11
-    left_height_top = total_board_px / 20
-    left_height = (left_height_per_piece * settings.NEXT_PIECES_COUNT) + left_height_top
+    next_width = int(engine.BOARD_WIDTH_PX * 0.4)
+    next_height_per_piece = total_board_px / 11
+    next_height_top = total_board_px / 20
+    next_height = (next_height_per_piece * settings.NEXT_PIECES_COUNT) + next_height_top
     
-    # --- Horizontal alignment: stick to the left of the board ---
-    left_x = engine.BOARD_PX_OFFSET_X - left_width
+    # --- Horizontal alignment: stick to the board ---
+    next_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX
     
     # --- Vertical alignment: start at a % down the board ---
-    vertical_pct = 0.4  # 0.0 = top, 1.0 = bottom
-    left_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
+    vertical_pct = 0.4  # change this: 0.0 = top of board, 1.0 = bottom
+    next_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.OVERLAY_COLOR
-    draw_rect(left_x, left_y, left_width, left_height, color=panel_color, cut_corners=['top-left', 'bottom-left'])
+    draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_corners=['top-right', 'bottom-right'])
     
     # --- Draw label ---
     font_size = 24
@@ -294,7 +294,7 @@ def draw_left_panel():
         
     text_surf = font.render(text, True, (255, 255, 255))
     padding = 10
-    text_rect = text_surf.get_rect(topright=(left_x + left_width - padding, left_y + padding))
+    text_rect = text_surf.get_rect(topright=(next_x + next_width - padding, next_y + padding))
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
     
     # --- Draw next pieces ---
@@ -311,8 +311,8 @@ def draw_left_panel():
             board_rows, board_cols = board.shape
             
             # x/y of the top-left of this board area (stacked)
-            area_start_x = left_x + (left_width - board_cols * cell_scaled) // 2
-            area_start_y = left_y + 10 + i * (board_rows * cell_scaled + spacing)
+            area_start_x = next_x + (next_width - board_cols * cell_scaled) // 2
+            area_start_y = next_y + 10 + i * (board_rows * cell_scaled + spacing)
             
             # compute bounding box of non-zero cells
             rows_nonzero = numpy.any(board != 0, axis=1)
@@ -344,23 +344,23 @@ def draw_left_panel():
                     
     
     
-def draw_right_panel():
+def draw_hold_panel():
     text = "Hold"
     total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
-    right_width = int(engine.BOARD_WIDTH_PX * 0.4)
-    right_height_per_piece = total_board_px / 11
-    right_height_top = total_board_px / 20
-    right_height = (right_height_per_piece * engine.hold_pieces_count) + right_height_top
+    hold_width = int(engine.BOARD_WIDTH_PX * 0.4)
+    hold_height_per_piece = total_board_px / 11
+    hold_height_top = total_board_px / 20
+    hold_height = (hold_height_per_piece * engine.hold_pieces_count) + hold_height_top
     
-    # --- Horizontal alignment: stick to the board ---
-    right_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX
+    # --- Horizontal alignment: stick to the left of the board ---
+    hold_x = engine.BOARD_PX_OFFSET_X - hold_width
     
     # --- Vertical alignment: start at a % down the board ---
-    vertical_pct = 0.4  # change this: 0.0 = top of board, 1.0 = bottom
-    right_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
+    vertical_pct = 0.4  # 0.0 = top, 1.0 = bottom
+    hold_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.OVERLAY_COLOR
-    draw_rect(right_x, right_y, right_width, right_height, color=panel_color, cut_corners=['top-right', 'bottom-right'])
+    draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_corners=['top-left', 'bottom-left'])
     
     # --- Draw label ---
     font_size = 24
@@ -371,7 +371,7 @@ def draw_right_panel():
         
     text_surf = font.render(text, True, (255, 255, 255))
     padding = 10
-    text_rect = text_surf.get_rect(topleft=(right_x + padding, right_y + padding))
+    text_rect = text_surf.get_rect(topleft=(hold_x + padding, hold_y + padding))
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
     
     # --- Draw held pieces ---
@@ -388,8 +388,8 @@ def draw_right_panel():
             board_rows, board_cols = board.shape
             
             # x/y of the top-left of this board area (stacked)
-            area_start_x = right_x + (right_width - board_cols * cell_scaled) // 2
-            area_start_y = right_y + 10 + i * (board_rows * cell_scaled + spacing)
+            area_start_x = hold_x + (hold_width - board_cols * cell_scaled) // 2
+            area_start_y = hold_y + 10 + i * (board_rows * cell_scaled + spacing)
             
             # compute bounding box of non-zero cells
             rows_nonzero = numpy.any(board != 0, axis=1)

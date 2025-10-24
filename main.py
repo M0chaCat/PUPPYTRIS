@@ -46,8 +46,8 @@ while engine.running:
         
     ui.draw_background()
     ui.draw_board_extension()
-    ui.draw_left_panel()
-    ui.draw_right_panel()
+    ui.draw_next_panel()
+    ui.draw_hold_panel()
     ui.draw_board_background()
     ui.draw_board(engine.game_board)
     ui.draw_board(engine.piece_board)
