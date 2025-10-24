@@ -1,3 +1,4 @@
+    
 # Engine
 
 import pygame
@@ -232,10 +233,9 @@ def hold_piece(): # mechanics need rewrite to check collision
             hold_pieces.pop(0) # remove the inserted hold piece from the hold queue
         
     # refresh current active piece
-    new_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    new_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
     refresh_piece_board(new_shape)
     hold_boards = gen_ui_boards(hold_boards, hold_pieces)
-        
         
 def move_piece(move_x, move_y):
     global piece_x, piece_y, piece_rotation, piece_board
@@ -540,4 +540,3 @@ def handle_swap_mode():
         hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
         
     reset_game()
-    
