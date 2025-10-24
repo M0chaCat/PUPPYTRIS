@@ -67,6 +67,7 @@ current_gravity = settings.STARTING_GRAVITY # measured in G (1g = 1 fall/frame, 
 spawn_new_piece = True
 
 piece_bags = [[],[]]
+hold_pieces = []
 
 pieces_dict = pieces.tetra_dict
 piece_inversions = pieces.tetra_inversions
