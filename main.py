@@ -29,6 +29,8 @@ engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
 engine.piece_bags[1] = engine.generate_bag()
 next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
 engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
+engine.spawn_piece()
+engine.update_ghost_piece()
 
 while engine.running:
     engine.frametime_clock.tick(settings.MAX_FRAMERATE)
@@ -39,10 +41,6 @@ while engine.running:
     engine.handle_events()
     engine.handle_gravity(frametime)
     engine.handle_movement(keys) # horizontal movement handled after gravity, because tetrio does it this way and it kinda makes sense
-    
-    if engine.spawn_new_piece:
-        engine.spawn_piece()
-        engine.spawn_new_piece = False
         
     ui.draw_background()
     ui.draw_board_extension()
@@ -53,7 +51,9 @@ while engine.running:
     ui.draw_board(engine.piece_board)
     ui.draw_grid_lines()
     
-    fps = str(int(engine.frametime_clock.get_fps()))
+    fps = str(int(engine.frametime_clock.get_fps()))\
+    
+    print(engine.ghost_piece_x, engine.ghost_piece_y)
     
     fps_surf = font.render(fps+" FPS", True, settings.TEXT_COLOR)
     ui.draw_rect(0, 0, 110, 40, settings.BOARD_COLOR, cut_corners=['bottom-right'], cut_size=10)
@@ -62,4 +62,5 @@ while engine.running:
     pygame.display.flip()
     
     if not engine.running: # wait for the main loop to finish running to quit properly
+
         pygame.quit()
