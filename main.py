@@ -51,9 +51,9 @@ while engine.running:
     ui.draw_board(engine.piece_board)
     ui.draw_grid_lines()
     
-    fps = str(int(engine.frametime_clock.get_fps()))\
+    fps = str(int(engine.frametime_clock.get_fps()))
     
-    print(engine.ghost_piece_x, engine.ghost_piece_y)
+    # print(engine.ghost_piece_x, engine.ghost_piece_y)
     
     fps_surf = font.render(fps+" FPS", True, settings.TEXT_COLOR)
     ui.draw_rect(0, 0, 110, 40, settings.BOARD_COLOR, cut_corners=['bottom-right'], cut_size=10)
