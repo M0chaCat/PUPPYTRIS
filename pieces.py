@@ -683,7 +683,7 @@ if skinloader.has_penta:
         },
         14: {
             "name": "X",
-            "harder": True,
+            "rare": True,
             "shapes": [
                 numpy.array([
                     [0,0,0,0,0],
@@ -723,8 +723,8 @@ if skinloader.has_penta:
                 numpy.array([
                     [0,0,0,0,0],
                     [0,0,0,0,0],
-                    [1,1,1,1,0],
-                    [0,1,0,0,0],
+                    [0,1,1,1,1],
+                    [0,0,1,0,0],
                     [0,0,0,0,0]
                 ]),
                 numpy.array([
@@ -736,9 +736,9 @@ if skinloader.has_penta:
                 ]),
                 numpy.array([
                     [0,0,0,0,0],
+                    [0,0,0,0,0],
                     [0,0,1,0,0],
                     [1,1,1,1,0],
-                    [0,0,0,0,0],
                     [0,0,0,0,0]
                 ]),
                 numpy.array([
@@ -757,9 +757,9 @@ if skinloader.has_penta:
             "shapes": [
                 numpy.array([
                     [0,0,0,0,0],
-                    [0,1,0,0,0],
-                    [1,1,1,1,0],
                     [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [0,1,1,1,1],
                     [0,0,0,0,0]
                 ]),
                 numpy.array([
