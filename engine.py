@@ -285,7 +285,7 @@ def gen_ui_boards(boards_list, pieces_list):
 
 def gen_topout_board(shape):
     """Return a 5×5 board with the shape centered."""
-    board_size = 5
+    board_size = PIECE_WIDTH
     board = numpy.zeros((board_size, board_size), dtype=int)
     shape_rows, shape_cols = shape.shape
     off_x = (board_size - shape_cols) // 2
