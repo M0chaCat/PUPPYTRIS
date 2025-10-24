@@ -66,24 +66,24 @@ gravity_timer = 0
 current_gravity = settings.STARTING_GRAVITY # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency))
 spawn_new_piece = True
 
-current_bag = []
-hold_pieces = []
+piece_bags = [[],[]]
 
 pieces_dict = pieces.tetra_dict
 piece_inversions = pieces.tetra_inversions
-hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_TETRA
+hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
 
 # if pentas exist and should be active, switch
 if skinloader.has_penta and settings.is_penta:
     pieces_dict = pieces.penta_dict
     piece_inversions = pieces.penta_inversions
-    hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_PENTA
+    hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
     
-hold_boards = numpy.zeros((hold_pieces_amount, 5, 5), dtype=int)
+hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
+next_boards = numpy.zeros((settings.NEXT_PIECES_COUNT, 5, 5), dtype=numpy.int8)
 
 PIECE_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
 PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECE_WIDTH//2) # dynamically calculate starting position based on board and piece size.
-PIECE_STARTING_Y = settings.BOARD_EXTRA_HEIGHT - 1
+PIECE_STARTING_Y = settings.BOARD_EXTRA_HEIGHT - (PIECE_WIDTH//5 + 1)
 PIECE_STARTING_ROTATION = 0
 
 piece_x = PIECE_STARTING_X
@@ -97,8 +97,8 @@ def generate_bag():
     generated_bag = []
     
     for piece, data in pieces_dict.items():
-        # Skip if harder piece and we're on an odd bag
-        if data.get("harder", False) and bag_counter % 2 == 1:
+        # Skip if rare piece (x) and we're on an odd bag
+        if data.get("rare", False) and bag_counter % 2 == 1:
             continue
         generated_bag.append(piece)
         
@@ -112,7 +112,7 @@ def spawn_piece():
     piece_y = PIECE_STARTING_Y
     piece_rotation = PIECE_STARTING_ROTATION
     
-    current_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
 
     refresh_piece_board(current_shape)
     
@@ -138,7 +138,7 @@ def check_collisions(target_move_x, target_move_y, target_shape):
     else: return False
 
 def check_touching_ground():
-    piece_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+    piece_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
 
     for coords in numpy.argwhere(piece_shape != 0):
         if coords[0] + piece_y + 1 > settings.BOARD_HEIGHT - 1: # check if its touching the bottom of the board
@@ -152,14 +152,14 @@ def rotate_piece(amount):
     kick_list = []
 
     new_rotation = (piece_rotation + amount) % 4
-    new_shape = pieces_dict[current_bag[0]]["shapes"][new_rotation]
+    new_shape = pieces_dict[piece_bags[0][0]]["shapes"][new_rotation]
 
     # offset pieces rotating from state 4 to make them kick more symetrically 
     # for example, think 180ing a state 4 z piece, will behave as if nothing happened
 
     # a problem with the bias system is that if an unbiased (state 2) rotation would collide and allow a kick to be performed,
     # and an biased (state 4) rotation simply won't collide at all when rotating, then it will perform asymmetrically 
-    # if piece_rotation == 0 and current_bag[0] in (1, 3, 4, 5): # covers pieces Z, S, O, I
+    # if piece_rotation == 0 and piece_bags[0][0] in (1, 3, 4, 5): # covers pieces Z, S, O, I
     #     bias = -1
     # else:
     #     bias = 0
@@ -172,7 +172,7 @@ def rotate_piece(amount):
 
     # slightly weird i kick behaviour on edge with hole underneath platform like this iiii
     #                                                                                  ---
-    if new_rotation == 0 and current_bag[0] in (1, 3, 4, 5): # ensures the kick order is symmetrical for Z, S, O, I
+    if new_rotation == 0 and piece_bags[0][0] in (1, 3, 4, 5): # ensures the kick order is symmetrical for Z, S, O, I
         kick_list = kick_list_left
     else:
         kick_list = kick_list_right
@@ -188,35 +188,35 @@ def rotate_piece(amount):
             return
     
 def mirror_piece():
-    global piece_board, current_bag
+    global piece_board, piece_bags
     
-    current_bag[0] = piece_inversions[current_bag[0]]
-    new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+    piece_bags[0][0] = piece_inversions[piece_bags[0][0]]
+    new_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
 
     if not check_collisions(0, 0, new_shape):
         refresh_piece_board(new_shape)
     else:
-        current_bag[0] = piece_inversions[current_bag[0]] # revert it back if collision
+        piece_bags[0][0] = piece_inversions[piece_bags[0][0]] # revert it back if collision
 
-def hold_piece(): # mechanics need rewrite to check collisio, refactoring of current_bag needed first
-    global current_bag, hold_pieces, hold_boards
-    hold_pieces.append(current_bag[0])
-    current_bag.pop(0) # pop shifts array automatically
+def hold_piece(): # mechanics need rewrite to check collision
+    global piece_bags, hold_pieces, hold_boards
+    hold_pieces.append(piece_bags[0][0])
+    piece_bags[0].pop(0) # pop shifts array automatically
     
     # enforce max hold pieces
-    if len(hold_pieces) > hold_pieces_amount:
-        current_bag.insert(0, hold_pieces[0])
+    if len(hold_pieces) > hold_pieces_count:
+        piece_bags[0].insert(0, hold_pieces[0])
         hold_pieces.pop(0)
         
     # refresh current active piece
-    new_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+    new_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
     refresh_piece_board(new_shape)
     
     # --- update all hold boards ---
     hold_boards = []  # clear previous
     for piece_id in hold_pieces:
         piece_shape = pieces_dict[piece_id]["shapes"][0]
-        board = numpy.zeros((5, 5), dtype=int)  # 5x5 board for hold piece
+        board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
         for coords in numpy.argwhere(piece_shape != 0):
             board[coords[0], coords[1]] = piece_id
         hold_boards.append(board)
@@ -224,7 +224,7 @@ def hold_piece(): # mechanics need rewrite to check collisio, refactoring of cur
         
 def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece. could be streamlined?
     global piece_x, piece_y, piece_rotation, piece_board
-    current_shape = pieces_dict[current_bag[0]]["shapes"][piece_rotation]
+    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
     move_dir_x = int((move_x > 0) - (move_x < 0))
     move_dir_y = int((move_y > 0) - (move_y < 0))
     
@@ -244,7 +244,7 @@ def refresh_piece_board(piece_shape):
     piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
 
     for coords in numpy.argwhere(piece_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
-        piece_board[piece_y + coords[0]][piece_x + coords[1]] = current_bag[0]
+        piece_board[piece_y + coords[0]][piece_x + coords[1]] = piece_bags[0][0]
 
 def find_completed_lines():
     # returns a 1d array of booleans for each line, true if its completed, false if not
@@ -269,14 +269,14 @@ def handle_piece_lockdown(): # NEED TO IMPLEMENT PIECE FLASHING
         lock_to_board()
     
 def lock_to_board():
-    global game_board, piece_board, current_bag, spawn_new_piece
+    global game_board, piece_board, piece_bags, spawn_new_piece
     game_board[piece_board != 0] = piece_board[piece_board != 0]
     piece_board = numpy.zeros_like(piece_board)
     spawn_new_piece = True
-    current_bag.pop(0)
+    piece_bags[0].pop(0)
     
-    if not current_bag:
-        current_bag = generate_bag()
+    if not piece_bags[0]:
+        piece_bags[0] = generate_bag()
         
     find_completed_lines()
     
@@ -355,7 +355,7 @@ def top_out():
     reset_game()
     
 def reset_game():
-    global game_board, piece_board, current_bag, bag_counter
+    global game_board, piece_board, piece_bags, bag_counter
     global piece_x, piece_y, piece_rotation
     global das_timer, arr_timer, sdr_timer, das_reset_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
@@ -381,11 +381,12 @@ def reset_game():
     bag_counter = 0
     
     # Reset hold
-    hold_boards = numpy.zeros((hold_pieces_amount, 5, 5), dtype=int)
+    hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
     hold_pieces = []
     
     # Reset piece bag
-    current_bag = generate_bag()
+    piece_bags[0] = generate_bag()
+    piece_bags[1].clear()
     
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
@@ -463,7 +464,7 @@ def handle_gravity(frametime):
             gravity_timer = gravity_timer % (16.666667 / current_gravity)
             
 def handle_swap_mode():
-    global pieces_dict, piece_inversions, hold_pieces_amount
+    global pieces_dict, piece_inversions, hold_pieces_count
     if skinloader.has_penta == False:
         print("Your skin does not support pentaminos!")
         return
@@ -472,14 +473,12 @@ def handle_swap_mode():
     PIECE_TYPES = 18 if settings.is_penta else 7
     pieces_dict = pieces.tetra_dict
     piece_inversions = pieces.tetra_inversions
-    hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_TETRA
+    hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
     
     # if pentas exist and should be active, switch
     if skinloader.has_penta and settings.is_penta:
         pieces_dict = pieces.penta_dict
         piece_inversions = pieces.penta_inversions
-        hold_pieces_amount = settings.HOLD_PIECES_AMOUNT_PENTA
+        hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
         
     reset_game()
-    
-    
