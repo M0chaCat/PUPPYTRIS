@@ -107,15 +107,17 @@ def generate_bag():
     return generated_bag
 
 def spawn_piece():
-    global piece_x, piece_y, piece_rotation
+    global piece_x, piece_y, piece_rotation, next_boards
     
     piece_x = PIECE_STARTING_X
     piece_y = PIECE_STARTING_Y
     piece_rotation = PIECE_STARTING_ROTATION
     
     current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    next_pieces = (piece_bags[0] + piece_bags[1])[:settings.NEXT_PIECES_COUNT] # gets a truncated next_pieces list
 
     refresh_piece_board(current_shape)
+    next_boards = gen_new_ui_boards(next_boards, next_pieces)
     
     if check_collisions(0, 0, current_shape):
         top_out()
@@ -201,26 +203,24 @@ def mirror_piece():
 
 def hold_piece(): # mechanics need rewrite to check collision
     global piece_bags, hold_pieces, hold_boards
-    hold_pieces.append(piece_bags[0][0])
-    piece_bags[0].pop(0) # pop shifts array automatically
+    if len(hold_pieces) >= hold_pieces_count: # if hold bag is full
+        new_shape = pieces_dict[hold_pieces[0]]["shapes"][piece_rotation] # returns the next piece in the hold queue
+    else:
+        new_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][piece_rotation] # returns the next piece in the next queue
     
-    # enforce max hold pieces
-    if len(hold_pieces) > hold_pieces_count:
-        piece_bags[0].insert(0, hold_pieces[0])
-        hold_pieces.pop(0)
+    if not check_collisions(0, 0, new_shape):
+        hold_pieces.append(piece_bags[0][0]) # take the current piece and add it to hold queue
+        piece_bags[0].pop(0) # remove the current piece from piece bag
+        
+        # if hold queue is full (enforce max hold pieces)
+        if len(hold_pieces) > hold_pieces_count:
+            piece_bags[0].insert(0, hold_pieces[0]) # insert the next hold piece as the new current piece
+            hold_pieces.pop(0) # remove the inserted hold piece from the hold queue
         
     # refresh current active piece
     new_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
     refresh_piece_board(new_shape)
-    
-    # --- update all hold boards ---
-    hold_boards = []  # clear previous
-    for piece_id in hold_pieces:
-        piece_shape = pieces_dict[piece_id]["shapes"][0]
-        board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
-        for coords in numpy.argwhere(piece_shape != 0):
-            board[coords[0], coords[1]] = piece_id
-        hold_boards.append(board)
+    hold_boards = gen_new_ui_boards(hold_boards, hold_pieces)
         
         
 def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece. could be streamlined?
@@ -229,7 +229,7 @@ def move_piece(move_x, move_y): # contains a LOT of copied code from spawn_piece
     move_dir_x = int((move_x > 0) - (move_x < 0))
     move_dir_y = int((move_y > 0) - (move_y < 0))
     
-    for each in range(max(abs(move_x), abs(move_y), 1)): # loops over whichever number is farther from 0 (the most moves), min 1
+    for _ in range(max(abs(move_x), abs(move_y), 1)): # loops over whichever number is farther from 0 (the most moves), min 1
         if not check_collisions(move_dir_x, move_dir_y, current_shape): # only goes through with the movement if no collisions occur
             piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
             piece_y = move_dir_y + piece_y
@@ -246,6 +246,16 @@ def refresh_piece_board(piece_shape):
 
     for coords in numpy.argwhere(piece_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
         piece_board[piece_y + coords[0]][piece_x + coords[1]] = piece_bags[0][0]
+
+def gen_new_ui_boards(board_list, pieces_list):
+    boards_list = [] # clear previous
+    for piece_id in pieces_list:
+        piece_shape = pieces_dict[piece_id]["shapes"][0]
+        board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
+        for coords in numpy.argwhere(piece_shape != 0):
+            board[coords[0], coords[1]] = piece_id
+        boards_list.append(board)
+    return board_list
 
 def find_completed_lines():
     # returns a 1d array of booleans for each line, true if its completed, false if not
@@ -277,7 +287,8 @@ def lock_to_board():
     piece_bags[0].pop(0)
     
     if not piece_bags[0]:
-        piece_bags[0] = generate_bag()
+        piece_bags[0] = piece_bags[1]
+        piece_bags[1] = generate_bag()
         
     find_completed_lines()
     
@@ -387,7 +398,7 @@ def reset_game():
     
     # Reset piece bag
     piece_bags[0] = generate_bag()
-    piece_bags[1].clear()
+    piece_bags[1] = generate_bag()
     
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
