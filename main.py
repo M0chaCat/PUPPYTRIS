@@ -52,7 +52,6 @@ while engine.running:
     ui.draw_board(engine.game_board)
     ui.draw_board(engine.piece_board)
     ui.draw_grid_lines()
-    print(engine.next_boards)
     
     fps = str(int(engine.frametime_clock.get_fps()))
     
