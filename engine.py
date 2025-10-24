@@ -80,6 +80,7 @@ if skinloader.has_penta and settings.is_penta:
     
 hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
 next_boards = numpy.zeros((settings.NEXT_PIECES_COUNT, 5, 5), dtype=numpy.int8)
+topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
 PIECE_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
 PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECE_WIDTH//2) # dynamically calculate starting position based on board and piece size.
@@ -108,7 +109,7 @@ def generate_bag():
     return generated_bag
 
 def spawn_piece():
-    global piece_x, piece_y, piece_rotation, next_boards
+    global piece_x, piece_y, piece_rotation, next_boards, topout_board
     
     piece_x = PIECE_STARTING_X
     piece_y = PIECE_STARTING_Y
@@ -120,6 +121,14 @@ def spawn_piece():
     refresh_piece_board(current_shape)
     next_boards = gen_ui_boards(next_boards, next_pieces)
     
+    # --- Check top 5 rows for occupancy ---
+    top_rows = game_board[:settings.BOARD_EXTRA_HEIGHT + 5, :]
+    if numpy.any(top_rows != 0):
+        topout_board = gen_topout_board(current_shape)
+    else:
+        topout_board = None
+        
+    # Normal top-out check
     if check_collisions(0, 0, current_shape):
         top_out()
 
@@ -269,6 +278,21 @@ def gen_ui_boards(boards_list, pieces_list):
             board[coords[0], coords[1]] = piece_id
         boards_list.append(board)
     return boards_list
+
+def gen_topout_board(shape):
+    """Return a 5×5 board with the shape centered."""
+    board_size = 5
+    board = numpy.zeros((board_size, board_size), dtype=int)
+    shape_rows, shape_cols = shape.shape
+    off_x = (board_size - shape_cols) // 2
+    off_y = (board_size - shape_rows) // 2
+    for r in range(shape_rows):
+        for c in range(shape_cols):
+            val = shape[r, c]
+            if val:
+                board[off_y + r, off_x + c] = val
+    print(board)
+    return board
 
 def find_completed_lines():
     # returns a 1d array of booleans for each line, true if its completed, false if not
@@ -513,3 +537,4 @@ def handle_swap_mode():
         hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
         
     reset_game()
+    

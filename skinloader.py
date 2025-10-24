@@ -40,7 +40,7 @@ for i in range(settings.PIECE_TYPES_TETRA):
     raw_skin = sprite_sheet.subsurface(cell_rect)
     scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
     tetra_skins.append(scaled_skin)
-    
+
 # --- Load penta skins (top-right column) ---
 penta_skins = []
 if has_penta:
@@ -52,11 +52,25 @@ if has_penta:
         raw_skin = sprite_sheet.subsurface(cell_rect)
         scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
         penta_skins.append(scaled_skin)
+    
         
+# --- Load other skins (right of top-left column) preserving original transparency ---
+other_skins = []
+
+def set_other_skins():
+    for i in range(5):
+        cell_x = (cell_size_tetra + cell_spacing) * (settings.PIECE_TYPES_TETRA + i)  # skip tetraminos
+        cell_rect = pygame.Rect((cell_x, 0), (cell_size_tetra, cell_size_tetra))
         
+        # Extract and scale the sprite
+        raw_skin = sprite_sheet.subsurface(cell_rect)
+        scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
         
-import os
-import settings
+        # Keep per-pixel alpha from PNG
+        scaled_skin = scaled_skin.convert_alpha()
+        
+        other_skins.append(scaled_skin)
+        
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 wallpaper_dir = os.path.join(script_dir, "wallpaper")

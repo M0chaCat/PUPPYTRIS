@@ -8,7 +8,7 @@ import random
 import pygame_gui
 import os
 
-import engine, settings
+import engine, settings, skinloader
 
 BLOCK_SIZE = engine.BOARD_WIDTH_PX // settings.BOARD_WIDTH
 
@@ -162,7 +162,36 @@ def draw_rect(x, y, width, height, color=(200, 200, 200), cut_corners=None, cut_
     ]
     
     pygame.draw.polygon(engine.MAIN_SCREEN, color, points)
-        
+    
+def draw_topout_board():
+    """Draw the top-out piece directly on the main board, aligned to the grid, shifted up/right 1 cell."""
+    if not hasattr(engine, "topout_board") or engine.topout_board is None:
+        return
+    
+    board = engine.topout_board
+    cell = settings.CELL_SIZE
+    board_rows, board_cols = board.shape
+    
+    # Main board top-left (include extra hidden rows if any)
+    grid_start_x = engine.BOARD_PX_OFFSET_X
+    grid_start_y = engine.BOARD_PX_OFFSET_Y + settings.BOARD_EXTRA_HEIGHT * cell
+    
+    # Compute horizontal alignment in board cells
+    main_cols = settings.BOARD_WIDTH
+    start_col = (main_cols - board_cols) // 2 + 1  # shift right 1 cell
+    start_row = -1  # shift up 1 cell (negative y)
+    
+    # Draw each block aligned to main board's grid
+    for row in range(board_rows):
+        for col in range(board_cols):
+            val = board[row, col]
+            if val == 0:
+                continue
+            skin = skinloader.other_skins[4]  # semi-transparent topout piece
+            x = grid_start_x + (start_col + col) * cell
+            y = grid_start_y + (start_row + row) * cell
+            engine.MAIN_SCREEN.blit(skin, (x, y))
+            
 def draw_board_extension(text="SCORE: 0"):
     """Draw a rectangular section aligned to the bottom of the board with text."""
     panel_height = int(settings.WINDOW_HEIGHT * 0.05)
