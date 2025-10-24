@@ -29,8 +29,8 @@ while engine.running:
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
     
-    if not engine.current_bag: # generate the first bag
-        engine.current_bag = engine.generate_bag()
+    if not engine.piece_bags[0]: # generate the first bag
+        engine.piece_bags[0] = engine.generate_bag()
     
     engine.handle_soft_drop(keys, frametime) # soft drop handled before gravity, because it has to override it
     engine.handle_events()
