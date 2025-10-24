@@ -120,11 +120,15 @@ def spawn_piece():
 
     refresh_piece_board(current_shape)
     next_boards = gen_ui_boards(next_boards, next_pieces)
-    
+    fill_topboard(current_shape, next_pieces)
+
+def fill_topboard(current_shape, next_pieces):
+    global topout_board
+    next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][PIECE_STARTING_ROTATION]
     # --- Check top 5 rows for occupancy ---
     top_rows = game_board[:settings.BOARD_EXTRA_HEIGHT + 5, :]
     if numpy.any(top_rows != 0):
-        topout_board = gen_topout_board(current_shape)
+        topout_board = gen_topout_board(next_shape)
     else:
         topout_board = None
         
@@ -291,7 +295,6 @@ def gen_topout_board(shape):
             val = shape[r, c]
             if val:
                 board[off_y + r, off_x + c] = val
-    print(board)
     return board
 
 def find_completed_lines():
