@@ -178,7 +178,7 @@ def draw_topout_board():
     
     # Compute horizontal alignment in board cells
     main_cols = settings.BOARD_WIDTH
-    start_col = (main_cols - board_cols) // 2 + 1  # shift right 1 cell
+    start_col = engine.PIECE_STARTING_X # piece_starting x is the regular piece offset
     start_row = -1  # shift up 1 cell (negative y)
     
     # Draw each block aligned to main board's grid
@@ -365,5 +365,3 @@ def draw_hold_panel():
                     piece_skin = engine.pieces_dict[val]["skin"]
                     piece_skin_scaled = pygame.transform.smoothscale(piece_skin, (cell_scaled, cell_scaled))
                     engine.MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
-                    
-                    
