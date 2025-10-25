@@ -219,7 +219,7 @@ def mirror_piece():
         piece_bags[0][0] = piece_inversions[piece_bags[0][0]] # revert it back if collision
 
 def hold_piece(): # mechanics need rewrite to check collision
-    global piece_bags, hold_pieces, hold_boards
+    global piece_bags, hold_pieces, hold_boards, next_boards
     if len(hold_pieces) >= hold_pieces_count: # if hold bag is full
         new_shape = pieces_dict[hold_pieces[0]]["shapes"][piece_rotation] # returns the next piece in the hold queue
     else:
@@ -233,6 +233,16 @@ def hold_piece(): # mechanics need rewrite to check collision
         if len(hold_pieces) > hold_pieces_count:
             piece_bags[0].insert(0, hold_pieces[0]) # insert the next hold piece as the new current piece
             hold_pieces.pop(0) # remove the inserted hold piece from the hold queue
+        else:
+            # refresh the next queue (only ever necessary if the hold queue wasn't already full)
+            next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
+            next_boards = gen_ui_boards(next_boards, next_pieces)
+            gen_ui_boards(next_boards, next_pieces)
+    
+    # regen bags if the bag is emptied because of hold
+    if not piece_bags[0]:
+        piece_bags[0] = piece_bags[1]
+        piece_bags[1] = generate_bag()
         
     # refresh current active piece
     new_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
