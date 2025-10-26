@@ -50,7 +50,7 @@ ROTATE_CW = pygame.K_x
 ROTATE_CCW = pygame.K_z
 ROTATE_180 = pygame.K_c
 ROTATE_MIRROR = pygame.K_a
-KEY_HOLD = pygame.K_PERIOD
+KEY_HOLD = pygame.k_v
 KEY_SWAP = pygame.K_q
 KEY_RESET = pygame.K_r
 
