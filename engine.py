@@ -473,48 +473,48 @@ def top_out():
     reset_game()
     
 def reset_game():
-    global game_board, piece_board, piece_bags, hold_pieces, bag_counter
-    global piece_x, piece_y, piece_rotation
-    global das_timer, arr_timer, sdr_timer, das_reset_timer
-    global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
-    global last_move_dir, gravity_timer, softdrop_overrides, timer, total_lines_cleared
-    global hold_boards, next_boards
-    
-    # Clear boards
-    game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-    piece_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-    
-    # Reset timers
-    das_timer = arr_timer = sdr_timer = das_reset_timer = 0
-    das_timer_started = arr_timer_started = sdr_timer_started = das_reset_timer_started = False
-    
-    # Reset active piece
-    piece_x = PIECE_STARTING_X
-    piece_y = PIECE_STARTING_Y
-    piece_rotation = PIECE_STARTING_ROTATION
-    last_move_dir = 0
-    gravity_timer = 0
-    softdrop_overrides = True
-    bag_counter = 0
-    
-    # Reset hold
-    hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
-    hold_pieces = []
-    
-    # Reset piece bag
-    piece_bags[0] = generate_bag()
-    piece_bags[1] = generate_bag()
-    
-    # Reset stats
-    timer.reset()
-    total_lines_cleared = 0
-
-    # generate the next boards
-    next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
-    next_boards = gen_ui_boards(next_boards, next_pieces)
-
-    spawn_piece()
-    update_ghost_piece()
+    def reset_game():
+        global game_board, piece_board, piece_bags, hold_pieces, bag_counter, total_lines_cleared
+        global piece_x, piece_y, piece_rotation
+        global das_timer, arr_timer, sdr_timer, das_reset_timer
+        global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
+        global last_move_dir, gravity_timer, softdrop_overrides, timer
+        global hold_boards, next_boards
+        
+        # Clear boards
+        game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+        piece_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+        
+        # Reset timers
+        das_timer = arr_timer = sdr_timer = das_reset_timer = 0
+        das_timer_started = arr_timer_started = sdr_timer_started = das_reset_timer_started = False
+        
+        # Reset active piece
+        piece_x = PIECE_STARTING_X
+        piece_y = PIECE_STARTING_Y
+        piece_rotation = PIECE_STARTING_ROTATION
+        last_move_dir = 0
+        gravity_timer = 0
+        softdrop_overrides = True
+        bag_counter = 0
+        total_lines_cleared = 0
+        
+        # Reset hold
+        hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
+        hold_pieces = []
+        
+        # Reset piece bag
+        piece_bags[0] = generate_bag()
+        piece_bags[1] = generate_bag()
+        
+        timer.reset()
+        
+        # generate the next boards
+        next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
+        next_boards = gen_ui_boards(next_boards, next_pieces)
+        
+        spawn_piece()
+        update_ghost_piece()
     
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
