@@ -13,27 +13,26 @@ import engine, settings, skinloader
 BLOCK_SIZE = engine.BOARD_WIDTH_PX // settings.BOARD_WIDTH
 
 def draw_background():
-    """Fill the screen with a wallpaper if set, else fallback to BACKGROUND_COLOR."""
+    """Return a surface with the background drawn, scaled wallpaper or color."""
+    win_w, win_h = settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT
+    background_surf = pygame.Surface((win_w, win_h))
+    
     if hasattr(settings, "WALLPAPER") and settings.WALLPAPER:
-        # Get window size
-        win_w, win_h = settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT
         wp = settings.WALLPAPER
         wp_w, wp_h = wp.get_size()
-        
-        # Determine scale factor to cover window
         scale_factor = max(win_w / wp_w, win_h / wp_h)
         new_w = int(wp_w * scale_factor)
         new_h = int(wp_h * scale_factor)
-        
-        # Scale wallpaper
         scaled_wp = pygame.transform.smoothscale(wp, (new_w, new_h))
-        
-        # Center crop
         offset_x = (new_w - win_w) // 2
         offset_y = (new_h - win_h) // 2
-        engine.MAIN_SCREEN.blit(scaled_wp, (-offset_x, -offset_y))
+        
+        # Draw wallpaper onto our surface
+        background_surf.blit(scaled_wp, (-offset_x, -offset_y))
     else:
-        engine.MAIN_SCREEN.fill(settings.BACKGROUND_COLOR)
+        background_surf.fill(settings.BACKGROUND_COLOR)
+        
+    return background_surf
 
 def draw_board(current_board):
     """
@@ -365,3 +364,4 @@ def draw_hold_panel():
                     piece_skin = engine.pieces_dict[val]["skin"]
                     piece_skin_scaled = pygame.transform.smoothscale(piece_skin, (cell_scaled, cell_scaled))
                     engine.MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
+                    

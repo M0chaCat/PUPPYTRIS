@@ -43,7 +43,7 @@ while engine.running:
     engine.handle_gravity(frametime)
     engine.handle_movement(keys) # horizontal movement handled after gravity, because tetrio does it this way and it kinda makes sense
         
-    ui.draw_background()
+    engine.MAIN_SCREEN.blit(ui.draw_background(), (0, 0))
     ui.draw_board_extension()
     ui.draw_next_panel()
     ui.draw_hold_panel()

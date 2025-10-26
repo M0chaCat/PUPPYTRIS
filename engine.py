@@ -15,7 +15,7 @@ pygame.init()
 
 running = True # so we can turn the game loop on and off
 
-MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT), pygame.SRCALPHA)
 GUI_manager = pygame_gui.UIManager((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
 # DISPLAY_WIDTH = 3440
