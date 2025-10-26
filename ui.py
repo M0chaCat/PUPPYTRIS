@@ -12,13 +12,44 @@ import engine, settings, skinloader
 
 BLOCK_SIZE = engine.BOARD_WIDTH_PX // settings.BOARD_WIDTH
 
-def draw_text(surface, text, font, color, x, y, line_spacing=4):
-    """Draw text with \n newlines manually handled."""
-    lines = text.splitlines()  # splits on '\n'
-    for i, line in enumerate(lines):
-        text_surf = font.render(line, True, color)
-        surface.blit(text_surf, (x, y + i * (text_surf.get_height() + line_spacing)))
+def draw_rect(x, y, width, height, color=(200, 200, 200),
+              cut_corners=None, cut_size=10, outline_color=None):
+    """
+    Draw a rectangle with optional 45° cut corners and an optional 1px outline.
+    """
+    if not cut_corners:
+        pygame.draw.rect(engine.MAIN_SCREEN, color, (x, y, width, height))
+        if outline_color:
+            pygame.draw.rect(engine.MAIN_SCREEN, outline_color, (x, y, width, height), 1)
+        return
+    
+    # Define polygon points clockwise
+    points = [
+        (x + (cut_size if 'top-left' in cut_corners else 0), y),
+        (x + width - (cut_size if 'top-right' in cut_corners else 0), y),
+        (x + width, y + (cut_size if 'top-right' in cut_corners else 0)),
+        (x + width, y + height - (cut_size if 'bottom-right' in cut_corners else 0)),
+        (x + width - (cut_size if 'bottom-right' in cut_corners else 0), y + height),
+        (x + (cut_size if 'bottom-left' in cut_corners else 0), y + height),
+        (x, y + height - (cut_size if 'bottom-left' in cut_corners else 0)),
+        (x, y + (cut_size if 'top-left' in cut_corners else 0))
+    ]
+    
+    # Fill
+    pygame.draw.polygon(engine.MAIN_SCREEN, color, points)
+    
+    # Outline
+    if outline_color:
+        pygame.draw.lines(engine.MAIN_SCREEN, outline_color, True, points, 1)
 
+def draw_text(surface, text, font, color, x, y, line_spacing=4):
+    """Draw text with \n newlines manually handled and transparent background."""
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        text_surf = font.render(line, True, color)  # True = antialias, no background
+        text_surf.set_colorkey((0, 0, 0))  # optional if your font surface has black bg
+        surface.blit(text_surf, (x, y + i * (text_surf.get_height() + line_spacing)))
+        
 def draw_background():
     """Return a surface with the background drawn, scaled wallpaper or color."""
     win_w, win_h = settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT
@@ -139,36 +170,6 @@ def draw_grid_lines():
                         (grid_start_x + width - cut, grid_start_y),
                         (grid_start_x + width, grid_start_y + cut))
             
-def draw_rect(x, y, width, height, color=(200, 200, 200),
-              cut_corners=None, cut_size=10, outline_color=None):
-    """
-    Draw a rectangle with optional 45° cut corners and an optional 1px outline.
-    """
-    if not cut_corners:
-        pygame.draw.rect(engine.MAIN_SCREEN, color, (x, y, width, height))
-        if outline_color:
-            pygame.draw.rect(engine.MAIN_SCREEN, outline_color, (x, y, width, height), 1)
-        return
-    
-    # Define polygon points clockwise
-    points = [
-        (x + (cut_size if 'top-left' in cut_corners else 0), y),
-        (x + width - (cut_size if 'top-right' in cut_corners else 0), y),
-        (x + width, y + (cut_size if 'top-right' in cut_corners else 0)),
-        (x + width, y + height - (cut_size if 'bottom-right' in cut_corners else 0)),
-        (x + width - (cut_size if 'bottom-right' in cut_corners else 0), y + height),
-        (x + (cut_size if 'bottom-left' in cut_corners else 0), y + height),
-        (x, y + height - (cut_size if 'bottom-left' in cut_corners else 0)),
-        (x, y + (cut_size if 'top-left' in cut_corners else 0))
-    ]
-    
-    # Fill
-    pygame.draw.polygon(engine.MAIN_SCREEN, color, points)
-    
-    # Outline
-    if outline_color:
-        pygame.draw.lines(engine.MAIN_SCREEN, outline_color, True, points, 1)
-        
 def draw_topout_board():
     """Draw the top-out piece directly on the main board, aligned to the grid, shifted up/right 1 cell."""
     if not hasattr(engine, "topout_board") or engine.topout_board is None:
@@ -223,7 +224,7 @@ def draw_next_panel():
     except:
         font = pygame.font.SysFont(None, font_size)
         
-    text_surf = font.render(text, True, (255, 255, 255))
+    text_surf = font.render(text, True, settings.TEXT_COLOR)
     padding = 10
     text_rect = text_surf.get_rect(topright=(next_x + next_width - padding, next_y + padding))
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
@@ -297,7 +298,7 @@ def draw_hold_panel():
     except:
         font = pygame.font.SysFont(None, font_size)
         
-    text_surf = font.render(text, True, (255, 255, 255))
+    text_surf = font.render(text, True, settings.TEXT_COLOR)
     padding = 10
     text_rect = text_surf.get_rect(topleft=(hold_x + padding, hold_y + padding))
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
@@ -365,18 +366,18 @@ def draw_stats_panel(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69"):
     fontbig = pygame.font.Font(settings.font_dir, 40)
     font = pygame.font.Font(settings.font_dir, 24)
     fontsmall = pygame.font.Font(settings.font_dir, 19)
-    draw_text(engine.MAIN_SCREEN, "PPS:", font, (255, 255, 255), stats_x + 10, stats_y + 20)
-    draw_text(engine.MAIN_SCREEN, "Time:", font, (255, 255, 255), stats_x + 10, stats_y + 120)
-    draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, (255, 255, 255), stats_x + 10, stats_y + 200)
-    draw_text(engine.MAIN_SCREEN, "Cleared:", font, (255, 255, 255), stats_x + 10, stats_y + 220)
+    draw_text(engine.MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 20)
+    draw_text(engine.MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 120)
+    draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 10, stats_y + 200)
+    draw_text(engine.MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 220)
     
-    draw_text(engine.MAIN_SCREEN, PPS, fontbig, (255, 255, 255), stats_x + 20, stats_y + 50)
-    draw_text(engine.MAIN_SCREEN, TIMES, fontbig, (255, 255, 255), stats_x + 20, stats_y + 150)
-    draw_text(engine.MAIN_SCREEN, TIMEMS, fontsmall, (255, 255, 255), stats_x + 22 + fontbig.size(TIMES)[0], stats_y + 141 + (fontbig.size(TIMES)[1] - fontsmall.size(TIMEMS)[1]))
+    draw_text(engine.MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 50)
+    draw_text(engine.MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 150)
+    draw_text(engine.MAIN_SCREEN, TIMEMS, fontsmall, settings.TEXT_COLOR, stats_x + 22 + fontbig.size(TIMES)[0], stats_y + 141 + (fontbig.size(TIMES)[1] - fontsmall.size(TIMEMS)[1]))
     
-    draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, (255, 255, 255), stats_x + 20, stats_y + 250)
+    draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 250)
     
-def draw_board_extension(text="SCORE: 0"):
+def draw_score_panel(Level="50", Score="50,000"):
     """Draw a rectangular section aligned to the bottom of the board with text."""
     panel_height = int(settings.WINDOW_HEIGHT * 0.05)
     total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
@@ -386,19 +387,18 @@ def draw_board_extension(text="SCORE: 0"):
     height = panel_height
     
     # Draw the panel rectangle
-    draw_rect(x, y, width, height, settings.CRUST_COLOR, cut_corners=['bottom-left', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
+    draw_rect(x, y, width, height, settings.CRUST_COLOR, cut_size=25, cut_corners=['bottom-left', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
     
-    # Load font
-    padding = 10
-    font_size = height - 2 * padding
-    try:
-        font = pygame.font.Font(settings.font_dir, font_size)
-    except:
-        font = pygame.font.SysFont(None, font_size)
-        
-    # Render text
-    text_surf = font.render(text, True, (255, 255, 255))
-    text_rect = text_surf.get_rect()
-    text_rect.topleft = (x + padding, y + padding)  # Add some padding
-    engine.MAIN_SCREEN.blit(text_surf, text_rect)
+    fontbig = pygame.font.Font(settings.font_dir, 50)
+    font = pygame.font.Font(settings.font_dir, 20)
+    
+    draw_text(engine.MAIN_SCREEN, "Level:", font, settings.TEXT_COLOR, x + 5, y + 5)
+    draw_text(engine.MAIN_SCREEN, Level, fontbig, settings.TEXT_COLOR, x + 70, y + 5)
+    
+    line_offset = font.size("Level:")[0] +  fontbig.size(Level)[0] + 15
+    pygame.draw.line(engine.MAIN_SCREEN, settings.PANEL_OUTLINE, (x + line_offset, y), (x+line_offset+40, y + height), 2)
+    
+    draw_text(engine.MAIN_SCREEN, "Score:", font, settings.TEXT_COLOR, x + line_offset + 25, y + 5)
+    draw_text(engine.MAIN_SCREEN, Score, fontbig, settings.TEXT_COLOR, x + width - 30 - fontbig.size(Score)[0], y + 5)
+    
     
