@@ -8,6 +8,7 @@ from enum import Enum
 import random
 import pygame_gui
 import os
+import time
 
 import settings, pieces, skinloader
 
@@ -49,6 +50,7 @@ das_reset_clock = pygame.time.Clock()
 gravity_clock = pygame.time.Clock()
 lockdown_clock = pygame.time.Clock()
 
+total_lines_cleared = 0
 bag_counter = 0
 das_timer = 0
 arr_timer = 0
@@ -83,9 +85,11 @@ hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
 next_boards = numpy.zeros((settings.NEXT_PIECES_COUNT, 5, 5), dtype=numpy.int8)
 topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
-PIECE_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
-PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECE_WIDTH//2) # dynamically calculate starting position based on board and piece size.
-PIECE_STARTING_Y = settings.BOARD_EXTRA_HEIGHT - (PIECE_WIDTH//5 + 1)
+onekf_key_array = numpy.zeros((4, 10), dtype=int) # int8 is too small
+
+PIECES_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
+PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECES_WIDTH//2) # dynamically calculate starting position based on board and piece size.
+PIECE_STARTING_Y = settings.BOARD_EXTRA_HEIGHT - (PIECES_WIDTH//5 + 1)
 PIECE_STARTING_ROTATION = 0
 
 piece_x = PIECE_STARTING_X
@@ -93,6 +97,36 @@ piece_y = PIECE_STARTING_Y
 piece_rotation = PIECE_STARTING_ROTATION
 ghost_piece_x = PIECE_STARTING_X
 ghost_piece_y = PIECE_STARTING_Y
+
+class Timer:
+    def __init__(self):
+        self.start_time = None
+        self.running = False
+        
+    def start(self):
+        self.start_time = time.perf_counter()
+        self.running = True
+        
+    def stop(self):
+        self.running = False
+        
+    def reset(self):
+        self.start_time = time.perf_counter()
+        
+    def split_strings(self):
+        """Return ('M:SS', '.XX') with hundredths of a second."""
+        if not self.running or self.start_time is None:
+            return "0:00", ".00"
+        
+        elapsed = time.perf_counter() - self.start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        hundredths = int((elapsed * 100) % 100)  # rounds to .XX
+        
+        return f"{minutes}:{seconds:02d}", f".{hundredths:02d}"
+    
+timer = Timer()
+timer.start()
 
 def generate_bag():
     global bag_counter
@@ -128,12 +162,12 @@ def spawn_piece():
 
 def gen_topout_board():
     global topout_board
-    board_size = PIECE_WIDTH
+    board_size = PIECES_WIDTH
     topout_board = numpy.zeros((board_size, board_size), dtype=numpy.int8)
     next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][PIECE_STARTING_ROTATION]
 
     # --- Check top 4/5 rows for occupancy ---
-    top_rows = game_board[:settings.BOARD_EXTRA_HEIGHT + PIECE_WIDTH]
+    top_rows = game_board[:settings.BOARD_EXTRA_HEIGHT + PIECES_WIDTH]
     if numpy.all(top_rows == 0):
         topout_board = None
     else:
@@ -252,7 +286,7 @@ def hold_piece(): # mechanics need rewrite to check collision
 def move_piece(move_x, move_y):
     global piece_x, piece_y, piece_rotation, piece_board
     current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
-    move_dir_x = int((move_x > 0) - (move_x < 0))
+    move_dir_x = int((move_x > 0) - (move_x < 0)) # treats bools like integers then converts to int to get direction
     move_dir_y = int((move_y > 0) - (move_y < 0))
     
     for _ in range(max(abs(move_x), abs(move_y), 1)): # loops over whichever number is farther from 0 (the most moves), min 1
@@ -302,8 +336,9 @@ def find_completed_lines():
         clear_lines(lines_to_clear)
         
 def clear_lines(lines_to_clear):
-    global game_board
+    global game_board, total_lines_cleared
     lines_cleared = numpy.where(lines_to_clear)[0].size
+    total_lines_cleared += lines_cleared
     new_board = game_board[~lines_to_clear] # masks the board, removing lines where the mask returned true
     new_lines = numpy.zeros((lines_cleared, settings.BOARD_WIDTH), dtype=numpy.int8)
     game_board = numpy.vstack((new_lines, new_board), dtype=numpy.int8)
@@ -400,6 +435,39 @@ def handle_movement(keys):
         arr_timer = 0 # reset the ARR timer only to keep things clean
         arr_timer_started = False
 
+def unpack_1kf_binds():
+    global onekf_key_array
+    for row, col in numpy.ndindex((4, 10)): # indexes through all coordinates in a 4x10 array
+        string_index = (row * 10) + col
+        onekf_key_array[row][col] = pygame.key.key_code(settings.ONEKF_STRING[string_index : string_index + 1])
+
+def handle_1kf(key):
+    global piece_rotation
+    key_row, key_col = numpy.where(onekf_key_array == key)
+    
+    # converts keyboard rows into their rotation states
+    match key_row:
+        case 0:
+            piece_rotation = 2
+        case 1:
+            piece_rotation = 3
+        case 2:
+            piece_rotation = 0
+        case 3:
+            piece_rotation = 2
+
+    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    rightmost_point = numpy.max(numpy.where(current_shape != 0)[1]) # gets the distance between piece_x and the rightmost point of the piece
+    leftmost_point = numpy.min(numpy.where(current_shape != 0)[1]) # this is usually 0, but needed for O piece
+
+    if key_col < 5:
+        steps_to_move = int(key_col - piece_x - leftmost_point) # cast to int since numpy.where always returns an array for some reason
+    else:
+        steps_to_move = int(key_col - piece_x - rightmost_point) # cast to int since numpy.where always returns an array for some reason
+    move_piece(steps_to_move, 0) # done in two steps because otherwise it stops early wehn colliding with the wall
+    move_piece(0, settings.BOARD_HEIGHT)
+    lock_to_board()
+         
 def top_out():
     # can add extra functionality later like displaying a score panel at the end
     reset_game()
@@ -409,7 +477,7 @@ def reset_game():
     global piece_x, piece_y, piece_rotation
     global das_timer, arr_timer, sdr_timer, das_reset_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
-    global last_move_dir, gravity_timer, softdrop_overrides
+    global last_move_dir, gravity_timer, softdrop_overrides, timer, total_lines_cleared
     global hold_boards, next_boards
     
     # Clear boards
@@ -436,6 +504,10 @@ def reset_game():
     # Reset piece bag
     piece_bags[0] = generate_bag()
     piece_bags[1] = generate_bag()
+    
+    # Reset stats
+    timer.reset()
+    total_lines_cleared = 0
 
     # generate the next boards
     next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
@@ -487,22 +559,27 @@ def handle_events():
     global running
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
-            if event.key == settings.KEY_HOLD:
-                hold_piece()
-            if event.key == settings.ROTATE_180:
-                rotate_piece(2)
-            if event.key == settings.ROTATE_CW:
-                rotate_piece(1)
-            if event.key == settings.ROTATE_CCW:
-                rotate_piece(3)
-            if event.key == settings.ROTATE_MIRROR:
-                mirror_piece()
-            if event.key == settings.MOVE_HARDDROP:
-                handle_hard_drop()
-            if event.key == settings.KEY_RESET:
-                reset_game()
-            if event.key == settings.KEY_SWAP:
-                handle_swap_mode()
+            if not settings.ONEKF_ENABLED:
+                if event.key == settings.KEY_HOLD:
+                    hold_piece()
+                if event.key == settings.ROTATE_180:
+                    rotate_piece(2)
+                if event.key == settings.ROTATE_CW:
+                    rotate_piece(1)
+                if event.key == settings.ROTATE_CCW:
+                    rotate_piece(3)
+                if event.key == settings.ROTATE_MIRROR:
+                    mirror_piece()
+                if event.key == settings.MOVE_HARDDROP:
+                    handle_hard_drop()
+                if event.key == settings.KEY_RESET:
+                    reset_game()
+                if event.key == settings.KEY_SWAP:
+                    handle_swap_mode()
+            else:
+                if event.key in onekf_key_array:
+                    handle_1kf(event.key)
+
         if event.type == pygame.QUIT:
             running = False
             

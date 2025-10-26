@@ -32,6 +32,7 @@ next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[1:settings.NEXT_PIEC
 engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
 engine.spawn_piece()
 engine.update_ghost_piece()
+engine.unpack_1kf_binds()
 
 while engine.running:
     engine.frametime_clock.tick(settings.MAX_FRAMERATE)
@@ -41,12 +42,13 @@ while engine.running:
     engine.handle_soft_drop(keys, frametime) # soft drop handled before gravity, because it has to override it
     engine.handle_events()
     engine.handle_gravity(frametime)
-    engine.handle_movement(keys) # horizontal movement handled after gravity, because tetrio does it this way and it kinda makes sense
-        
+    if not settings.ONEKF_ENABLED: engine.handle_movement(keys) # horizontal movement handled after gravity, because tetrio does it this way and it kinda makes sense        
     engine.MAIN_SCREEN.blit(ui.draw_background(), (0, 0))
     ui.draw_board_extension()
     ui.draw_next_panel()
     ui.draw_hold_panel()
+    mins_secs, dot_ms = engine.timer.split_strings()
+    ui.draw_stats_panel(PPS='50.2', TIMES=mins_secs, TIMEMS=dot_ms, CLEARED=str(engine.total_lines_cleared))
     ui.draw_board_background()
     ui.draw_grid_lines()
     ui.draw_board(engine.game_board)

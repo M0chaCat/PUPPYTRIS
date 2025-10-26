@@ -40,6 +40,10 @@ SDR_THRESHOLD = 0 # SDR = soft drop rate
 DAS_RESET_THRESHOLD = 0
 STARTING_GRAVITY = 0
 
+ONEKF_ENABLED = False
+ONEKF_STRING = "1234567890qdrwbjfup;ashtgyneoizxmcvkl,./"
+ONEKF_HOLD = pygame.K_SPACE
+
 LOCKDOWN_THRESHOLD = 2000 # not a user variable
 
 MOVE_LEFT = pygame.K_LEFT
@@ -50,12 +54,14 @@ ROTATE_CW = pygame.K_x
 ROTATE_CCW = pygame.K_z
 ROTATE_180 = pygame.K_c
 ROTATE_MIRROR = pygame.K_a
-KEY_HOLD = pygame.k_v
+KEY_HOLD = pygame.K_PERIOD
 KEY_SWAP = pygame.K_q
 KEY_RESET = pygame.K_r
 
 BOARD_COLOR = (30, 30, 46)
 BACKGROUND_COLOR = (24, 24, 37)
+PANEL_COLOR = (64, 66, 86)
+PANEL_OUTLINE = (108, 112, 134)
 GRID_COLOR = (88, 91, 112)
 TEXT_COLOR = (205, 214, 244)
 CRUST_COLOR = (17, 17, 27)
