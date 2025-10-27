@@ -32,7 +32,7 @@ def load_game():
     next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
     engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
     engine.spawn_piece()
-    engine.gen_ghost_board()
+    engine.refresh_ghost_board()
     engine.unpack_1kf_binds()
         
 def menu_loop():
@@ -74,10 +74,10 @@ def game_loop():
         ui.draw_score_panel(Level="99", Score="99,999")
         ui.draw_board_background()
         ui.draw_grid_lines()
-        ui.draw_board(engine.game_board)
+        ui.draw_board()
         ui.draw_topout_board()
         ui.draw_ghost_board()
-        ui.draw_board(engine.piece_board)
+        ui.draw_piece_board()
         btn.draw(screen)
     
     engine.game_state_changed = False # reset it for next frame
