@@ -196,7 +196,7 @@ def draw_grid_lines():
         pygame.draw.line(engine.MAIN_SCREEN, settings.GRID_COLOR,
                         (grid_start_x + width - cut, grid_start_y),
                         (grid_start_x + width, grid_start_y + cut))
-            
+
 def draw_ghost_board():
     """Draw the top-out piece directly on the main board, aligned to the grid, shifted up/right 1 cell."""
     if not hasattr(engine, "ghost_board") or engine.ghost_board is None:
@@ -213,7 +213,7 @@ def draw_ghost_board():
     # Compute horizontal alignment in board cells
     start_col = engine.ghost_piece_x # piece_starting x is the regular piece offset
     start_row = engine.ghost_piece_y  # shift up 1 cell (negative y)
-    print(start_col, start_row)
+    
     # Draw each block aligned to main board's grid
     for row in range(board_rows):
         for col in range(board_cols):
@@ -224,7 +224,7 @@ def draw_ghost_board():
             x = grid_start_x + (start_col + col) * cell
             y = grid_start_y + (start_row + row) * cell
             engine.MAIN_SCREEN.blit(skin, (x, y))
-
+            
 def draw_topout_board():
     """Draw the top-out piece directly on the main board, aligned to the grid, shifted up/right 1 cell."""
     if not hasattr(engine, "topout_board") or engine.topout_board is None:
@@ -239,6 +239,7 @@ def draw_topout_board():
     grid_start_y = engine.BOARD_PX_OFFSET_Y + settings.BOARD_EXTRA_HEIGHT * cell
     
     # Compute horizontal alignment in board cells
+    main_cols = settings.BOARD_WIDTH
     start_col = engine.PIECE_STARTING_X # piece_starting x is the regular piece offset
     start_row = -1  # shift up 1 cell (negative y)
     
@@ -402,34 +403,56 @@ def draw_hold_panel():
                     engine.MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
                     
                     
-def draw_stats_panel(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69"):
-    total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
-    stats_width = int(total_board_px * 0.18)
-    stats_height = total_board_px / 2.6
+# Precompute panel rect for later use
+stats_panel_rect = None
+saved_stats_bg = None
+
+def draw_stats_panel_bg():
+        """Draw just the stats panel background and save it for later text updates."""
+        global stats_panel_rect, saved_stats_bg
     
-    # --- Horizontal alignment: stick to the left of the board ---
-    stats_x = engine.BOARD_PX_OFFSET_X - stats_width
+        total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
+        stats_width = int(total_board_px * 0.18)
+        stats_height = total_board_px / 2.6
+        stats_x = engine.BOARD_PX_OFFSET_X - stats_width
+        vertical_pct = 0.7
+        stats_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
-    # --- Vertical alignment: start at a % down the board ---
-    vertical_pct = 0.7  # 0.0 = top, 1.0 = bottom
-    stats_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
+        stats_panel_rect = pygame.Rect(stats_x, stats_y, stats_width, stats_height)
     
-    panel_color = settings.CRUST_COLOR
-    draw_rect(stats_x, stats_y, stats_width, stats_height, cut_size=20, color=panel_color, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
+        panel_color = settings.CRUST_COLOR
+        draw_rect(stats_x, stats_y, stats_width, stats_height,
+                            cut_size=20, color=panel_color,
+                            cut_corners=['top-left', 'bottom-left'],
+                            outline_color=settings.PANEL_OUTLINE)
     
-    fontbig = pygame.font.Font(settings.font_dir, 40)
-    font = pygame.font.Font(settings.font_dir, 24)
-    fontsmall = pygame.font.Font(settings.font_dir, 19)
-    draw_text(engine.MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 25)
-    draw_text(engine.MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 125)
-    draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 10, stats_y + 205)
-    draw_text(engine.MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 225)
+        # Save the background so we can restore it before updating text
+        saved_stats_bg = engine.MAIN_SCREEN.subsurface(stats_panel_rect).copy()
     
-    draw_text(engine.MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 55)
-    draw_text(engine.MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 155)
-    draw_text(engine.MAIN_SCREEN, TIMEMS, fontsmall, settings.TEXT_COLOR, stats_x + 22 + fontbig.size(TIMES)[0], stats_y + 146 + (fontbig.size(TIMES)[1] - fontsmall.size(TIMEMS)[1]))
     
-    draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 255)
+def draw_stats_panel_text(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69"):
+        """Draw only the stats text, restoring background first."""
+        if saved_stats_bg:
+                engine.MAIN_SCREEN.blit(saved_stats_bg, stats_panel_rect.topleft)
+            
+        stats_x, stats_y = stats_panel_rect.topleft
+    
+        fontbig = pygame.font.Font(settings.font_dir, 40)
+        font = pygame.font.Font(settings.font_dir, 24)
+        fontsmall = pygame.font.Font(settings.font_dir, 19)
+    
+        draw_text(engine.MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 25)
+        draw_text(engine.MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 125)
+        draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 10, stats_y + 205)
+        draw_text(engine.MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 225)
+    
+        draw_text(engine.MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 55)
+        draw_text(engine.MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 155)
+        draw_text(engine.MAIN_SCREEN, TIMEMS, fontsmall, settings.TEXT_COLOR,
+                            stats_x + 22 + fontbig.size(TIMES)[0],
+                            stats_y + 146 + (fontbig.size(TIMES)[1] - fontsmall.size(TIMEMS)[1]))
+    
+        draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 255)
     
 def draw_score_panel(Level="50", Score="50,000"):
     """Draw a rectangular section aligned to the bottom of the board with text."""
