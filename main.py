@@ -68,6 +68,7 @@ def game_loop():
     if engine.game_state_changed:
         screen = engine.MAIN_SCREEN
         screen.blit(ui.draw_background(), (0, 0))
+        ui.draw_stats_panel_bg()
         ui.draw_next_panel()
         ui.draw_hold_panel()
         ui.draw_score_panel(Level="99", Score="99,999")
@@ -82,7 +83,7 @@ def game_loop():
     engine.game_state_changed = False # reset it for next frame
         
     mins_secs, dot_ms = engine.timer.split_strings()
-    ui.draw_stats_panel(
+    ui.draw_stats_panel_text(
         PPS='50.2',
         TIMES=mins_secs,
         TIMEMS=dot_ms,
@@ -104,7 +105,7 @@ state_funcs = {
 engine.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
 while engine.running:
-    engine.frametime_clock.tick(settings.MAX_FRAMERATE)
+    engine.frametime_clock.tick()
     fps = str(int(engine.frametime_clock.get_fps()))
     
     # Run current state’s logic
@@ -120,3 +121,4 @@ while engine.running:
     if not engine.running: # wait for the main loop to finish running to quit properly
         pygame.quit()
     
+            
