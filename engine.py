@@ -147,21 +147,20 @@ def generate_bag():
     return generated_bag
 
 def spawn_piece():
-    global piece_x, piece_y, piece_rotation, next_boards, topout_board
+    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board
     
     piece_x = PIECE_STARTING_X
     piece_y = PIECE_STARTING_Y
     piece_rotation = PIECE_STARTING_ROTATION
     
-    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
     next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
 
-    refresh_piece_board(current_shape)
     next_boards = gen_ui_boards(next_boards, next_pieces)
     gen_topout_board()
     refresh_ghost_board()
     # top-out check
-    if check_collisions(0, 0, current_shape):
+    if check_collisions(0, 0, piece_board):
         top_out()
 
 def gen_topout_board():
@@ -261,7 +260,7 @@ def rotate_piece(amount):
             # move the piece
             piece_x = piece_x + kick_x # update the position variables
             piece_y = piece_y + kick_y
-            refresh_piece_board(new_shape)
+            piece_board = new_shape
             refresh_ghost_board()
             return
     
@@ -272,12 +271,12 @@ def mirror_piece():
     new_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
 
     if not check_collisions(0, 0, new_shape):
-        refresh_piece_board(new_shape)
+        piece_board = new_shape
     else:
         piece_bags[0][0] = piece_inversions[piece_bags[0][0]] # revert it back if collision
 
 def hold_piece(): # mechanics need rewrite to check collision
-    global piece_bags, hold_pieces, hold_boards, next_boards
+    global piece_bags, hold_pieces, hold_boards, next_boards, piece_board
     if len(hold_pieces) >= hold_pieces_count: # if hold bag is full
         new_shape = pieces_dict[hold_pieces[0]]["shapes"][piece_rotation] # returns the next piece in the hold queue
     else:
@@ -303,8 +302,7 @@ def hold_piece(): # mechanics need rewrite to check collision
         piece_bags[1] = generate_bag()
         
     # refresh current active piece
-    new_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
-    refresh_piece_board(new_shape)
+    piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
     refresh_ghost_board()
     hold_boards = gen_ui_boards(hold_boards, hold_pieces)
         
@@ -319,22 +317,14 @@ def move_piece(move_x, move_y):
             piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
             piece_y = move_dir_y + piece_y
         else: # when first collision happens, return false. this only makes sense if a single collision is being checked.
-            refresh_piece_board(current_shape)
+            piece_board = current_shape
             game_state_changed = True
             if move_x != 0: refresh_ghost_board()
             return False
-    refresh_piece_board(current_shape)
+    piece_board = current_shape
     game_state_changed = True
     if move_x != 0: refresh_ghost_board()
     return True
-
-def refresh_piece_board(piece_shape):
-    global piece_board
-
-    piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
-
-    for coords in numpy.argwhere(piece_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
-        piece_board[coords[0]][coords[1]] = piece_bags[0][0]
 
 def gen_ui_boards(boards_list, pieces_list):
     boards_list = [] # clear previous
