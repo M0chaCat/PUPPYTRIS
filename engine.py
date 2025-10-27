@@ -367,8 +367,10 @@ def lock_to_board():
     find_completed_lines()
     spawn_piece()
     
+draw_from_das = False
+    
 def handle_movement(keys):
-    global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir
+    global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir, draw_from_das
     
     # find which horizontal input the user pressed (0 if none)
     if keys[settings.MOVE_LEFT] and not keys[settings.MOVE_RIGHT]:
@@ -380,6 +382,7 @@ def handle_movement(keys):
         
     # handle horizontal movement according to DAS and ARR rules
     if move_dir != 0:
+        draw_from_das = True
         if (last_move_dir != move_dir and settings.DAS_RESET_THRESHOLD <= 0): # if switching movement direction (and DAS_RESET_THRESHOLD is set to 0), reset DAS and ARR
             das_timer = 0                                           # last_move_dir is set to 0 by default so it will reset for the first movement, but that doesn't matter because it starts that way anyways
             das_timer_started = False
@@ -419,6 +422,7 @@ def handle_movement(keys):
                             arr_timer = arr_timer % settings.ARR_THRESHOLD
                             
     elif das_timer_started: # saves performance by only checking this stuff when das_timer is still running
+        draw_from_das = False
         if not das_reset_timer_started:
             das_reset_timer = 0
             das_reset_clock.tick()
@@ -559,8 +563,10 @@ def handle_hard_drop():
     
 def handle_events():
     global running, STATE
+    did_something = False
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
+            did_something = True
             if not settings.ONEKF_ENABLED:
                 if event.key == settings.KEY_HOLD:
                     hold_piece()
@@ -587,6 +593,8 @@ def handle_events():
 
         if event.type == pygame.QUIT:
             running = False
+
+    return did_something
             
 def handle_gravity(frametime):
     global gravity_timer, current_gravity

@@ -50,35 +50,54 @@ def go_back():
 btn = menu.Button(10, 10, 50, 50, "X", color=settings.PANEL_COLOR, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], font=font, callback=lambda: go_back())
 mouse_was_down = False
     
+do_something = True
+first_frame = True
+
 def game_loop():
-    global mouse_was_down
+    global mouse_was_down, do_something, first_frame
+    
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
-
-    engine.handle_soft_drop(keys, frametime) # soft drop handled before gravity, because it has to override it
-    engine.handle_events()
+    
+    engine.handle_soft_drop(keys, frametime)
+    
+    did_events = engine.handle_events()
     engine.handle_gravity(frametime)
-    if not settings.ONEKF_ENABLED: engine.handle_movement(keys) # horizontal movement handled after gravity, because tetrio does it this way and it kinda makes sense        
-    engine.MAIN_SCREEN.blit(ui.draw_background(), (0, 0))
-    ui.draw_score_panel(Level="99", Score="99,999") # dont forget da comma, and make sure the chars total 7 max (not incl the comma)
-    ui.draw_next_panel()
-    ui.draw_hold_panel()
+    did_movement = False
+    if not settings.ONEKF_ENABLED:
+        did_movement = engine.handle_movement(keys)
+        
+    do_something = did_events or did_movement
+
+    if do_something or first_frame or engine.draw_from_das:
+        screen = engine.MAIN_SCREEN
+        screen.blit(ui.draw_background(), (0, 0))
+        ui.draw_next_panel()
+        ui.draw_hold_panel()
+        ui.draw_score_panel(Level="99", Score="99,999")
+        ui.draw_board_background()
+        ui.draw_grid_lines()
+        ui.draw_board(engine.game_board)
+        ui.draw_topout_board()
+        ui.draw_board(engine.piece_board)
+        btn.draw(screen)
+        
     mins_secs, dot_ms = engine.timer.split_strings()
-    ui.draw_stats_panel(PPS='50.2', TIMES=mins_secs, TIMEMS=dot_ms, CLEARED=str(engine.total_lines_cleared))
-    ui.draw_board_background()
-    ui.draw_grid_lines()
-    ui.draw_board(engine.game_board)
-    ui.draw_topout_board()
-    ui.draw_board(engine.piece_board)
+    ui.draw_stats_panel(
+        PPS='50.2',
+        TIMES=mins_secs,
+        TIMEMS=dot_ms,
+        CLEARED=str(engine.total_lines_cleared)
+    )
     
-    btn.draw(engine.MAIN_SCREEN)
+    first_frame = False
     
-    mouse_down = pygame.mouse.get_pressed()[0] # all dis works perfectly but is JANKY!!!! pls rewrite me!!!!!!!!!!!!!!!!!!!!!!
+    mouse_down = pygame.mouse.get_pressed()[0]
     if mouse_down and not mouse_was_down and btn.rect.collidepoint(pygame.mouse.get_pos()):
-        btn.callback()  
+        btn.callback()
         
     mouse_was_down = mouse_down
-
+    
 state_funcs = {
     0: menu_loop,
     1: card_screen_loop,
