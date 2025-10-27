@@ -41,9 +41,6 @@ tetra_skins = []
 # --- Load penta skins (top-right column) ---
 penta_skins = []
 
-game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-piece_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-
 frametime_clock = pygame.time.Clock()
 arr_clock = pygame.time.Clock()
 das_clock = pygame.time.Clock()
@@ -88,9 +85,12 @@ hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
 next_boards = numpy.zeros((settings.NEXT_PIECES_COUNT, 5, 5), dtype=numpy.int8)
 topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
+PIECES_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
+game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+piece_board = numpy.zeros((PIECES_WIDTH, PIECES_WIDTH), numpy.int8)
+
 onekf_key_array = numpy.zeros((4, 10), dtype=int) # int8 is too small
 
-PIECES_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
 PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECES_WIDTH//2) # dynamically calculate starting position based on board and piece size.
 PIECE_STARTING_Y = settings.BOARD_EXTRA_HEIGHT - (PIECES_WIDTH//5 + 1)
 PIECE_STARTING_ROTATION = 0
@@ -159,7 +159,7 @@ def spawn_piece():
     refresh_piece_board(current_shape)
     next_boards = gen_ui_boards(next_boards, next_pieces)
     gen_topout_board()
-    gen_ghost_board()
+    refresh_ghost_board()
     # top-out check
     if check_collisions(0, 0, current_shape):
         top_out()
@@ -177,7 +177,7 @@ def gen_topout_board():
     else:
         topout_board = next_shape
 
-def gen_ghost_board():
+def refresh_ghost_board():
     # calculate the coords
     global ghost_piece_x, ghost_piece_y, ghost_board, piece_y
     ghost_piece_x = piece_x
@@ -262,7 +262,7 @@ def rotate_piece(amount):
             piece_x = piece_x + kick_x # update the position variables
             piece_y = piece_y + kick_y
             refresh_piece_board(new_shape)
-            gen_ghost_board()
+            refresh_ghost_board()
             return
     
 def mirror_piece():
@@ -305,11 +305,11 @@ def hold_piece(): # mechanics need rewrite to check collision
     # refresh current active piece
     new_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
     refresh_piece_board(new_shape)
-    gen_ghost_board()
+    refresh_ghost_board()
     hold_boards = gen_ui_boards(hold_boards, hold_pieces)
         
 def move_piece(move_x, move_y):
-    global piece_x, piece_y, piece_rotation, piece_board
+    global piece_x, piece_y, piece_rotation, piece_board, game_state_changed
     current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
     move_dir_x = int((move_x > 0) - (move_x < 0)) # treats bools like integers then converts to int to get direction
     move_dir_y = int((move_y > 0) - (move_y < 0))
@@ -320,10 +320,12 @@ def move_piece(move_x, move_y):
             piece_y = move_dir_y + piece_y
         else: # when first collision happens, return false. this only makes sense if a single collision is being checked.
             refresh_piece_board(current_shape)
-            if move_x != 0: gen_ghost_board()
+            game_state_changed = True
+            if move_x != 0: refresh_ghost_board()
             return False
     refresh_piece_board(current_shape)
-    if move_x != 0: gen_ghost_board()
+    game_state_changed = True
+    if move_x != 0: refresh_ghost_board()
     return True
 
 def refresh_piece_board(piece_shape):
@@ -332,7 +334,7 @@ def refresh_piece_board(piece_shape):
     piece_board = numpy.zeros_like(piece_board) # clear the board. NEEDS OPTIMIZATION
 
     for coords in numpy.argwhere(piece_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
-        piece_board[piece_y + coords[0]][piece_x + coords[1]] = piece_bags[0][0]
+        piece_board[coords[0]][coords[1]] = piece_bags[0][0]
 
 def gen_ui_boards(boards_list, pieces_list):
     boards_list = [] # clear previous
@@ -369,7 +371,9 @@ def handle_piece_lockdown(): # NEED TO IMPLEMENT PIECE FLASHING
     
 def lock_to_board():
     global game_board, piece_board, piece_bags
-    game_board[piece_board != 0] = piece_board[piece_board != 0]
+    for coords in numpy.argwhere(piece_board != 0):
+        game_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
+        #game_board[piece_board != 0] = piece_board[piece_board != 0]
     piece_board = numpy.zeros_like(piece_board)
     piece_bags[0].pop(0)
     
@@ -381,7 +385,7 @@ def lock_to_board():
     spawn_piece()
     
 def handle_movement(keys):
-    global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir, game_state_changed
+    global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir
     
     # find which horizontal input the user pressed (0 if none)
     if keys[settings.MOVE_LEFT] and not keys[settings.MOVE_RIGHT]:
@@ -402,7 +406,6 @@ def handle_movement(keys):
         last_move_dir = move_dir
         
         if not das_timer_started:
-            game_state_changed = True
             move_piece(move_dir, 0)
             das_timer_started = True # start the DAS timer
             das_timer = 0
@@ -413,7 +416,6 @@ def handle_movement(keys):
             das_timer += das_clock.get_time()
             
             if (das_timer > settings.DAS_THRESHOLD):
-                game_state_changed = True
                 if not arr_timer_started and settings.ARR_THRESHOLD != 0:
                     move_piece(move_dir, 0)
                     arr_timer_started = True # start the ARR timer
@@ -499,7 +501,7 @@ def reset_game():
     
     # Clear boards
     game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-    piece_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+    piece_board = numpy.zeros((PIECES_WIDTH, PIECES_WIDTH), numpy.int8)
     
     # Reset timers
     das_timer = arr_timer = sdr_timer = das_reset_timer = 0
@@ -531,7 +533,7 @@ def reset_game():
     next_boards = gen_ui_boards(next_boards, next_pieces)
 
     spawn_piece()
-    gen_ghost_board()
+    refresh_ghost_board()
     
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides, game_state_changed
