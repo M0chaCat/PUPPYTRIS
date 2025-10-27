@@ -29,7 +29,7 @@ def draw_rect(x, y, width, height, color=(200, 200, 200, 255),
             pygame.draw.rect(surf, outline_color, (0, 0, width, height), 1)
     else:
         # Offset to keep 1px outline fully inside surface
-        offset = 0.5
+        offset = 0.7
         points = [
             ((cut_size if 'top-left' in cut_corners else 0) + offset, 0 + offset),
             (width - (cut_size if 'top-right' in cut_corners else 0) - offset, 0 + offset),
@@ -208,7 +208,7 @@ def draw_topout_board():
 def draw_next_panel():
     text = "Next"
     total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
-    next_width = int(engine.BOARD_WIDTH_PX * 0.4)
+    next_width = int(total_board_px * 0.2)
     next_height_per_piece = total_board_px / 7
     next_height_top = total_board_px / 19
     next_height = (next_height_per_piece * settings.NEXT_PIECES_COUNT) + next_height_top
@@ -232,7 +232,7 @@ def draw_next_panel():
         
     text_surf = font.render(text, True, settings.TEXT_COLOR)
     padding = 10
-    text_rect = text_surf.get_rect(topright=(next_x + next_width - padding, next_y + padding))
+    text_rect = text_surf.get_rect(topleft=(next_x + padding, next_y + padding))
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
     
     # --- Draw next pieces ---
@@ -282,7 +282,7 @@ def draw_next_panel():
 def draw_hold_panel():
     text = "Hold"
     total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
-    hold_width = int(engine.BOARD_WIDTH_PX * 0.4)
+    hold_width = int(total_board_px * 0.2)
     hold_height_per_piece = total_board_px / 7
     hold_height_top = total_board_px / 19
     hold_height = (hold_height_per_piece * engine.hold_pieces_count) + hold_height_top
@@ -306,7 +306,7 @@ def draw_hold_panel():
         
     text_surf = font.render(text, True, settings.TEXT_COLOR)
     padding = 10
-    text_rect = text_surf.get_rect(topleft=(hold_x + padding, hold_y + padding))
+    text_rect = text_surf.get_rect(topright=(hold_x + hold_width - padding, hold_y + padding))
     engine.MAIN_SCREEN.blit(text_surf, text_rect)
     
     # --- Draw held pieces ---
@@ -356,7 +356,7 @@ def draw_hold_panel():
                     
 def draw_stats_panel(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69"):
     total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
-    stats_width = int(engine.BOARD_WIDTH_PX * 0.35)
+    stats_width = int(total_board_px * 0.18)
     stats_height = total_board_px / 2.6
     
     # --- Horizontal alignment: stick to the left of the board ---
