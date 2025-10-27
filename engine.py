@@ -534,7 +534,7 @@ def reset_game():
     gen_ghost_board()
     
 def handle_soft_drop(keys, frametime):
-    global sdr_timer, sdr_timer_started, softdrop_overrides
+    global sdr_timer, sdr_timer_started, softdrop_overrides, game_state_changed
     if current_gravity > 0.001:
         softdrop_overrides = (settings.SDR_THRESHOLD <= 16.666667 / current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
     elif keys[settings.MOVE_SOFTDROP]:
@@ -548,6 +548,7 @@ def handle_soft_drop(keys, frametime):
         steps_to_move = max(int(frametime / settings.SDR_THRESHOLD), 1) # predicts how much softdrop should move for first button press
         
     if softdrop_overrides:
+        game_state_changed = True
         if not sdr_timer_started:
             sdr_timer = 0
             sdr_clock.tick()
@@ -605,14 +606,16 @@ def handle_events():
             running = False
             
 def handle_gravity(frametime):
-    global gravity_timer, current_gravity
+    global gravity_timer, current_gravity, game_state_changed
     if current_gravity >= 19.8: # make instant drop at 20g regardless of framerate
+        game_state_changed = True
         move_piece(0, settings.BOARD_HEIGHT + 10) 
     elif current_gravity <= 0.0001: # disable gravity if too low
         return  
     elif not softdrop_overrides: # only process gravity this frame if user isn't pressing the softdrop key
         gravity_timer += frametime # use frametime clock because precision is not necessary, only consistent pacing is
         if (gravity_timer >= 16.666667 / current_gravity):
+            game_state_changed = True
             steps_to_move = int(gravity_timer / (16.666667 / current_gravity))
             move_piece(0, steps_to_move)
             gravity_timer = gravity_timer % (16.666667 / current_gravity)
