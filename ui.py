@@ -86,7 +86,7 @@ def draw_board(current_board):
     cell = settings.CELL_SIZE
     grid_start_x = engine.BOARD_PX_OFFSET_X
     grid_start_y = engine.BOARD_PX_OFFSET_Y
-    total_rows = current_board.shape[0]  # safer than BOARD_HEIGHT + EXTRA_HEIGHT
+    total_rows = current_board.shape[0]
     total_cols = current_board.shape[1]
     
     for row in range(total_rows):
@@ -207,17 +207,17 @@ def draw_topout_board():
             
 def draw_next_panel():
     text = "Next"
-    total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
+    total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
     next_width = int(engine.BOARD_WIDTH_PX * 0.4)
-    next_height_per_piece = total_board_px / 11
-    next_height_top = total_board_px / 20
+    next_height_per_piece = total_board_px / 7
+    next_height_top = total_board_px / 19
     next_height = (next_height_per_piece * settings.NEXT_PIECES_COUNT) + next_height_top
     
     # --- Horizontal alignment: stick to the board ---
     next_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX
     
     # --- Vertical alignment: start at a % down the board ---
-    vertical_pct = 0.4  # change this: 0.0 = top of board, 1.0 = bottom
+    vertical_pct = 0.3  # change this: 0.0 = top of board, 1.0 = bottom
     next_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.PANEL_COLOR
@@ -250,7 +250,7 @@ def draw_next_panel():
             
             # x/y of the top-left of this board area (stacked)
             area_start_x = next_x + (next_width - board_cols * cell_scaled) // 2
-            area_start_y = next_y + 10 + i * (board_rows * cell_scaled + spacing)
+            area_start_y = next_y + 20 + i * (board_rows * cell_scaled + spacing)
             
             # compute bounding box of non-zero cells
             rows_nonzero = numpy.any(board != 0, axis=1)
@@ -281,17 +281,17 @@ def draw_next_panel():
     
 def draw_hold_panel():
     text = "Hold"
-    total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
+    total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
     hold_width = int(engine.BOARD_WIDTH_PX * 0.4)
-    hold_height_per_piece = total_board_px / 11
-    hold_height_top = total_board_px / 20
+    hold_height_per_piece = total_board_px / 7
+    hold_height_top = total_board_px / 19
     hold_height = (hold_height_per_piece * engine.hold_pieces_count) + hold_height_top
     
     # --- Horizontal alignment: stick to the left of the board ---
     hold_x = engine.BOARD_PX_OFFSET_X - hold_width
     
     # --- Vertical alignment: start at a % down the board ---
-    vertical_pct = 0.4  # 0.0 = top, 1.0 = bottom
+    vertical_pct = 0.3  # 0.0 = top, 1.0 = bottom
     hold_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.PANEL_COLOR
@@ -355,9 +355,9 @@ def draw_hold_panel():
                     
                     
 def draw_stats_panel(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69"):
-    total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
+    total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
     stats_width = int(engine.BOARD_WIDTH_PX * 0.35)
-    stats_height = total_board_px / 4
+    stats_height = total_board_px / 2.6
     
     # --- Horizontal alignment: stick to the left of the board ---
     stats_x = engine.BOARD_PX_OFFSET_X - stats_width

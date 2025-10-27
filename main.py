@@ -60,7 +60,7 @@ def game_loop():
     engine.handle_gravity(frametime)
     if not settings.ONEKF_ENABLED: engine.handle_movement(keys) # horizontal movement handled after gravity, because tetrio does it this way and it kinda makes sense        
     engine.MAIN_SCREEN.blit(ui.draw_background(), (0, 0))
-    ui.draw_score_panel(Level="50", Score="50,000") # dont forget da comma, and make sure the chars total 7 max (not incl the comma)
+    ui.draw_score_panel(Level="99", Score="99,999") # dont forget da comma, and make sure the chars total 7 max (not incl the comma)
     ui.draw_next_panel()
     ui.draw_hold_panel()
     mins_secs, dot_ms = engine.timer.split_strings()
