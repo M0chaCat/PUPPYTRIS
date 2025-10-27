@@ -24,16 +24,15 @@ try:
 except:
     font = pygame.font.SysFont(None, font_size)
 
-#pre game stuff
-    
-def on_load():
+# pre game stuff
+def load_game():
     skinloader.set_other_skins()
     engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
     engine.piece_bags[1] = engine.generate_bag()
     next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
     engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
     engine.spawn_piece()
-    engine.update_ghost_piece()
+    engine.gen_ghost_board()
     engine.unpack_1kf_binds()
         
 def menu_loop():
@@ -50,30 +49,23 @@ def go_back():
     engine.STATE -= 1
     
 btn = menu.Button(10, 10, 50, 50, "X", color=settings.PANEL_COLOR, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], font=font, callback=lambda: go_back())
+load_game()
 mouse_was_down = False
-
-on_load()
-    
-do_something = True
-first_frame = True
+engine.game_state_changed = True # always true on the first frame
 
 def game_loop():
-    global mouse_was_down, do_something, first_frame
-    
+    global mouse_was_down
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
     
     engine.handle_soft_drop(keys, frametime)
     
-    did_events = engine.handle_events()
+    engine.handle_events()
     engine.handle_gravity(frametime)
-    did_movement = False
     if not settings.ONEKF_ENABLED:
-        did_movement = engine.handle_movement(keys)
-        
-    do_something = did_events or did_movement
+        engine.handle_movement(keys)
 
-    if do_something or first_frame or engine.draw_from_das:
+    if engine.game_state_changed:
         screen = engine.MAIN_SCREEN
         screen.blit(ui.draw_background(), (0, 0))
         ui.draw_next_panel()
@@ -85,6 +77,8 @@ def game_loop():
         ui.draw_topout_board()
         ui.draw_board(engine.piece_board)
         btn.draw(screen)
+    
+    engine.game_state_changed = False # reset it for next frame
         
     mins_secs, dot_ms = engine.timer.split_strings()
     ui.draw_stats_panel(
@@ -94,14 +88,12 @@ def game_loop():
         CLEARED=str(engine.total_lines_cleared)
     )
     
-    first_frame = False
-    
     mouse_down = pygame.mouse.get_pressed()[0]
     if mouse_down and not mouse_was_down and btn.rect.collidepoint(pygame.mouse.get_pos()):
         btn.callback()
         
     mouse_was_down = mouse_down
-    
+
 state_funcs = {
     0: menu_loop,
     1: card_screen_loop,
