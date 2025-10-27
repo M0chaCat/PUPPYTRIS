@@ -175,6 +175,34 @@ def draw_grid_lines():
         pygame.draw.line(engine.MAIN_SCREEN, settings.GRID_COLOR,
                         (grid_start_x + width - cut, grid_start_y),
                         (grid_start_x + width, grid_start_y + cut))
+
+def draw_ghost_board():
+    """Draw the top-out piece directly on the main board, aligned to the grid, shifted up/right 1 cell."""
+    if not hasattr(engine, "ghost_board") or engine.ghost_board is None:
+        return
+    
+    board = engine.ghost_board
+    cell = settings.CELL_SIZE
+    board_rows, board_cols = board.shape
+    
+    # Main board top-left (include extra hidden rows if any)
+    grid_start_x = engine.BOARD_PX_OFFSET_X
+    grid_start_y = engine.BOARD_PX_OFFSET_Y
+    
+    # Compute horizontal alignment in board cells
+    start_col = engine.ghost_piece_x # piece_starting x is the regular piece offset
+    start_row = engine.ghost_piece_y  # shift up 1 cell (negative y)
+    
+    # Draw each block aligned to main board's grid
+    for row in range(board_rows):
+        for col in range(board_cols):
+            val = board[row, col]
+            if val == 0:
+                continue
+            skin = skinloader.other_skins[0]  # semi-transparent ghost piece
+            x = grid_start_x + (start_col + col) * cell
+            y = grid_start_y + (start_row + row) * cell
+            engine.MAIN_SCREEN.blit(skin, (x, y))
             
 def draw_topout_board():
     """Draw the top-out piece directly on the main board, aligned to the grid, shifted up/right 1 cell."""
