@@ -14,6 +14,8 @@ import settings, pieces, skinloader
 
 pygame.init()
 
+STATE = 0
+
 running = True # so we can turn the game loop on and off
 
 MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
@@ -556,7 +558,7 @@ def handle_hard_drop():
     lock_to_board()
     
 def handle_events():
-    global running
+    global running, STATE
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             if not settings.ONEKF_ENABLED:
@@ -574,8 +576,11 @@ def handle_events():
                     handle_hard_drop()
                 if event.key == settings.KEY_RESET:
                     reset_game()
-                if event.key == settings.KEY_SWAP:
-                    handle_swap_mode()
+                #if event.key == settings.KEY_SWAP:
+                    #handle_swap_mode()
+                if event.key == settings.KEY_EXIT:
+                    reset_game()
+                    STATE = 0
             else:
                 if event.key in onekf_key_array:
                     handle_1kf(event.key)

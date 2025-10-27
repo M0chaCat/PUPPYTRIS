@@ -12,36 +12,42 @@ import engine, settings, skinloader
 
 BLOCK_SIZE = engine.BOARD_WIDTH_PX // settings.BOARD_WIDTH
 
-def draw_rect(x, y, width, height, color=(200, 200, 200),
+def draw_rect(x, y, width, height, color=(200, 200, 200, 255),
               cut_corners=None, cut_size=10, outline_color=None):
     """
-    Draw a rectangle with optional 45° cut corners and an optional 1px outline.
+    Draw a rectangle with optional 45° cut corners and optional outline,
+    supporting transparency, without turning the main screen black.
     """
+    import pygame
+    # Create temporary surface with per-pixel alpha
+    surf = pygame.Surface((width, height), pygame.SRCALPHA)
+    
     if not cut_corners:
-        pygame.draw.rect(engine.MAIN_SCREEN, color, (x, y, width, height))
+        # Simple rectangle
+        pygame.draw.rect(surf, color, (0, 0, width, height))
         if outline_color:
-            pygame.draw.rect(engine.MAIN_SCREEN, outline_color, (x, y, width, height), 1)
-        return
+            pygame.draw.rect(surf, outline_color, (0, 0, width, height), 1)
+    else:
+        # Offset to keep 1px outline fully inside surface
+        offset = 0.5
+        points = [
+            ((cut_size if 'top-left' in cut_corners else 0) + offset, 0 + offset),
+            (width - (cut_size if 'top-right' in cut_corners else 0) - offset, 0 + offset),
+            (width - offset, (cut_size if 'top-right' in cut_corners else 0) + offset),
+            (width - offset, height - (cut_size if 'bottom-right' in cut_corners else 0) - offset),
+            (width - (cut_size if 'bottom-right' in cut_corners else 0) - offset, height - offset),
+            ((cut_size if 'bottom-left' in cut_corners else 0) + offset, height - offset),
+            (0 + offset, height - (cut_size if 'bottom-left' in cut_corners else 0) - offset),
+            (0 + offset, (cut_size if 'top-left' in cut_corners else 0) + offset)
+        ]
+        
+        pygame.draw.polygon(surf, color, points)
+        if outline_color:
+            pygame.draw.polygon(surf, outline_color, points, 1)
+            
+    # Blit to main screen
+    engine.MAIN_SCREEN.blit(surf, (x, y))
     
-    # Define polygon points clockwise
-    points = [
-        (x + (cut_size if 'top-left' in cut_corners else 0), y),
-        (x + width - (cut_size if 'top-right' in cut_corners else 0), y),
-        (x + width, y + (cut_size if 'top-right' in cut_corners else 0)),
-        (x + width, y + height - (cut_size if 'bottom-right' in cut_corners else 0)),
-        (x + width - (cut_size if 'bottom-right' in cut_corners else 0), y + height),
-        (x + (cut_size if 'bottom-left' in cut_corners else 0), y + height),
-        (x, y + height - (cut_size if 'bottom-left' in cut_corners else 0)),
-        (x, y + (cut_size if 'top-left' in cut_corners else 0))
-    ]
-    
-    # Fill
-    pygame.draw.polygon(engine.MAIN_SCREEN, color, points)
-    
-    # Outline
-    if outline_color:
-        pygame.draw.lines(engine.MAIN_SCREEN, outline_color, True, points, 1)
-
 def draw_text(surface, text, font, color, x, y, line_spacing=4):
     """Draw text with \n newlines manually handled and transparent background."""
     lines = text.splitlines()
@@ -53,7 +59,7 @@ def draw_text(surface, text, font, color, x, y, line_spacing=4):
 def draw_background():
     """Return a surface with the background drawn, scaled wallpaper or color."""
     win_w, win_h = settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT
-    background_surf = pygame.Surface((win_w, win_h))
+    background_surf = pygame.Surface((win_w, win_h), pygame.SRCALPHA)
     
     if hasattr(settings, "WALLPAPER") and settings.WALLPAPER:
         wp = settings.WALLPAPER
