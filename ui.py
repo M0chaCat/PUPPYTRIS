@@ -221,7 +221,7 @@ def draw_next_panel():
     next_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.PANEL_COLOR
-    draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_corners=['top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
+    draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_size=20, cut_corners=['top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
     
     # --- Draw label ---
     font_size = 24
@@ -295,7 +295,7 @@ def draw_hold_panel():
     hold_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.PANEL_COLOR
-    draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
+    draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
     
     # --- Draw label ---
     font_size = 24
@@ -367,21 +367,21 @@ def draw_stats_panel(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69"):
     stats_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
     panel_color = settings.CRUST_COLOR
-    draw_rect(stats_x, stats_y, stats_width, stats_height, color=panel_color, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
+    draw_rect(stats_x, stats_y, stats_width, stats_height, cut_size=20, color=panel_color, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
     
     fontbig = pygame.font.Font(settings.font_dir, 40)
     font = pygame.font.Font(settings.font_dir, 24)
     fontsmall = pygame.font.Font(settings.font_dir, 19)
-    draw_text(engine.MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 20)
-    draw_text(engine.MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 120)
-    draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 10, stats_y + 200)
-    draw_text(engine.MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 220)
+    draw_text(engine.MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 25)
+    draw_text(engine.MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 125)
+    draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 10, stats_y + 205)
+    draw_text(engine.MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 225)
     
-    draw_text(engine.MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 50)
-    draw_text(engine.MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 150)
-    draw_text(engine.MAIN_SCREEN, TIMEMS, fontsmall, settings.TEXT_COLOR, stats_x + 22 + fontbig.size(TIMES)[0], stats_y + 141 + (fontbig.size(TIMES)[1] - fontsmall.size(TIMEMS)[1]))
+    draw_text(engine.MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 55)
+    draw_text(engine.MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 155)
+    draw_text(engine.MAIN_SCREEN, TIMEMS, fontsmall, settings.TEXT_COLOR, stats_x + 22 + fontbig.size(TIMES)[0], stats_y + 146 + (fontbig.size(TIMES)[1] - fontsmall.size(TIMEMS)[1]))
     
-    draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 250)
+    draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 255)
     
 def draw_score_panel(Level="50", Score="50,000"):
     """Draw a rectangular section aligned to the bottom of the board with text."""
