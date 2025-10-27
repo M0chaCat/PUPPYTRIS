@@ -65,6 +65,7 @@ arr_timer_started = False
 sdr_timer_started = False
 das_reset_timer_started = False
 softdrop_overrides = True
+game_state_changed = False
 
 last_move_dir = 0
 gravity_timer = 0
@@ -158,6 +159,7 @@ def spawn_piece():
     refresh_piece_board(current_shape)
     next_boards = gen_ui_boards(next_boards, next_pieces)
     gen_topout_board()
+    gen_ghost_board()
     # top-out check
     if check_collisions(0, 0, current_shape):
         top_out()
@@ -174,6 +176,26 @@ def gen_topout_board():
         topout_board = None
     else:
         topout_board = next_shape
+
+def gen_ghost_board():
+    # calculate the coords
+    global ghost_piece_x, ghost_piece_y, ghost_board, piece_y
+    ghost_piece_x = piece_x
+    ghost_piece_y = piece_y # STARTS at piece y and looks from there
+    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    print("\n")
+    old_piece_y = piece_y
+    for _ in range(piece_y, settings.BOARD_HEIGHT): # -3 prevents collision with top of board
+        if not check_collisions(0, 1, current_shape):
+            piece_y += 1 # needs to use piece_y because check_collisions only uses piece coords
+        else:
+            piece_y = old_piece_y
+            break
+    # update the board
+    board_size = PIECES_WIDTH
+    ghost_board = numpy.zeros((board_size, board_size), dtype=numpy.int8)
+    ghost_board = current_shape
+    print(ghost_board)
 
 def check_collisions(target_move_x, target_move_y, target_shape):
     new_x = target_move_x + piece_x
@@ -241,6 +263,7 @@ def rotate_piece(amount):
             piece_x = piece_x + kick_x # update the position variables
             piece_y = piece_y + kick_y
             refresh_piece_board(new_shape)
+            gen_ghost_board()
             return
     
 def mirror_piece():
@@ -283,6 +306,7 @@ def hold_piece(): # mechanics need rewrite to check collision
     # refresh current active piece
     new_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
     refresh_piece_board(new_shape)
+    gen_ghost_board()
     hold_boards = gen_ui_boards(hold_boards, hold_pieces)
         
 def move_piece(move_x, move_y):
@@ -297,21 +321,11 @@ def move_piece(move_x, move_y):
             piece_y = move_dir_y + piece_y
         else: # when first collision happens, return false. this only makes sense if a single collision is being checked.
             refresh_piece_board(current_shape)
+            if move_x != 0: gen_ghost_board()
             return False
     refresh_piece_board(current_shape)
-    if move_x != 0: update_ghost_piece()
+    if move_x != 0: gen_ghost_board()
     return True
-    
-def update_ghost_piece():
-    global ghost_piece_x, ghost_piece_y
-    ghost_piece_x = piece_x
-    ghost_piece_y = 0
-    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
-    for _ in range(settings.BOARD_HEIGHT):
-        if not check_collisions(0, 1, current_shape):
-            ghost_piece_y += 1
-        else:
-            break
 
 def refresh_piece_board(piece_shape):
     global piece_board
@@ -367,10 +381,8 @@ def lock_to_board():
     find_completed_lines()
     spawn_piece()
     
-draw_from_das = False
-    
 def handle_movement(keys):
-    global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir, draw_from_das
+    global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir, game_state_changed
     
     # find which horizontal input the user pressed (0 if none)
     if keys[settings.MOVE_LEFT] and not keys[settings.MOVE_RIGHT]:
@@ -382,7 +394,6 @@ def handle_movement(keys):
         
     # handle horizontal movement according to DAS and ARR rules
     if move_dir != 0:
-        draw_from_das = True
         if (last_move_dir != move_dir and settings.DAS_RESET_THRESHOLD <= 0): # if switching movement direction (and DAS_RESET_THRESHOLD is set to 0), reset DAS and ARR
             das_timer = 0                                           # last_move_dir is set to 0 by default so it will reset for the first movement, but that doesn't matter because it starts that way anyways
             das_timer_started = False
@@ -392,6 +403,7 @@ def handle_movement(keys):
         last_move_dir = move_dir
         
         if not das_timer_started:
+            game_state_changed = True
             move_piece(move_dir, 0)
             das_timer_started = True # start the DAS timer
             das_timer = 0
@@ -402,6 +414,7 @@ def handle_movement(keys):
             das_timer += das_clock.get_time()
             
             if (das_timer > settings.DAS_THRESHOLD):
+                game_state_changed = True
                 if not arr_timer_started and settings.ARR_THRESHOLD != 0:
                     move_piece(move_dir, 0)
                     arr_timer_started = True # start the ARR timer
@@ -422,7 +435,6 @@ def handle_movement(keys):
                             arr_timer = arr_timer % settings.ARR_THRESHOLD
                             
     elif das_timer_started: # saves performance by only checking this stuff when das_timer is still running
-        draw_from_das = False
         if not das_reset_timer_started:
             das_reset_timer = 0
             das_reset_clock.tick()
@@ -448,9 +460,9 @@ def unpack_1kf_binds():
         onekf_key_array[row][col] = pygame.key.key_code(settings.ONEKF_STRING[string_index : string_index + 1])
 
 def handle_1kf(key):
-    global piece_rotation
+    global piece_rotation, game_state_changed
+    game_state_changed = True
     key_row, key_col = numpy.where(onekf_key_array == key)
-    
     # converts keyboard rows into their rotation states
     match key_row:
         case 0:
@@ -520,7 +532,7 @@ def reset_game():
     next_boards = gen_ui_boards(next_boards, next_pieces)
 
     spawn_piece()
-    update_ghost_piece()
+    gen_ghost_board()
     
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
@@ -562,11 +574,10 @@ def handle_hard_drop():
     lock_to_board()
     
 def handle_events():
-    global running, STATE
-    did_something = False
+    global running, STATE, game_state_changed
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
-            did_something = True
+            game_state_changed = True
             if not settings.ONEKF_ENABLED:
                 if event.key == settings.KEY_HOLD:
                     hold_piece()
@@ -582,19 +593,17 @@ def handle_events():
                     handle_hard_drop()
                 if event.key == settings.KEY_RESET:
                     reset_game()
-                #if event.key == settings.KEY_SWAP:
-                    #handle_swap_mode()
                 if event.key == settings.KEY_EXIT:
                     reset_game()
                     STATE = 0
             else:
                 if event.key in onekf_key_array:
                     handle_1kf(event.key)
+                if event.key == settings.ONEKF_HOLD:
+                    hold_piece()
 
         if event.type == pygame.QUIT:
             running = False
-
-    return did_something
             
 def handle_gravity(frametime):
     global gravity_timer, current_gravity
