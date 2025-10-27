@@ -25,14 +25,16 @@ except:
     font = pygame.font.SysFont(None, font_size)
 
 #pre game stuff
-skinloader.set_other_skins()
-engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
-engine.piece_bags[1] = engine.generate_bag()
-next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
-engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
-engine.spawn_piece()
-engine.update_ghost_piece()
-engine.unpack_1kf_binds()
+    
+def on_load():
+    skinloader.set_other_skins()
+    engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
+    engine.piece_bags[1] = engine.generate_bag()
+    next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
+    engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
+    engine.spawn_piece()
+    engine.update_ghost_piece()
+    engine.unpack_1kf_binds()
         
 def menu_loop():
     menu.draw_menu()
@@ -49,6 +51,8 @@ def go_back():
     
 btn = menu.Button(10, 10, 50, 50, "X", color=settings.PANEL_COLOR, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], font=font, callback=lambda: go_back())
 mouse_was_down = False
+
+on_load()
     
 do_something = True
 first_frame = True
