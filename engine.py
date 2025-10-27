@@ -186,6 +186,7 @@ def gen_ghost_board():
     old_piece_y = piece_y
     for _ in range(piece_y, settings.BOARD_HEIGHT): # -3 prevents collision with top of board
         if not check_collisions(0, 1, current_shape):
+            ghost_piece_y += 1
             piece_y += 1 # needs to use piece_y because check_collisions only uses piece coords
         else:
             piece_y = old_piece_y
