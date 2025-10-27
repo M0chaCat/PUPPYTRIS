@@ -75,6 +75,7 @@ def game_loop():
         ui.draw_grid_lines()
         ui.draw_board(engine.game_board)
         ui.draw_topout_board()
+        ui.draw_ghost_board()
         ui.draw_board(engine.piece_board)
         btn.draw(screen)
     
