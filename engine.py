@@ -183,7 +183,6 @@ def gen_ghost_board():
     ghost_piece_x = piece_x
     ghost_piece_y = piece_y # STARTS at piece y and looks from there
     current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
-    print("\n")
     old_piece_y = piece_y
     for _ in range(piece_y, settings.BOARD_HEIGHT): # -3 prevents collision with top of board
         if not check_collisions(0, 1, current_shape):
@@ -195,7 +194,6 @@ def gen_ghost_board():
     board_size = PIECES_WIDTH
     ghost_board = numpy.zeros((board_size, board_size), dtype=numpy.int8)
     ghost_board = current_shape
-    print(ghost_board)
 
 def check_collisions(target_move_x, target_move_y, target_shape):
     new_x = target_move_x + piece_x
