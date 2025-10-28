@@ -10,8 +10,6 @@ import os
 
 import engine, settings, skinloader
 
-BLOCK_SIZE = engine.BOARD_WIDTH_PX // settings.BOARD_WIDTH
-
 def draw_rect(x, y, width, height, color=(200, 200, 200, 255),
               cut_corners=None, cut_size=10, outline_color=None):
     """
@@ -257,10 +255,15 @@ def draw_topout_board():
 def draw_next_panel():
     text = "Next"
     total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
-    next_width = int(total_board_px * 0.2)
-    next_height_per_piece = total_board_px / 7
-    next_height_top = total_board_px / 19
+    board_width_px = engine.BOARD_WIDTH_PX
+    board_height_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT * settings.SCALE  # vertical pixels
+    
+    next_width = int(board_width_px * 0.4)
+    
+    next_height_per_piece = next_width * 0.68
+    next_height_top = next_width * 0.3
     next_height = (next_height_per_piece * settings.NEXT_PIECES_COUNT) + next_height_top
+    
     
     # --- Horizontal alignment: stick to the board ---
     next_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX
@@ -273,7 +276,7 @@ def draw_next_panel():
     draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_size=20, cut_corners=['top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
     
     # --- Draw label ---
-    font_size = 24
+    font_size = int(next_width * 0.15)
     try:
         font = pygame.font.Font(settings.font_dir, font_size)
     except:
@@ -328,12 +331,17 @@ def draw_next_panel():
                     piece_skin_scaled = pygame.transform.smoothscale(piece_skin, (cell_scaled, cell_scaled))
                     engine.MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
     
+    
 def draw_hold_panel():
     text = "Hold"
     total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
-    hold_width = int(total_board_px * 0.2)
-    hold_height_per_piece = total_board_px / 7
-    hold_height_top = total_board_px / 19
+    board_width_px = engine.BOARD_WIDTH_PX
+    board_height_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT * settings.SCALE  # vertical pixels
+    
+    hold_width = int(board_width_px * 0.4)
+    
+    hold_height_per_piece = hold_width * 0.68
+    hold_height_top = hold_width * 0.3
     hold_height = (hold_height_per_piece * engine.hold_pieces_count) + hold_height_top
     
     # --- Horizontal alignment: stick to the left of the board ---
@@ -347,7 +355,7 @@ def draw_hold_panel():
     draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
     
     # --- Draw label ---
-    font_size = 24
+    font_size = int(hold_width * 0.15)
     try:
         font = pygame.font.Font(settings.font_dir, font_size)
     except:
@@ -410,12 +418,15 @@ saved_stats_bg = None
 def draw_stats_panel_bg():
         """Draw just the stats panel background and save it for later text updates."""
         global stats_panel_rect, saved_stats_bg
-    
         total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
-        stats_width = int(total_board_px * 0.18)
-        stats_height = total_board_px / 2.6
-        stats_x = engine.BOARD_PX_OFFSET_X - stats_width
-        vertical_pct = 0.7
+    
+        board_width_px = engine.BOARD_WIDTH_PX
+        stats_width = int(board_width_px * 0.37)
+        stats_height = int(stats_width * 2)
+    
+    
+        stats_x = engine.BOARD_PX_OFFSET_X - stats_width 
+        vertical_pct = 0.7 
         stats_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     
         stats_panel_rect = pygame.Rect(stats_x, stats_y, stats_width, stats_height)
@@ -436,23 +447,37 @@ def draw_stats_panel_text(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69")
                 engine.MAIN_SCREEN.blit(saved_stats_bg, stats_panel_rect.topleft)
             
         stats_x, stats_y = stats_panel_rect.topleft
+        panel_height = stats_panel_rect.height
     
-        fontbig = pygame.font.Font(settings.font_dir, 40)
-        font = pygame.font.Font(settings.font_dir, 24)
-        fontsmall = pygame.font.Font(settings.font_dir, 19)
+        # Fonts relative to panel height
+        fontbig   = pygame.font.Font(settings.font_dir, max(1, int(panel_height * 0.12)))
+        font      = pygame.font.Font(settings.font_dir, max(1, int(panel_height * 0.08)))
+        fontsmall = pygame.font.Font(settings.font_dir, max(1, int(panel_height * 0.06)))
     
-        draw_text(engine.MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 25)
-        draw_text(engine.MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 125)
-        draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 10, stats_y + 205)
-        draw_text(engine.MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 10, stats_y + 225)
+        # Vertical positions as % of panel height
+        y_PPS_label      = stats_y + int(panel_height * 0.10)
+        y_PPS_value      = stats_y + int(panel_height * 0.20)
+        y_Time_label     = stats_y + int(panel_height * 0.40)
+        y_Time_value     = stats_y + int(panel_height * 0.50)
+        y_Lines_label    = stats_y + int(panel_height * 0.68)
+        y_Cleared_label  = stats_y + int(panel_height * 0.73)
+        y_Cleared_value  = stats_y + int(panel_height * 0.83)
     
-        draw_text(engine.MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 55)
-        draw_text(engine.MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 155)
+        # Draw labels
+        draw_text(engine.MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_PPS_label)
+        draw_text(engine.MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Time_label)
+        draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Lines_label)
+        draw_text(engine.MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Cleared_label)
+    
+        # Draw values
+        draw_text(engine.MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_PPS_value)
+        draw_text(engine.MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_Time_value)
         draw_text(engine.MAIN_SCREEN, TIMEMS, fontsmall, settings.TEXT_COLOR,
-                            stats_x + 22 + fontbig.size(TIMES)[0],
-                            stats_y + 146 + (fontbig.size(TIMES)[1] - fontsmall.size(TIMEMS)[1]))
+                            stats_x + 0.2*stats_panel_rect.width + fontbig.size(TIMES)[0],
+                            y_Time_value + fontbig.get_ascent() - fontsmall.get_ascent())
+
+        draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_Cleared_value)
     
-        draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 20, stats_y + 255)
     
 def draw_score_panel(Level="50", Score="50,000"):
     """Draw a rectangular section aligned to the bottom of the board with text."""
@@ -464,16 +489,36 @@ def draw_score_panel(Level="50", Score="50,000"):
     height = panel_height
     
     # Draw the panel rectangle
-    draw_rect(x, y, width, height, settings.CRUST_COLOR, cut_size=25, cut_corners=['bottom-left', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
+    draw_rect(
+        x, y, width, height, settings.CRUST_COLOR,
+        cut_size=int(panel_height * 0.5),
+        cut_corners=['bottom-left', 'bottom-right'],
+        outline_color=settings.PANEL_OUTLINE
+    )
     
-    fontbig = pygame.font.Font(settings.font_dir, 50)
-    font = pygame.font.Font(settings.font_dir, 20)
+    # Fonts relative to panel height
+    fontbig = pygame.font.Font(settings.font_dir, max(1, int(panel_height * 1.07)))
+    font = pygame.font.Font(settings.font_dir, max(1, int(panel_height * 0.35)))
     
-    draw_text(engine.MAIN_SCREEN, "Level:", font, settings.TEXT_COLOR, x + 5, y + 5)
-    draw_text(engine.MAIN_SCREEN, Level, fontbig, settings.TEXT_COLOR, x + 70, y + 5)
+    padding_x = int(0.02 * width)  # 2% of panel width
+    right_padding_x = int(0.08 * width) 
+    padding_y = int(0.1 * height)  # 10% of panel height from top
     
-    line_offset = font.size("Level:")[0] +  fontbig.size(Level)[0] + 15
-    pygame.draw.line(engine.MAIN_SCREEN, settings.PANEL_OUTLINE, (x + line_offset, y), (x+line_offset+40, y + height), 2)
+    # Draw Level
+    draw_text(engine.MAIN_SCREEN, "Level:", font, settings.TEXT_COLOR, x + padding_x, y + padding_y)
+    draw_text(engine.MAIN_SCREEN, Level, fontbig, settings.TEXT_COLOR, x + padding_x + font.size("Level:")[0] + 5, y + padding_y)
     
-    draw_text(engine.MAIN_SCREEN, "Score:", font, settings.TEXT_COLOR, x + line_offset + 25, y + 5)
-    draw_text(engine.MAIN_SCREEN, Score, fontbig, settings.TEXT_COLOR, x + width - 30 - fontbig.size(Score)[0], y + 5)
+    # Vertical line separator
+    line_offset = x + padding_x + font.size("Level:")[0] + fontbig.size(Level)[0] + int(0.02 * width)
+    pygame.draw.line(
+        engine.MAIN_SCREEN, settings.PANEL_OUTLINE,
+        (line_offset, y),
+        (line_offset + int(0.3 * height), y + height), # 0.3 is the width the line takes up
+        1
+    )
+    
+    # Draw Score
+    draw_text(engine.MAIN_SCREEN, "Score:", font, settings.TEXT_COLOR, line_offset + int(0.03 * width), y + padding_y)
+    score_width = fontbig.size(Score)[0]
+    draw_text(engine.MAIN_SCREEN, Score, fontbig, settings.TEXT_COLOR, x + width - right_padding_x - score_width, y + padding_y)
+    

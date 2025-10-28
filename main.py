@@ -83,12 +83,7 @@ def game_loop():
     engine.game_state_changed = False # reset it for next frame
         
     mins_secs, dot_ms = engine.timer.split_strings()
-    ui.draw_stats_panel_text(
-        PPS='50.2',
-        TIMES=mins_secs,
-        TIMEMS=dot_ms,
-        CLEARED=str(engine.total_lines_cleared)
-    )
+    ui.draw_stats_panel_text(PPS='50.2', TIMES=mins_secs, TIMEMS=dot_ms, CLEARED=str(engine.total_lines_cleared))
     
     mouse_down = pygame.mouse.get_pressed()[0]
     if mouse_down and not mouse_was_down and btn.rect.collidepoint(pygame.mouse.get_pos()):
@@ -105,7 +100,7 @@ state_funcs = {
 engine.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
 while engine.running:
-    engine.frametime_clock.tick()
+    engine.frametime_clock.tick(settings.MAX_FRAMERATE)
     fps = str(int(engine.frametime_clock.get_fps()))
     
     # Run current state’s logic
