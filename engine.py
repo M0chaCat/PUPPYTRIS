@@ -272,6 +272,7 @@ def mirror_piece():
 
     if not check_collisions(0, 0, new_shape):
         piece_board = new_shape * piece_bags[0][0]
+        refresh_ghost_board()
     else:
         piece_bags[0][0] = piece_inversions[piece_bags[0][0]] # revert it back if collision
 
