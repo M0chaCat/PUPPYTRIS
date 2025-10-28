@@ -153,7 +153,7 @@ def spawn_piece():
     piece_y = PIECE_STARTING_Y
     piece_rotation = PIECE_STARTING_ROTATION
     
-    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
     next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
 
     next_boards = gen_ui_boards(next_boards, next_pieces)
@@ -260,7 +260,7 @@ def rotate_piece(amount):
             # move the piece
             piece_x = piece_x + kick_x # update the position variables
             piece_y = piece_y + kick_y
-            piece_board = new_shape
+            piece_board = new_shape * piece_bags[0][0]
             refresh_ghost_board()
             return
     
@@ -271,7 +271,7 @@ def mirror_piece():
     new_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
 
     if not check_collisions(0, 0, new_shape):
-        piece_board = new_shape
+        piece_board = new_shape * piece_bags[0][0]
     else:
         piece_bags[0][0] = piece_inversions[piece_bags[0][0]] # revert it back if collision
 
@@ -302,7 +302,7 @@ def hold_piece(): # mechanics need rewrite to check collision
         piece_bags[1] = generate_bag()
         
     # refresh current active piece
-    piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
+    piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
     refresh_ghost_board()
     hold_boards = gen_ui_boards(hold_boards, hold_pieces)
         
@@ -311,20 +311,20 @@ def move_piece(move_x, move_y):
     current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
     move_dir_x = int((move_x > 0) - (move_x < 0)) # treats bools like integers then converts to int to get direction
     move_dir_y = int((move_y > 0) - (move_y < 0))
-    
-    for _ in range(max(abs(move_x), abs(move_y), 1)): # loops over whichever number is farther from 0 (the most moves), min 1
+    steps_to_move = max(abs(move_x), abs(move_y), 1)
+    for step in range(steps_to_move): # loops over whichever number is farther from 0 (the most moves), min 1
         if not check_collisions(move_dir_x, move_dir_y, current_shape): # only goes through with the movement if no collisions occur
             piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
             piece_y = move_dir_y + piece_y
         else: # when first collision happens, return false. this only makes sense if a single collision is being checked.
-            piece_board = current_shape
+            piece_board = current_shape * piece_bags[0][0]
             game_state_changed = True
             if move_x != 0: refresh_ghost_board()
-            return False
-    piece_board = current_shape
+            return steps_to_move - step # return remaining steps
+    piece_board = current_shape * piece_bags[0][0]
     game_state_changed = True
     if move_x != 0: refresh_ghost_board()
-    return True
+    return 0 # moved full distance
 
 def gen_ui_boards(boards_list, pieces_list):
     boards_list = [] # clear previous
@@ -545,7 +545,7 @@ def handle_soft_drop(keys, frametime):
             sdr_timer = 0
             sdr_clock.tick()
             sdr_timer_started = True
-            move_piece(0, steps_to_move)
+            remaining_steps = move_piece(0, steps_to_move)
         else:
             sdr_clock.tick()
             sdr_timer += sdr_clock.get_time()
@@ -556,7 +556,7 @@ def handle_soft_drop(keys, frametime):
                 else:
                     steps_to_move = int(sdr_timer / settings.SDR_THRESHOLD)
                     sdr_timer = sdr_timer % settings.SDR_THRESHOLD
-                move_piece(0, steps_to_move)
+                remaining_steps = move_piece(0, steps_to_move)
     else:
         sdr_timer = 0
         sdr_timer_started = False
@@ -601,16 +601,18 @@ def handle_gravity(frametime):
     global gravity_timer, current_gravity, game_state_changed
     if current_gravity >= 19.8: # make instant drop at 20g regardless of framerate
         game_state_changed = True
-        move_piece(0, settings.BOARD_HEIGHT + 10) 
+        remaining_steps = move_piece(0, settings.BOARD_HEIGHT + 10)
+        return remaining_steps 
     elif current_gravity <= 0.0001: # disable gravity if too low
-        return  
+        return 0
     elif not softdrop_overrides: # only process gravity this frame if user isn't pressing the softdrop key
         gravity_timer += frametime # use frametime clock because precision is not necessary, only consistent pacing is
         if (gravity_timer >= 16.666667 / current_gravity):
             game_state_changed = True
             steps_to_move = int(gravity_timer / (16.666667 / current_gravity))
-            move_piece(0, steps_to_move)
+            remaining_steps = move_piece(0, steps_to_move)
             gravity_timer = gravity_timer % (16.666667 / current_gravity)
+            return remaining_steps
             
 def handle_swap_mode():
     global pieces_dict, piece_inversions, hold_pieces_count
@@ -629,5 +631,3 @@ def handle_swap_mode():
         pieces_dict = pieces.penta_dict
         piece_inversions = pieces.penta_inversions
         hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
-        
-    reset_game()
