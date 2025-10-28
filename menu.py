@@ -84,11 +84,16 @@ def draw_menu():
     spacing = 20  # vertical space between buttons
     
     def start_tetra():
+        engine.handle_swap_mode(False)
+        engine.reset_game()
         engine.STATE = 2
+        engine.game_state_changed = True
         
     def start_penta():
-        engine.handle_swap_mode()
+        engine.handle_swap_mode(True)
+        engine.reset_game()
         engine.STATE = 2
+        engine.game_state_changed = True
     
     button_data = [
         ("Start Tetris", start_tetra),

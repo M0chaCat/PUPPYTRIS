@@ -615,13 +615,13 @@ def handle_gravity(frametime):
             gravity_timer = gravity_timer % (16.666667 / current_gravity)
             return remaining_steps
             
-def handle_swap_mode():
+def handle_swap_mode(gotopenta):
     global pieces_dict, piece_inversions, hold_pieces_count
     if skinloader.has_penta == False:
         print("Your skin does not support pentaminos!")
         return
     global PIECE_TYPES, pieces_dict, piece_inversions
-    settings.is_penta = not settings.is_penta
+    settings.is_penta = gotopenta
     PIECE_TYPES = 18 if settings.is_penta else 7
     pieces_dict = pieces.tetra_dict
     piece_inversions = pieces.tetra_inversions
