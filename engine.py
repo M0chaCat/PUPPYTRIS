@@ -63,6 +63,7 @@ sdr_timer_started = False
 das_reset_timer_started = False
 softdrop_overrides = True
 game_state_changed = False
+queue_spawn_piece = True
 
 last_move_dir = 0
 gravity_timer = 0
@@ -147,8 +148,8 @@ def generate_bag():
     return generated_bag
 
 def spawn_piece():
-    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board
-    
+    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece
+    queue_spawn_piece = False
     piece_x = PIECE_STARTING_X
     piece_y = PIECE_STARTING_Y
     piece_rotation = PIECE_STARTING_ROTATION
@@ -313,6 +314,7 @@ def move_piece(move_x, move_y):
     move_dir_x = int((move_x > 0) - (move_x < 0)) # treats bools like integers then converts to int to get direction
     move_dir_y = int((move_y > 0) - (move_y < 0))
     steps_to_move = max(abs(move_x), abs(move_y), 1)
+
     for step in range(steps_to_move): # loops over whichever number is farther from 0 (the most moves), min 1
         if not check_collisions(move_dir_x, move_dir_y, current_shape): # only goes through with the movement if no collisions occur
             piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
@@ -322,6 +324,7 @@ def move_piece(move_x, move_y):
             game_state_changed = True
             if move_x != 0: refresh_ghost_board()
             return steps_to_move - step # return remaining steps
+        
     piece_board = current_shape * piece_bags[0][0]
     game_state_changed = True
     if move_x != 0: refresh_ghost_board()
@@ -361,7 +364,7 @@ def handle_piece_lockdown(): # NEED TO IMPLEMENT PIECE FLASHING
         lock_to_board()
     
 def lock_to_board():
-    global game_board, piece_board, piece_bags
+    global game_board, piece_board, piece_bags, queue_spawn_piece
     for coords in numpy.argwhere(piece_board != 0):
         game_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
         #game_board[piece_board != 0] = piece_board[piece_board != 0]
@@ -373,7 +376,8 @@ def lock_to_board():
         piece_bags[1] = generate_bag()
         
     find_completed_lines()
-    spawn_piece()
+    queue_spawn_piece = True
+    refresh_ghost_board()
     
 def handle_movement(keys):
     global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir
@@ -487,7 +491,7 @@ def reset_game():
     global piece_x, piece_y, piece_rotation
     global das_timer, arr_timer, sdr_timer, das_reset_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
-    global last_move_dir, gravity_timer, softdrop_overrides, timer, total_lines_cleared
+    global last_move_dir, gravity_timer, softdrop_overrides, timer, total_lines_cleared, queue_spawn_piece
     global hold_boards, next_boards
     
     # Clear boards
@@ -506,6 +510,7 @@ def reset_game():
     gravity_timer = 0
     softdrop_overrides = True
     bag_counter = 0
+    queue_spawn_piece = True
     
     # Reset hold
     hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
@@ -523,7 +528,6 @@ def reset_game():
     next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
     next_boards = gen_ui_boards(next_boards, next_pieces)
 
-    spawn_piece()
     refresh_ghost_board()
     
 def handle_soft_drop(keys, frametime):
@@ -546,7 +550,7 @@ def handle_soft_drop(keys, frametime):
             sdr_timer = 0
             sdr_clock.tick()
             sdr_timer_started = True
-            remaining_steps = move_piece(0, steps_to_move)
+            return move_piece(0, steps_to_move) # returns remaining steps
         else:
             sdr_clock.tick()
             sdr_timer += sdr_clock.get_time()
@@ -557,10 +561,12 @@ def handle_soft_drop(keys, frametime):
                 else:
                     steps_to_move = int(sdr_timer / settings.SDR_THRESHOLD)
                     sdr_timer = sdr_timer % settings.SDR_THRESHOLD
-                remaining_steps = move_piece(0, steps_to_move)
+
+                return move_piece(0, steps_to_move) # returns remaining steps
     else:
         sdr_timer = 0
         sdr_timer_started = False
+    return 0
         
 def handle_hard_drop():
     move_piece(0, settings.BOARD_HEIGHT + 10)
@@ -600,12 +606,15 @@ def handle_events():
             
 def handle_gravity(frametime):
     global gravity_timer, current_gravity, game_state_changed
+    
     if current_gravity >= 19.8: # make instant drop at 20g regardless of framerate
         game_state_changed = True
         remaining_steps = move_piece(0, settings.BOARD_HEIGHT + 10)
-        return remaining_steps 
+        return remaining_steps
+    
     elif current_gravity <= 0.0001: # disable gravity if too low
         return 0
+    
     elif not softdrop_overrides: # only process gravity this frame if user isn't pressing the softdrop key
         gravity_timer += frametime # use frametime clock because precision is not necessary, only consistent pacing is
         if (gravity_timer >= 16.666667 / current_gravity):
@@ -614,14 +623,19 @@ def handle_gravity(frametime):
             remaining_steps = move_piece(0, steps_to_move)
             gravity_timer = gravity_timer % (16.666667 / current_gravity)
             return remaining_steps
+    return 0
             
-def handle_swap_mode(gotopenta):
+def handle_leftover_gravity(remaining_steps): # for when a piece falls, touches the ground, then loses ground inside the same frame. prevents hanging for a frame.
+    if remaining_steps != 0: # check if the piece can move at all
+        move_piece(0, remaining_steps) # move the piece by the leftover amount from this frame
+
+def handle_swap_mode():
     global pieces_dict, piece_inversions, hold_pieces_count
     if skinloader.has_penta == False:
         print("Your skin does not support pentaminos!")
         return
     global PIECE_TYPES, pieces_dict, piece_inversions
-    settings.is_penta = gotopenta
+    settings.is_penta = not settings.is_penta
     PIECE_TYPES = 18 if settings.is_penta else 7
     pieces_dict = pieces.tetra_dict
     piece_inversions = pieces.tetra_inversions
