@@ -50,6 +50,7 @@ gravity_clock = pygame.time.Clock()
 lockdown_clock = pygame.time.Clock()
 
 total_lines_cleared = 0
+pieces_placed = 0
 bag_counter = 0
 das_timer = 0
 arr_timer = 0
@@ -129,8 +130,23 @@ class Timer:
         
         return f"{minutes}:{seconds:02d}", f".{hundredths:02d}"
     
+    def get_seconds(self):
+        """Return the time in seconds as an integer"""
+        if not self.running or self.start_time is None:
+            return 0
+        
+        elapsed = time.perf_counter() - self.start_time
+
+        return elapsed
+    
 timer = Timer()
 timer.start()
+
+def calculate_pps():
+    total_time = timer.get_seconds()
+    pps = pieces_placed / total_time
+    pps = round(pps, 2)
+    return str(pps)
 
 def generate_bag():
     global bag_counter
@@ -364,7 +380,7 @@ def handle_piece_lockdown(): # NEED TO IMPLEMENT PIECE FLASHING
         lock_to_board()
     
 def lock_to_board():
-    global game_board, piece_board, piece_bags, queue_spawn_piece
+    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed
     for coords in numpy.argwhere(piece_board != 0):
         game_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
         #game_board[piece_board != 0] = piece_board[piece_board != 0]
@@ -375,6 +391,7 @@ def lock_to_board():
         piece_bags[0] = piece_bags[1]
         piece_bags[1] = generate_bag()
         
+    pieces_placed += 1
     find_completed_lines()
     queue_spawn_piece = True
     refresh_ghost_board()
@@ -491,7 +508,7 @@ def reset_game():
     global piece_x, piece_y, piece_rotation
     global das_timer, arr_timer, sdr_timer, das_reset_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
-    global last_move_dir, gravity_timer, softdrop_overrides, timer, total_lines_cleared, queue_spawn_piece
+    global last_move_dir, gravity_timer, softdrop_overrides, timer, total_lines_cleared, pieces_placed, queue_spawn_piece
     global hold_boards, next_boards
     
     # Clear boards
@@ -523,6 +540,7 @@ def reset_game():
     # Reset stats
     timer.reset()
     total_lines_cleared = 0
+    pieces_placed = 0
 
     # generate the next boards
     next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list

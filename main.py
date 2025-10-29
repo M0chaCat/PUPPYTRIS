@@ -60,10 +60,12 @@ def game_loop():
     keys = pygame.key.get_pressed()
     if engine.queue_spawn_piece:
         engine.spawn_piece()
+        
     remaining_steps = engine.handle_soft_drop(keys, frametime)
     remaining_steps += engine.handle_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
     #engine.handle_lockdown
+    
     if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)
@@ -85,8 +87,9 @@ def game_loop():
         btn.draw(screen)
     engine.game_state_changed = False # reset it for next frame
     mins_secs, dot_ms = engine.timer.split_strings()
+    pps = engine.calculate_pps()
     ui.draw_stats_panel_text(
-        PPS='50.2',
+        PPS=pps,
         TIMES=mins_secs,
         TIMEMS=dot_ms,
         CLEARED=str(engine.total_lines_cleared)
