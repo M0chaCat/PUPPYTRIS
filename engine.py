@@ -360,6 +360,10 @@ def hold_piece_guideline():
 
         refresh_ghost_board()
         hold_boards = gen_ui_boards(hold_boards, hold_pieces)
+
+        # top-out check
+        if check_collisions(0, 0, piece_board):
+            top_out()
         
 def move_piece(move_x, move_y):
     global piece_x, piece_y, piece_rotation, piece_board, game_state_changed
