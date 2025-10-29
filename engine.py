@@ -65,6 +65,7 @@ das_reset_timer_started = False
 softdrop_overrides = True
 game_state_changed = False
 queue_spawn_piece = True
+can_hold = True
 
 last_move_dir = 0
 gravity_timer = 0
@@ -164,11 +165,12 @@ def generate_bag():
     return generated_bag
 
 def spawn_piece():
-    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece
+    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, can_hold
     queue_spawn_piece = False
     piece_x = PIECE_STARTING_X
     piece_y = PIECE_STARTING_Y
     piece_rotation = PIECE_STARTING_ROTATION
+    can_hold = True
     
     piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
     next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
@@ -293,8 +295,10 @@ def mirror_piece():
     else:
         piece_bags[0][0] = piece_inversions[piece_bags[0][0]] # revert it back if collision
 
-def hold_piece(): # mechanics need rewrite to check collision
-    global piece_bags, hold_pieces, hold_boards, next_boards, piece_board
+def hold_piece():
+    global piece_bags, hold_pieces, hold_boards, next_boards, piece_board, game_state_changed
+    game_state_changed = True
+
     if len(hold_pieces) >= hold_pieces_count: # if hold bag is full
         new_shape = pieces_dict[hold_pieces[0]]["shapes"][piece_rotation] # returns the next piece in the hold queue
     else:
@@ -323,6 +327,39 @@ def hold_piece(): # mechanics need rewrite to check collision
     piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
     refresh_ghost_board()
     hold_boards = gen_ui_boards(hold_boards, hold_pieces)
+
+def hold_piece_guideline():
+    global piece_bags, hold_pieces, hold_boards, next_boards, game_state_changed, can_hold
+    global piece_x, piece_y, piece_rotation, piece_board
+    game_state_changed = True
+    if can_hold == True:
+        hold_pieces.append(piece_bags[0][0]) # take the current piece and add it to hold queue
+        piece_bags[0].pop(0) # remove the current piece from piece bag
+            
+        # if hold queue is full (enforce max hold pieces)
+        if len(hold_pieces) > hold_pieces_count:
+            piece_bags[0].insert(0, hold_pieces[0]) # insert the next hold piece as the new current piece
+            hold_pieces.pop(0) # remove the inserted hold piece from the hold queue
+        else:
+            # refresh the next queue (only ever necessary if the hold queue wasn't already full)
+            next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
+            next_boards = gen_ui_boards(next_boards, next_pieces)
+            gen_ui_boards(next_boards, next_pieces)
+        
+        # regen bags if the bag is emptied because of hold
+        if not piece_bags[0]:
+            piece_bags[0] = piece_bags[1]
+            piece_bags[1] = generate_bag()
+            
+        # refresh current active piece
+        piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][PIECE_STARTING_ROTATION] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
+        piece_x = PIECE_STARTING_X
+        piece_y = PIECE_STARTING_Y
+        piece_rotation = PIECE_STARTING_ROTATION
+        can_hold = False
+
+        refresh_ghost_board()
+        hold_boards = gen_ui_boards(hold_boards, hold_pieces)
         
 def move_piece(move_x, move_y):
     global piece_x, piece_y, piece_rotation, piece_board, game_state_changed
@@ -532,6 +569,7 @@ def reset_game():
     # Reset hold
     hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
     hold_pieces = []
+    can_hold = True
     
     # Reset piece bag
     piece_bags[0] = generate_bag()
@@ -597,7 +635,7 @@ def handle_events():
             game_state_changed = True
             if not settings.ONEKF_ENABLED:
                 if event.key == settings.KEY_HOLD:
-                    hold_piece()
+                    hold_piece_guideline()
                 if event.key == settings.ROTATE_180:
                     rotate_piece(2)
                 if event.key == settings.ROTATE_CW:
