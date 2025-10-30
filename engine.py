@@ -690,14 +690,14 @@ def handle_leftover_gravity(remaining_steps): # for when a piece falls, touches 
     if remaining_steps != 0: # check if the piece can move at all
         move_piece(0, remaining_steps) # move the piece by the leftover amount from this frame
 
-def handle_swap_mode(): # need to eventually remove this to replace with new system
+def handle_swap_mode(usepenta):
     global pieces_dict, piece_inversions, hold_pieces_count, holds_left
-    if skinloader.has_penta == False:
+    if not skinloader.has_penta and usepenta:
         print("Your skin does not support pentaminos!")
         return
     global PIECE_TYPES, pieces_dict, piece_inversions
-    settings.is_penta = not settings.is_penta
-    PIECE_TYPES = 18 if settings.is_penta else 7
+    settings.is_penta = usepenta
+    PIECE_TYPES = settings.PIECE_TYPES_PENTA if settings.is_penta else settings.PIECE_TYPES_TETRA
     pieces_dict = pieces.tetra_dict
     piece_inversions = pieces.tetra_inversions
     hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
