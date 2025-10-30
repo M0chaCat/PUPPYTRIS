@@ -204,6 +204,7 @@ def refresh_ghost_board(): # make sure piece_board has been updated before calli
     global ghost_piece_x, ghost_piece_y, ghost_board, piece_y, piece_board
     if settings.ONEKF_ENABLED: # return an empty board if 1kf is enabled
         ghost_board = numpy.zeros_like(ghost_board)
+        return
     # calculate the coords
     ghost_piece_x = piece_x
     ghost_piece_y = piece_y # STARTS at piece y and looks from there
@@ -658,12 +659,10 @@ def handle_events():
                     reset_game()
                     STATE = 0
             else:
-                if event.key in onekf_key_array:
+                if numpy.isin(event.key, onekf_key_array):
                     handle_1kf(event.key)
                 if event.key == settings.ONEKF_HOLD:
                     hold_piece_guideline()
-        # elif event.type == pygame.KEYUP and settings.ONEKF_ENABLED and settings.ONEKF_PRACTICE:
-        #     handle_1kf(event.key, keydir="UP")
 
         if event.type == pygame.QUIT:
             running = False
@@ -691,7 +690,7 @@ def handle_leftover_gravity(remaining_steps): # for when a piece falls, touches 
     if remaining_steps != 0: # check if the piece can move at all
         move_piece(0, remaining_steps) # move the piece by the leftover amount from this frame
 
-def handle_swap_mode(): # most of this code doesn't go both ways
+def handle_swap_mode(): # need to eventually remove this to replace with new system
     global pieces_dict, piece_inversions, hold_pieces_count, holds_left
     if skinloader.has_penta == False:
         print("Your skin does not support pentaminos!")
