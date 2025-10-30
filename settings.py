@@ -64,7 +64,7 @@ ROTATE_CCW = pygame.K_z
 ROTATE_180 = pygame.K_c
 ROTATE_MIRROR = pygame.K_a
 KEY_HOLD = pygame.K_PERIOD
-#KEY_SWAP = pygame.K_q
+KEY_SWAP = pygame.K_q
 KEY_RESET = pygame.K_r
 KEY_EXIT = pygame.K_ESCAPE
 
@@ -79,7 +79,8 @@ PANEL_COLOR_HOVER = (128, 132, 172, TRANSPARENCY_MAIN)
 PANEL_OUTLINE = (108, 112, 134, TRANSPARENCY_MAIN)
 GRID_COLOR = (88, 91, 112)
 TEXT_COLOR = (250, 250, 250, TRANSPARENCY_TEXT)
-CRUST_COLOR = (17, 17, 27, TRANSPARENCY_MAIN)DRAW_COLOR = (205, 214, 244)
+CRUST_COLOR = (17, 17, 27, TRANSPARENCY_MAIN)
+DRAW_COLOR = (205, 214, 244)
 UI_COLOR = (203, 166, 247)
 USE_SKIN = False
 WALLPAPER = None  # will hold the loaded surface after pygame.init()
@@ -89,4 +90,5 @@ try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
 except Exception as e:
+
     print("Font load failed:", e)
