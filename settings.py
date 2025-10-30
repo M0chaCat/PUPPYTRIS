@@ -12,9 +12,9 @@ import os
 # DISPLAY_HEIGHT = 1440 # implement this later!!!
 
 BOARD_WIDTH = 10
-BOARD_EXTRA_HEIGHT = 4 # 10 is truely unnecessary 
-DRAWN_BOARD_HEIGHT = 20 
-BOARD_HEIGHT = DRAWN_BOARD_HEIGHT + BOARD_EXTRA_HEIGHT
+BOARD_EXTRA_HEIGHT = 4
+BOARD_MAIN_HEIGHT = 20 
+BOARD_HEIGHT = BOARD_MAIN_HEIGHT + BOARD_EXTRA_HEIGHT
 
 DESIGN_WINDOW_WIDTH = 1400 #DONT CHANGE!!!!!
 DESIGN_WINDOW_HEIGHT = 1000 #ME NEITHER!!!! SPARE ME!!!!!
@@ -92,3 +92,4 @@ try:
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
 except Exception as e:
     print("Font load failed:", e)
+
