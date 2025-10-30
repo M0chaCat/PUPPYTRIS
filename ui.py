@@ -254,9 +254,9 @@ def draw_topout_board():
             
 def draw_next_panel():
     text = "Next"
-    total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
+    total_board_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
     board_width_px = engine.BOARD_WIDTH_PX
-    board_height_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT * settings.SCALE  # vertical pixels
+    board_height_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT * settings.SCALE  # vertical pixels
     
     next_width = int(board_width_px * 0.4)
     
@@ -334,9 +334,9 @@ def draw_next_panel():
     
 def draw_hold_panel():
     text = "Hold"
-    total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
+    total_board_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
     board_width_px = engine.BOARD_WIDTH_PX
-    board_height_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT * settings.SCALE  # vertical pixels
+    board_height_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT * settings.SCALE  # vertical pixels
     
     hold_width = int(board_width_px * 0.4)
     
@@ -418,7 +418,7 @@ saved_stats_bg = None
 def draw_stats_panel_bg():
         """Draw just the stats panel background and save it for later text updates."""
         global stats_panel_rect, saved_stats_bg
-        total_board_px = settings.CELL_SIZE * settings.DRAWN_BOARD_HEIGHT
+        total_board_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
     
         board_width_px = engine.BOARD_WIDTH_PX
         stats_width = int(board_width_px * 0.37)
