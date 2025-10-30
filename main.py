@@ -65,7 +65,6 @@ def game_loop():
     remaining_steps += engine.handle_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
     #engine.handle_lockdown
-    
     if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)
@@ -80,8 +79,8 @@ def game_loop():
         ui.draw_score_panel(Level="99", Score="99,999")
         ui.draw_board_background()
         ui.draw_grid_lines()
+        ui.draw_ghost_board()
         ui.draw_board()
-        #ui.draw_ghost_board()
         ui.draw_piece_board()
         ui.draw_topout_board()
         btn.draw(screen)
