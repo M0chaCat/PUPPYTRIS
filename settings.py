@@ -64,7 +64,7 @@ ROTATE_CCW = pygame.K_z
 ROTATE_180 = pygame.K_c
 ROTATE_MIRROR = pygame.K_a
 KEY_HOLD = pygame.K_PERIOD
-KEY_SWAP = pygame.K_q
+#KEY_SWAP = pygame.K_q
 KEY_RESET = pygame.K_r
 KEY_EXIT = pygame.K_ESCAPE
 
@@ -92,3 +92,4 @@ try:
 except Exception as e:
 
     print("Font load failed:", e)
+
