@@ -79,8 +79,8 @@ tetra_dict = {
             ]),
             numpy.array([
                 [0,0,0,0],
-                [0,0,1,1],
-                [0,0,1,1],
+                [0,1,1,0],
+                [0,1,1,0],
                 [0,0,0,0]
             ]),
             numpy.array([
@@ -91,8 +91,8 @@ tetra_dict = {
             ]),
             numpy.array([
                 [0,0,0,0],
-                [1,1,0,0],
-                [1,1,0,0],
+                [0,1,1,0],
+                [0,1,1,0],
                 [0,0,0,0]
             ])
         ],
@@ -224,14 +224,18 @@ tetra_dict = {
         "skin": skinloader.tetra_skins[6]
     }
 }
-
-
-
 if skinloader.has_penta:
     penta_dict = {
         1: {
             "name": "F",
             "shapes": [
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [0,1,1,1,0],
+                    [0,0,0,1,0],
+                    [0,0,0,0,0]
+                ]),
                 numpy.array([
                     [0,0,0,0,0],
                     [0,0,1,0,0],
@@ -251,13 +255,6 @@ if skinloader.has_penta:
                     [0,0,1,1,0],
                     [0,1,1,0,0],
                     [0,0,1,0,0],
-                    [0,0,0,0,0]
-                ]),
-                numpy.array([
-                    [0,0,0,0,0],
-                    [0,0,1,0,0],
-                    [0,1,1,1,0],
-                    [0,0,0,1,0],
                     [0,0,0,0,0]
                 ])
             ],
@@ -269,6 +266,13 @@ if skinloader.has_penta:
             "shapes": [
                 numpy.array([
                     [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [0,1,1,1,0],
+                    [0,1,0,0,0],
+                    [0,0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0,0],
                     [0,1,1,0,0],
                     [0,0,1,1,0],
                     [0,0,1,0,0],
@@ -286,13 +290,6 @@ if skinloader.has_penta:
                     [0,0,1,0,0],
                     [0,1,1,0,0],
                     [0,0,1,1,0],
-                    [0,0,0,0,0]
-                ]),
-                numpy.array([
-                    [0,0,0,0,0],
-                    [0,0,1,0,0],
-                    [0,1,1,1,0],
-                    [0,1,0,0,0],
                     [0,0,0,0,0]
                 ])
             ],
@@ -892,3 +889,11 @@ penta_inversions = {
     17: 18,
     18: 17
 }
+
+kick_list_right = [(0, 0), (0, 1), (-1, 1), (1, 1), (-1, 0), (1, 0), (-2, 0), (2, 0), (0, -1)] # checks left to right if kicking right
+kick_list_left = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)] # checks right to left if kicking left
+# there are some rotation states where using the biased lists wouldn't make sense, for example rotating a state 4 I piece to a state 1 or 3. 
+# it should be fine though because it only affects kick order, and if anything gives advanced players more control.
+
+
+kick_list_mirror = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)]

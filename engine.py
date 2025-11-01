@@ -194,7 +194,8 @@ def gen_topout_board():
     next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][PIECE_STARTING_ROTATION]
 
     # --- Check top 4/5 rows for occupancy ---
-    top_rows = game_board[:settings.BOARD_EXTRA_HEIGHT + PIECES_WIDTH]
+    top_rows = settings.BOARD_EXTRA_HEIGHT + PIECES_WIDTH + math.floor(settings.BOARD_HEIGHT/8) - 1 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
+    top_rows = game_board[:top_rows]
     if numpy.all(top_rows == 0):
         topout_board = None
     else:
@@ -227,12 +228,15 @@ def check_collisions(target_move_x, target_move_y, target_shape, ghost_piece = F
     for coords in numpy.argwhere(target_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
         if (coords[0] + new_y > settings.BOARD_HEIGHT - 1): # check for collision with the bottom of the board
             collided = True
+            print("collided with bottom")
             break
         if (coords[1] + new_x < 0 or coords[1] + new_x > settings.BOARD_WIDTH - 1): # check for collision with the sides of the board
             collided = True
+            print("collided with wall")
             break
-        if (game_board[coords[0] + new_y, coords[1] + new_x]): # check for collision with minos below the piece
+        if (game_board[coords[0] + new_y, coords[1] + new_x]): # check for collision with minos
             collided = True
+            print("collided with mino")
             break
     if collided: return True
     else: return False
@@ -264,43 +268,43 @@ def rotate_piece(amount):
     # else:
     #     bias = 0
 
-    kick_list_right = [(0, 0), (0, 1), (-1, 1), (1, 1), (-1, 0), (1, 0), (-2, 0), (2, 0), (0, -1)] # checks left to right if kicking right
-    kick_list_left = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)] # checks right to left if kicking left
-
-    # there are some rotation states where using the biased lists wouldn't make sense, for example rotating a state 4 I piece to a state 1 or 3. 
-    # it should be fine though because it only affects kick order, and if anything gives advanced players more control.
-
     # slightly weird i kick behaviour on edge with hole underneath platform like this iiii
     #                                                                                  ---
     if new_rotation == 0 and piece_bags[0][0] in (1, 3, 4, 5): # ensures the kick order is symmetrical for Z, S, O, I
-        kick_list = kick_list_left
+        kick_list = pieces.kick_list_left
     else:
-        kick_list = kick_list_right
+        kick_list = pieces.kick_list_right
 
     for kick in kick_list:
         kick_x, kick_y = kick
         if not check_collisions(kick_x, kick_y, new_shape): # continue if no collisions found
             piece_rotation = new_rotation
             # move the piece
-            piece_x = piece_x + kick_x # update the position variables
-            piece_y = piece_y + kick_y
+            piece_x += kick_x # update the position variables
+            piece_y += kick_y
             piece_board = new_shape * piece_bags[0][0]
             refresh_ghost_board()
             game_state_changed = True
             return
     
 def mirror_piece():
-    global piece_board, piece_bags, game_state_changed
+    global piece_board, piece_bags, game_state_changed, piece_x, piece_y
     
-    piece_bags[0][0] = piece_inversions[piece_bags[0][0]]
-    new_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    mirrored_piece = piece_inversions[piece_bags[0][0]] # get the mirror
+    new_shape = pieces_dict[mirrored_piece]["shapes"][piece_rotation] # get its shape
 
-    if not check_collisions(0, 0, new_shape):
-        game_state_changed = True
-        piece_board = new_shape * piece_bags[0][0]
-        refresh_ghost_board()
-    else:
-        piece_bags[0][0] = piece_inversions[piece_bags[0][0]] # revert it back if collision
+    kick_list = pieces.kick_list_mirror
+
+    for kick in kick_list:
+        kick_x, kick_y = kick
+        if not check_collisions(kick_x, kick_y, new_shape):
+            game_state_changed = True
+            piece_x += kick_x # update the coordinates
+            piece_y += kick_y
+            piece_bags[0][0] = mirrored_piece # update the piece in the queue
+            piece_board = new_shape * piece_bags[0][0] # update the piece board
+            refresh_ghost_board()
+            break
 
 def hold_piece():
     global piece_bags, hold_pieces, hold_boards, next_boards, piece_board, game_state_changed
@@ -429,7 +433,6 @@ def lock_to_board():
     global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed
     for coords in numpy.argwhere(piece_board != 0):
         game_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
-        #game_board[piece_board != 0] = piece_board[piece_board != 0]
     piece_board = numpy.zeros_like(piece_board)
     piece_bags[0].pop(0)
     
