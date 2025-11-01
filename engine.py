@@ -227,15 +227,12 @@ def check_collisions(target_move_x, target_move_y, target_shape, ghost_piece = F
     for coords in numpy.argwhere(target_shape != 0): # returns a 1d numpy array of coordinates that meet the condition != 0
         if (coords[0] + new_y > settings.BOARD_HEIGHT - 1): # check for collision with the bottom of the board
             collided = True
-            print("collided with bottom")
             break
         if (coords[1] + new_x < 0 or coords[1] + new_x > settings.BOARD_WIDTH - 1): # check for collision with the sides of the board
             collided = True
-            print("collided with wall")
             break
         if (game_board[coords[0] + new_y, coords[1] + new_x]): # check for collision with minos
             collided = True
-            print("collided with mino")
             break
     if collided: return True
     else: return False
@@ -595,6 +592,12 @@ def reset_game():
 
     refresh_ghost_board()
     
+def handle_sonic_drop():
+    global softdrop_overrides, game_state_changed
+    game_state_changed = True
+    softdrop_overrides = True
+    return move_piece(0, settings.BOARD_HEIGHT)
+
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides, game_state_changed
     if current_gravity > 0.001:
@@ -653,6 +656,8 @@ def handle_events():
                     rotate_piece(3)
                 if event.key == settings.ROTATE_MIRROR:
                     mirror_piece()
+                if event.key == settings.MOVE_SONICDROP:
+                    handle_sonic_drop()
                 if event.key == settings.MOVE_HARDDROP:
                     handle_hard_drop()
                 if event.key == settings.KEY_RESET:

@@ -55,6 +55,7 @@ LOCKDOWN_THRESHOLD = 2000 # not a user variable
 MOVE_LEFT = pygame.K_LEFT
 MOVE_RIGHT = pygame.K_RIGHT
 MOVE_SOFTDROP = pygame.K_DOWN
+MOVE_SONICDROP = pygame.K_UP
 MOVE_HARDDROP = pygame.K_SPACE
 ROTATE_CW = pygame.K_z
 ROTATE_CCW = pygame.K_x
