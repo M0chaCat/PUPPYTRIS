@@ -1,12 +1,6 @@
 # Main
 
 import pygame
-import math
-import numpy
-from enum import Enum
-import random
-import pygame_gui
-import os
 
 import engine, ui, settings, skinloader, menu
 
@@ -53,6 +47,8 @@ load_game()
 mouse_was_down = False
 remaining_steps = 0 # remaining steps for gravity or soft-drop
 engine.game_state_changed = True # always true on the first frame
+
+print(pygame.K_KP4, pygame.K_KP6, pygame.K_KP5, pygame.K_SPACE, pygame.K_h, pygame.K_a, pygame.K_s, pygame.K_q, pygame.K_KP8, pygame.K_q, pygame.K_r, pygame.K_ESCAPE)
 
 def game_loop():
     global mouse_was_down

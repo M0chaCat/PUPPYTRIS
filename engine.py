@@ -4,7 +4,6 @@
 import pygame
 import math
 import numpy
-from enum import Enum
 import random
 import pygame_gui
 import os

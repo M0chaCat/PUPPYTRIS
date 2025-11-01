@@ -1,6 +1,5 @@
 # Piece maps
 
-import math
 import numpy
 
 import skinloader

@@ -1,19 +1,15 @@
 # Settings
 
 import pygame
-import math
-import numpy
-from enum import Enum
-import random
-import pygame_gui
 import os
+import json
 
-# DISPLAY_WIDTH = 3440
-# DISPLAY_HEIGHT = 1440 # implement this later!!!
+DISPLAY_WIDTH = 3440 # for fullscreen? implement this later!!!
+DISPLAY_HEIGHT = 1440
 
 BOARD_WIDTH = 10
+BOARD_MAIN_HEIGHT = 20
 BOARD_EXTRA_HEIGHT = 4
-BOARD_MAIN_HEIGHT = 20 
 BOARD_HEIGHT = BOARD_MAIN_HEIGHT + BOARD_EXTRA_HEIGHT
 
 DESIGN_WINDOW_WIDTH = 1400 #DONT CHANGE!!!!!
@@ -28,10 +24,10 @@ SCALE = min(WINDOW_WIDTH / DESIGN_WINDOW_WIDTH, WINDOW_HEIGHT / DESIGN_WINDOW_HE
 
 MAX_FRAMERATE = 60
 
-#if BOARD_WIDTH / WINDOW_WIDTH < BOARD_HEIGHT / WINDOW_HEIGHT:
-CELL_SIZE = WINDOW_HEIGHT//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 5) # +2 so its not too zoomed in
-#else: # if the board is REALLY wide # kity note: dis seems useless? # pupy note: is not :3 jus need to get it workying
-    #CELL_SIZE = WINDOW_WIDTH//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 2)
+if BOARD_WIDTH / WINDOW_WIDTH < BOARD_HEIGHT / WINDOW_HEIGHT:
+    CELL_SIZE = WINDOW_HEIGHT//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 5) # +5 so its not too zoomed in
+else: # if the board is REALLY wide
+    CELL_SIZE = WINDOW_WIDTH//(BOARD_WIDTH + 20) # TODO: improve the formula for calculating CELL_SIZE
     
 
 # --- Config / constants ---
@@ -51,21 +47,20 @@ STARTING_GRAVITY = 0
 
 ONEKF_ENABLED = False
 ONEKF_PRACTICE = True
-ONEKF_STRING = "1234567890qdrwbjfup;ashtgyneoizxmcvkl,./"
+ONEKF_STRING = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./"
 ONEKF_HOLD = pygame.K_SPACE
 
 LOCKDOWN_THRESHOLD = 2000 # not a user variable
 
-MOVE_LEFT = pygame.K_KP4
-MOVE_RIGHT = pygame.K_KP6
-MOVE_SOFTDROP = pygame.K_KP5
+MOVE_LEFT = pygame.K_LEFT
+MOVE_RIGHT = pygame.K_RIGHT
+MOVE_SOFTDROP = pygame.K_DOWN
 MOVE_HARDDROP = pygame.K_SPACE
-ROTATE_CW = pygame.K_h
-ROTATE_CCW = pygame.K_a
-ROTATE_180 = pygame.K_s
-ROTATE_MIRROR = pygame.K_q
-KEY_HOLD = pygame.K_KP8
-KEY_SWAP = pygame.K_q
+ROTATE_CW = pygame.K_z
+ROTATE_CCW = pygame.K_x
+ROTATE_180 = pygame.K_a
+KEY_HOLD = pygame.K_c
+ROTATE_MIRROR = pygame.K_s
 KEY_RESET = pygame.K_r
 KEY_EXIT = pygame.K_ESCAPE
 
@@ -86,10 +81,14 @@ UI_COLOR = (203, 166, 247)
 USE_SKIN = False
 WALLPAPER = None  # will hold the loaded surface after pygame.init()
 
+# load the settings
+with open("settings.json", "r") as file:
+    user_settings = json.load(file)
+    globals().update(user_settings)
+
 # load the font
 try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
 except Exception as e:
     print("Font load failed:", e)
-

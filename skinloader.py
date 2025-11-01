@@ -1,7 +1,6 @@
 # Skin-Loader
 
 import pygame
-import math
 import os
 
 import settings
