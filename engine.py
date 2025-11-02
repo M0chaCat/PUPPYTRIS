@@ -48,10 +48,13 @@ das_reset_clock = pygame.time.Clock()
 gravity_clock = pygame.time.Clock()
 lockdown_clock = pygame.time.Clock()
 onekf_prac_clock = pygame.time.Clock()
+prevent_harddrop_clock = pygame.time.Clock()
 
 total_lines_cleared = 0
 pieces_placed = 0
+pps = 0
 bag_counter = 0
+rng_state = random.getstate()
 das_timer = 0
 arr_timer = 0
 sdr_timer = 0
@@ -59,11 +62,13 @@ das_reset_timer = 0
 gravity_timer = 0
 lockdown_timer = 0
 onekf_prac_timer = 0
+prevent_harddrop_timer = 0
 das_timer_started = False
 arr_timer_started = False
 sdr_timer_started = False
 das_reset_timer_started = False
 onekf_prac_timer_started = False
+prevent_harddrop_timer_started = False
 softdrop_overrides = True
 game_state_changed = False
 queue_spawn_piece = True
@@ -92,6 +97,8 @@ topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
 PIECES_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
 game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+board_history = numpy.zeros((settings.MAX_BOARD_HISTORY, settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+# board_state_history = []
 piece_board = numpy.zeros((PIECES_WIDTH, PIECES_WIDTH), numpy.int8)
 ghost_board = numpy.zeros_like(piece_board)
 
@@ -146,11 +153,11 @@ class Timer:
 timer = Timer()
 timer.start()
 
-def calculate_pps():
+def update_pps():
+    global pps
     total_time = timer.get_seconds()
     pps = pieces_placed / total_time
     pps = round(pps, 2)
-    return str(pps)
 
 def generate_bag():
     global bag_counter
@@ -163,7 +170,7 @@ def generate_bag():
         if data.get("rare", False) and bag_counter % 2 == 1:
             continue
         generated_bag.append(piece)
-        
+    
     random.shuffle(generated_bag)
     return generated_bag
 
@@ -185,6 +192,12 @@ def spawn_piece():
     # top-out check
     if check_collisions(0, 0, piece_board):
         top_out()
+
+def update_game_board(new_board):
+    global game_board, game_state_changed
+    game_state_changed = True
+    #update board history and stuff
+    game_board = new_board.copy()
 
 def gen_topout_board():
     global topout_board
@@ -335,11 +348,11 @@ def hold_piece():
     refresh_ghost_board()
     hold_boards = gen_ui_boards(hold_boards, hold_pieces)
 
-def hold_piece_guideline():
+def hold_piece_guideline(infinite_holds = False):
     global piece_bags, hold_pieces, hold_boards, next_boards, game_state_changed, holds_left
     global piece_x, piece_y, piece_rotation, piece_board
     game_state_changed = True
-    if holds_left > 0:
+    if holds_left > 0 or infinite_holds:
         hold_pieces.append(piece_bags[0][0]) # take the current piece and add it to hold queue
         piece_bags[0].pop(0) # remove the current piece from piece bag
             
@@ -413,29 +426,35 @@ def clear_lines(lines_to_clear):
     global game_board, total_lines_cleared
     lines_cleared = numpy.where(lines_to_clear)[0].size
     total_lines_cleared += lines_cleared
-    new_board = game_board[~lines_to_clear] # masks the board, removing lines where the mask returned true
+    board_mask = game_board[~lines_to_clear] # masks the board, removing lines where the mask returned true
     new_lines = numpy.zeros((lines_cleared, settings.BOARD_WIDTH), dtype=numpy.int8)
-    game_board = numpy.vstack((new_lines, new_board), dtype=numpy.int8)
+    new_board = numpy.vstack((new_lines, board_mask), dtype=numpy.int8)
+    update_game_board(new_board)
     
-def handle_piece_lockdown(): # NEED TO IMPLEMENT PIECE FLASHING
-    # the way this function is called causes a lot of issues!!! REWRITE IT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    global lockdown_timer
-    lockdown_timer += lockdown_clock.tick()
-    if (lockdown_timer >= math.inf): #LOCKDOWN_THRESHOLD):                  TEMPORARILY DISABLED BECAUSE THIS SUCKS
-        lockdown_timer = 0
+def handle_lockdown(frametime): # NEED TO IMPLEMENT PIECE FLASHING
+    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
+    lockdown_timer += frametime
+    if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
+        print("starting the harddrop timer")
+        prevent_harddrop_timer = 0 # start the harddrop delay timer
+        prevent_harddrop_timer_started = True
+        prevent_harddrop_clock.tick()
         lock_to_board()
     
 def lock_to_board():
-    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed
+    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer
+    new_board = game_board.copy()
     for coords in numpy.argwhere(piece_board != 0):
-        game_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
+        new_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
+    update_game_board(new_board)
     piece_board = numpy.zeros_like(piece_board)
     piece_bags[0].pop(0)
     
     if not piece_bags[0]:
         piece_bags[0] = piece_bags[1]
         piece_bags[1] = generate_bag()
-        
+    
+    lockdown_timer = 0
     pieces_placed += 1
     find_completed_lines()
     queue_spawn_piece = True
@@ -466,10 +485,10 @@ def handle_movement(keys):
             move_piece(move_dir, 0)
             das_timer_started = True # start the DAS timer
             das_timer = 0
-            das_clock.tick() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
+            das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
             
         else:
-            das_timer += das_clock.tick() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
+            das_timer += das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
             
             if (das_timer > settings.DAS_THRESHOLD):
                 if not arr_timer_started and settings.ARR_THRESHOLD != 0:
@@ -547,20 +566,21 @@ def top_out():
     reset_game()
     
 def reset_game():
-    global game_board, piece_board, piece_bags, hold_pieces, bag_counter, holds_left
+    global game_board, board_history, piece_board, piece_bags, hold_pieces, bag_counter, holds_left
     global piece_x, piece_y, piece_rotation
-    global das_timer, arr_timer, sdr_timer, das_reset_timer
-    global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started
+    global das_timer, arr_timer, sdr_timer, das_reset_timer, prevent_harddrop_timer
+    global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started, prevent_harddrop_timer_started
     global last_move_dir, gravity_timer, softdrop_overrides, timer, total_lines_cleared, pieces_placed, queue_spawn_piece
     global hold_boards, next_boards
     
     # Clear boards
     game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+    board_history = numpy.zeros((settings.MAX_BOARD_HISTORY, settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
     piece_board = numpy.zeros((PIECES_WIDTH, PIECES_WIDTH), numpy.int8)
     
     # Reset timers
-    das_timer = arr_timer = sdr_timer = das_reset_timer = 0
-    das_timer_started = arr_timer_started = sdr_timer_started = das_reset_timer_started = False
+    das_timer = arr_timer = sdr_timer = das_reset_timer = prevent_harddrop_timer = 0
+    das_timer_started = arr_timer_started = sdr_timer_started = das_reset_timer_started = prevent_harddrop_timer_started = False
     
     # Reset active piece
     piece_x = PIECE_STARTING_X
@@ -599,7 +619,7 @@ def handle_sonic_drop():
     return move_piece(0, settings.BOARD_HEIGHT)
 
 def handle_soft_drop(keys, frametime):
-    global sdr_timer, sdr_timer_started, softdrop_overrides, game_state_changed
+    global sdr_timer, sdr_timer_started, softdrop_overrides
     if current_gravity > 0.001:
         softdrop_overrides = (settings.SDR_THRESHOLD <= 16.666667 / current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
     elif keys[settings.MOVE_SOFTDROP]:
@@ -613,7 +633,6 @@ def handle_soft_drop(keys, frametime):
         steps_to_move = max(int(frametime / settings.SDR_THRESHOLD), 1) # predicts how much softdrop should move for first button press
         
     if softdrop_overrides:
-        game_state_changed = True
         if not sdr_timer_started:
             sdr_timer = 0
             sdr_clock.tick()
@@ -636,10 +655,17 @@ def handle_soft_drop(keys, frametime):
     return 0
         
 def handle_hard_drop():
-    global game_state_changed
-    game_state_changed = True
-    move_piece(0, settings.BOARD_HEIGHT + 10)
-    lock_to_board()
+    global prevent_harddrop_clock, prevent_harddrop_timer, prevent_harddrop_timer_started, prevent_harddrop_clock
+    prevent_harddrop_timer += prevent_harddrop_clock.tick()
+    if not prevent_harddrop_timer_started or prevent_harddrop_timer >= settings.PREVENT_HARDDROP_THRESHOLD:
+        if prevent_harddrop_timer_started: print("decided not to eat input", prevent_harddrop_timer)
+        move_piece(0, settings.BOARD_HEIGHT + 10)
+        lock_to_board()
+    else: print("ate input", prevent_harddrop_timer)
+
+    prevent_harddrop_timer = 0 # reset either way, because it only applies to the first hard drop after lockdown
+    prevent_harddrop_clock.tick()
+    prevent_harddrop_timer_started = False # remove the timer flag
     
 def handle_events():
     global running, STATE, game_state_changed
@@ -647,7 +673,7 @@ def handle_events():
         if event.type == pygame.KEYDOWN:
             if not settings.ONEKF_ENABLED:
                 if event.key == settings.KEY_HOLD:
-                    hold_piece_guideline()
+                    hold_piece_guideline(settings.INFINITE_HOLDS)
                 if event.key == settings.ROTATE_180:
                     rotate_piece(2)
                 if event.key == settings.ROTATE_CW:

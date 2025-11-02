@@ -36,21 +36,24 @@ PIECE_TYPES_PENTA = 18
 HOLD_PIECES_COUNT_TETRA = 1
 HOLD_PIECES_COUNT_PENTA = 2
 NEXT_PIECES_COUNT = 5
+INFINITE_HOLDS = False
 
 is_penta = False
 
 DAS_THRESHOLD = 100
 ARR_THRESHOLD = 0
 SDR_THRESHOLD = 0 # SDR = soft drop rate
-DAS_RESET_THRESHOLD = 0
+DAS_RESET_THRESHOLD = 0 # experimental mechanic that causes DAS to stay charged for the duration of the value in MS
+PREVENT_HARDDROP_THRESHOLD = 400
+
 STARTING_GRAVITY = 0
+MAX_BOARD_HISTORY = 1000
+LOCKDOWN_THRESHOLD = 1000 # not a user variable
 
 ONEKF_ENABLED = False
 ONEKF_PRACTICE = True
 ONEKF_STRING = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./"
 ONEKF_HOLD = pygame.K_SPACE
-
-LOCKDOWN_THRESHOLD = 2000 # not a user variable
 
 MOVE_LEFT = pygame.K_LEFT
 MOVE_RIGHT = pygame.K_RIGHT
@@ -62,6 +65,7 @@ ROTATE_CCW = pygame.K_x
 ROTATE_180 = pygame.K_a
 KEY_HOLD = pygame.K_c
 ROTATE_MIRROR = pygame.K_s
+KEY_UNDO = pygame.K_z
 KEY_RESET = pygame.K_r
 KEY_EXIT = pygame.K_ESCAPE
 

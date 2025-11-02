@@ -55,15 +55,16 @@ def game_loop():
     if engine.queue_spawn_piece:
         engine.spawn_piece()
         
-    remaining_steps = engine.handle_soft_drop(keys, frametime)
-    remaining_steps += engine.handle_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
+    remaining_grav = engine.handle_soft_drop(keys, frametime)
+    remaining_grav += engine.handle_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
-    #engine.handle_lockdown
+    if keys[settings.KEY_UNDO]: engine.undo_board(1)
+    if engine.check_touching_ground():
+        engine.handle_lockdown(frametime)
     if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)
-        engine.handle_leftover_gravity(remaining_steps)
-
+        engine.handle_leftover_gravity(remaining_grav)
     if engine.game_state_changed:
         screen = engine.MAIN_SCREEN
         screen.blit(ui.draw_background(), (0, 0))
@@ -80,9 +81,9 @@ def game_loop():
         btn.draw(screen)
     engine.game_state_changed = False # reset it for next frame
     mins_secs, dot_ms = engine.timer.split_strings()
-    pps = engine.calculate_pps()
+    engine.update_pps()
     ui.draw_stats_panel_text(
-        PPS=pps,
+        PPS=str(engine.pps),
         TIMES=mins_secs,
         TIMEMS=dot_ms,
         CLEARED=str(engine.total_lines_cleared)
