@@ -44,7 +44,7 @@ DAS_THRESHOLD = 100
 ARR_THRESHOLD = 0
 SDR_THRESHOLD = 0 # SDR = soft drop rate
 DAS_RESET_THRESHOLD = 0 # experimental mechanic that causes DAS to stay charged for the duration of the value in MS
-PREVENT_HARDDROP_THRESHOLD = 400
+PREVENT_HARDDROP_THRESHOLD = 300
 
 STARTING_GRAVITY = 0
 MAX_BOARD_HISTORY = 1000
@@ -96,4 +96,5 @@ try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
 except Exception as e:
+
     print("Font load failed:", e)
