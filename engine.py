@@ -113,6 +113,10 @@ piece_y = PIECE_STARTING_Y
 piece_rotation = PIECE_STARTING_ROTATION
 ghost_piece_x = PIECE_STARTING_X
 ghost_piece_y = PIECE_STARTING_Y
+lockdown_start_x = PIECE_STARTING_X
+lockdown_start_y = -settings.BOARD_EXTRA_HEIGHT
+lockdown_start_rotation = PIECE_STARTING_ROTATION
+lockdown_resets_left = 15
 
 class Timer:
     def __init__(self):
@@ -430,12 +434,66 @@ def clear_lines(lines_to_clear):
     new_lines = numpy.zeros((lines_cleared, settings.BOARD_WIDTH), dtype=numpy.int8)
     new_board = numpy.vstack((new_lines, board_mask), dtype=numpy.int8)
     update_game_board(new_board)
+
+def handle_lockdown_classic(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entry reset style.
+    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
+    lockdown_timer += frametime
+
+    if current_gravity == 0:
+        fall_time = math.inf
+    else:
+        fall_time = 16.6666667/current_gravity
+
+    if lockdown_timer >= fall_time:
+        prevent_harddrop_timer = 0 # start the harddrop delay timer
+        prevent_harddrop_timer_started = True
+        prevent_harddrop_clock.tick()
+        lock_to_board()
     
-def handle_lockdown(frametime): # NEED TO IMPLEMENT PIECE FLASHING
+def handle_lockdown_simple(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entry reset style.
     global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
     lockdown_timer += frametime
     if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
-        print("starting the harddrop timer")
+        prevent_harddrop_timer = 0 # start the harddrop delay timer
+        prevent_harddrop_timer_started = True
+        prevent_harddrop_clock.tick()
+        lock_to_board()
+
+def handle_lockdown_step(frametime): # NEED TO IMPLEMENT PIECE FLASHING. step reset (TGM) style.
+    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started, lockdown_start_y
+
+    if lockdown_timer == 0: lockdown_start_y = piece_y # set the initial variable
+    lockdown_timer += frametime
+    if lockdown_start_y < piece_y:
+        lockdown_timer = 0 # if the piece has fallen, reset the timer
+        lockdown_start_y = piece_y # reset the position variable
+
+    if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
+        prevent_harddrop_timer = 0 # start the harddrop delay timer
+        prevent_harddrop_timer_started = True
+        prevent_harddrop_clock.tick()
+        lock_to_board()
+
+def handle_lockdown_guideline(frametime): # NEED TO IMPLEMENT PIECE FLASHING. move reset (guideline) style.
+    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
+    global lockdown_start_x, lockdown_start_y, lockdown_start_rotation, lockdown_resets_left
+
+    if lockdown_timer == 0:
+        lockdown_start_x = piece_x # set the initial variables
+        lockdown_start_y = piece_y
+        lockdown_start_rotation = piece_rotation
+
+    lockdown_timer += frametime
+    piece_moved = lockdown_start_x != piece_x or lockdown_start_y != piece_y or lockdown_start_rotation != piece_rotation
+    if piece_moved and lockdown_resets_left > 0: # if the piece has moved at all
+        lockdown_resets_left -= 1
+        lockdown_timer = 0 # if the piece has moved, reset the timer
+        lockdown_start_x = piece_x # reset the position variables
+        lockdown_start_y = piece_y
+        lockdown_start_rotation = piece_rotation
+    print(lockdown_resets_left)
+    if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
+        lockdown_resets_left = settings.LOCKDOWN_RESETS_COUNT
         prevent_harddrop_timer = 0 # start the harddrop delay timer
         prevent_harddrop_timer_started = True
         prevent_harddrop_clock.tick()

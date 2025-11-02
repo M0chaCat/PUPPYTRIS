@@ -60,7 +60,7 @@ def game_loop():
     engine.handle_events()
     if keys[settings.KEY_UNDO]: engine.undo_board(1)
     if engine.check_touching_ground():
-        engine.handle_lockdown(frametime)
+        engine.handle_lockdown_step(frametime)
     if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)

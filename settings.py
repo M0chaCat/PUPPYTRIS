@@ -28,7 +28,6 @@ if BOARD_WIDTH / WINDOW_WIDTH < BOARD_HEIGHT / WINDOW_HEIGHT:
     CELL_SIZE = WINDOW_HEIGHT//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 5) # +5 so its not too zoomed in
 else: # if the board is REALLY wide
     CELL_SIZE = WINDOW_WIDTH//(BOARD_WIDTH + 20) # TODO: improve the formula for calculating CELL_SIZE
-    
 
 # --- Config / constants ---
 PIECE_TYPES_TETRA = 7
@@ -36,6 +35,7 @@ PIECE_TYPES_PENTA = 18
 HOLD_PIECES_COUNT_TETRA = 1
 HOLD_PIECES_COUNT_PENTA = 2
 NEXT_PIECES_COUNT = 5
+LOCKDOWN_RESETS_COUNT = 14
 INFINITE_HOLDS = False
 
 is_penta = False
@@ -46,9 +46,12 @@ SDR_THRESHOLD = 0 # SDR = soft drop rate
 DAS_RESET_THRESHOLD = 0 # experimental mechanic that causes DAS to stay charged for the duration of the value in MS
 PREVENT_HARDDROP_THRESHOLD = 300
 
-STARTING_GRAVITY = 0
+# not user variables
+STARTING_GRAVITY = 0.5
 MAX_BOARD_HISTORY = 1000
-LOCKDOWN_THRESHOLD = 1000 # not a user variable
+LOCKDOWN_THRESHOLD = 1000
+LOCKDOWN_THRESHOLD_STEP = 400
+LOCKDOWN_THRESHOLD_GUIDELINE = 400
 
 ONEKF_ENABLED = False
 ONEKF_PRACTICE = True
@@ -96,5 +99,4 @@ try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
 except Exception as e:
-
     print("Font load failed:", e)
