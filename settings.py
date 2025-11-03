@@ -48,7 +48,7 @@ PREVENT_HARDDROP_THRESHOLD = 300
 
 # not user variables
 STARTING_GRAVITY = 0
-MAX_HISTORY = 1000
+MAX_HISTORY = 2000
 LOCKDOWN_THRESHOLD = 1000
 LOCKDOWN_THRESHOLD_STEP = 400
 LOCKDOWN_THRESHOLD_GUIDELINE = 400
@@ -90,7 +90,9 @@ USE_SKIN = False
 WALLPAPER = None  # will hold the loaded surface after pygame.init()
 
 # load the settings
-with open("settings.json", "r") as file:
+script_dir = os.path.dirname(os.path.abspath(__file__))
+settings_dir = os.path.join(script_dir, "settings.json")
+with open(settings_dir, "r") as file:
     user_settings = json.load(file)
     globals().update(user_settings)
 

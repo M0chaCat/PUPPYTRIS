@@ -159,10 +159,12 @@ class Timer:
 timer = Timer()
 
 def update_starting_coords():
-    global piece_width, starting_x, starting_y
+    global piece_width, piece_x, piece_y, starting_x, starting_y
     piece_width = pieces_dict[piece_bags[0][0]]["shapes"][STARTING_ROTATION].shape[1]
     starting_x = (settings.BOARD_WIDTH - piece_width) // 2 # dynamically calculate starting position based on board and piece size.
     starting_y = settings.BOARD_EXTRA_HEIGHT - (piece_width//5 + 1)
+    piece_x = starting_x
+    piece_y = starting_y
 
 def update_pps():
     global pps
@@ -188,8 +190,6 @@ def spawn_piece():
     global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_left, game_state_changed
     queue_spawn_piece = False
     update_starting_coords()
-    piece_x = starting_x
-    piece_y = starting_y
     piece_rotation = STARTING_ROTATION
     holds_left = hold_pieces_count
     game_state_changed = True
@@ -229,37 +229,36 @@ def update_history():
 
 def undo(amount):
     global game_board, pieces_placed, lines_cleared, piece_bags, hold_pieces, rng_state, pps, bag_count
-    global piece_x, piece_y, piece_rotation, holds_left
-    global game_state_changed, history_index, piece_board
-    game_state_changed = True
+    global piece_x, piece_y, piece_rotation, holds_left, piece_board
+    global game_state_changed, history_index
 
-    history_index -= amount
-    if history_index < 0:
-        history_index = settings.MAX_HISTORY - amount # make sure this doesn't miss one
+    if pieces_placed - amount >= 0:
+        game_state_changed = True
+        history_index -= amount
+        if history_index < 0:
+            history_index = settings.MAX_HISTORY - amount # make sure this doesn't miss one
+        state = game_history[history_index]
 
-    state = game_history[history_index]
+        # revert history
+        game_board = state["board"].copy()
+        pieces_placed = state["pieces"]
+        lines_cleared = state["lines"]
+        piece_bags = copy.deepcopy(state["next"])
+        hold_pieces = copy.deepcopy(state["hold"])
+        rng_state = state["rng"]
+        bag_count = state["bag_count"]
 
-    # revert history
-    game_board = state["board"].copy()
-    pieces_placed = state["pieces"]
-    lines_cleared = state["lines"]
-    piece_bags = copy.deepcopy(state["next"])
-    hold_pieces = copy.deepcopy(state["hold"])
-    rng_state = state["rng"]
-    bag_count = state["bag_count"]
+        # reset position
+        update_starting_coords()
+        piece_rotation = STARTING_ROTATION
+        holds_left = hold_pieces_count
+        random.setstate(rng_state)
 
-    # reset position
-    piece_x = 3
-    piece_y = 2
-    piece_rotation = STARTING_ROTATION
-    holds_left = hold_pieces_count
-    random.setstate(rng_state)
-
-    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board
-    gen_topout_board()
-    gen_hold_boards()
-    gen_next_boards()
-    update_ghost_piece()
+        piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board
+        gen_topout_board()
+        gen_hold_boards()
+        gen_next_boards()
+        update_ghost_piece()
 
 def gen_topout_board():
     global topout_board
@@ -434,8 +433,6 @@ def hold_guideline(infinite_holds = False):
         # refresh current active piece
         piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][STARTING_ROTATION] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
         update_starting_coords()
-        piece_x = starting_x
-        piece_y = starting_y
         piece_rotation = STARTING_ROTATION
         holds_left -= 1
 
