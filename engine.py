@@ -8,6 +8,7 @@ import random
 import pygame_gui
 import os
 import time
+import copy
 
 import settings, pieces, skinloader
 
@@ -50,11 +51,13 @@ lockdown_clock = pygame.time.Clock()
 onekf_prac_clock = pygame.time.Clock()
 prevent_harddrop_clock = pygame.time.Clock()
 
-total_lines_cleared = 0
+lines_cleared = 0
 pieces_placed = 0
 pps = 0
-bag_counter = 0
-rng_state = random.getstate()
+bag_count = 0
+rng_seed = random.getstate()
+rng_state = rng_seed
+history_index = 0
 das_timer = 0
 arr_timer = 0
 sdr_timer = 0
@@ -97,8 +100,7 @@ topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
 PIECES_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
 game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-board_history = numpy.zeros((settings.MAX_BOARD_HISTORY, settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-# board_state_history = []
+game_history = [None] * settings.MAX_HISTORY
 piece_board = numpy.zeros((PIECES_WIDTH, PIECES_WIDTH), numpy.int8)
 ghost_board = numpy.zeros_like(piece_board)
 
@@ -155,7 +157,6 @@ class Timer:
         return elapsed
     
 timer = Timer()
-timer.start()
 
 def update_pps():
     global pps
@@ -164,17 +165,16 @@ def update_pps():
     pps = round(pps, 2)
 
 def generate_bag():
-    global bag_counter
-    bag_counter += 1
+    global bag_count
+    bag_count += 1
     
     generated_bag = []
     
-    for piece, data in pieces_dict.items():
+    for piece, data in pieces_dict.items(): # put all the pieces in the bag
         # Skip if rare piece (x) and we're on an odd bag
-        if data.get("rare", False) and bag_counter % 2 == 1:
+        if data.get("rare", False) and bag_count % 2 == 1:
             continue
         generated_bag.append(piece)
-    
     random.shuffle(generated_bag)
     return generated_bag
 
@@ -188,11 +188,10 @@ def spawn_piece():
     game_state_changed = True
     
     piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
-    next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
-
-    next_boards = gen_ui_boards(next_boards, next_pieces)
+    gen_next_boards()
     gen_topout_board()
-    refresh_ghost_board()
+    update_history()
+    update_ghost_piece()
     # top-out check
     if check_collisions(0, 0, piece_board):
         top_out()
@@ -200,8 +199,60 @@ def spawn_piece():
 def update_game_board(new_board):
     global game_board, game_state_changed
     game_state_changed = True
-    #update board history and stuff
     game_board = new_board.copy()
+
+def update_history():
+    global history_index, game_history
+
+    history_index += 1
+    if history_index == settings.MAX_HISTORY:
+        history_index = 0
+
+    game_history[history_index] = {
+        "board": game_board.copy(),
+        "pieces": pieces_placed,
+        "lines": lines_cleared,
+        "next": copy.deepcopy(piece_bags),
+        "hold": copy.deepcopy(hold_pieces),
+        "rng": rng_state,
+        #"level": level,
+        #"score": score,
+        "bag_count": bag_count
+    }
+
+def undo(amount):
+    global game_board, pieces_placed, lines_cleared, piece_bags, hold_pieces, rng_state, pps, bag_count
+    global piece_x, piece_y, piece_rotation, holds_left
+    global game_state_changed, history_index, piece_board
+    game_state_changed = True
+
+    history_index -= amount
+    if history_index < 0:
+        history_index = settings.MAX_HISTORY - amount # make sure this doesn't miss one
+
+    state = game_history[history_index]
+
+    # revert history
+    game_board = state["board"].copy()
+    pieces_placed = state["pieces"]
+    lines_cleared = state["lines"]
+    piece_bags = copy.deepcopy(state["next"])
+    hold_pieces = copy.deepcopy(state["hold"])
+    rng_state = state["rng"]
+    bag_count = state["bag_count"]
+
+    # reset position
+    piece_x = PIECE_STARTING_X
+    piece_y = PIECE_STARTING_Y
+    piece_rotation = PIECE_STARTING_ROTATION
+    holds_left = hold_pieces_count
+    random.setstate(rng_state)
+
+    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board
+    gen_topout_board()
+    gen_hold_boards()
+    gen_next_boards()
+    update_ghost_piece()
 
 def gen_topout_board():
     global topout_board
@@ -217,14 +268,14 @@ def gen_topout_board():
     else:
         topout_board = next_shape
 
-def refresh_ghost_board(): # make sure piece_board has been updated before calling this function
+def update_ghost_piece(): # make sure piece_board has been updated before calling this function
     global ghost_piece_x, ghost_piece_y, ghost_board, piece_y, piece_board
     if settings.ONEKF_ENABLED: # return an empty board if 1kf is enabled
         ghost_board = numpy.zeros_like(ghost_board)
         return
     # calculate the coords
     ghost_piece_x = piece_x
-    ghost_piece_y = piece_y # STARTS at piece y and looks from there
+    ghost_piece_y = piece_y # STARTS at piece y and looks from there 
     for _ in range(piece_y, settings.BOARD_HEIGHT):
         if not check_collisions(0, 1, piece_board, ghost_piece=True): # fourth param for ghost pieces
             ghost_piece_y += 1
@@ -296,7 +347,7 @@ def rotate_piece(amount):
             piece_x += kick_x # update the position variables
             piece_y += kick_y
             piece_board = new_shape * piece_bags[0][0]
-            refresh_ghost_board()
+            update_ghost_piece()
             game_state_changed = True
             return
     
@@ -316,7 +367,7 @@ def mirror_piece():
             piece_y += kick_y
             piece_bags[0][0] = mirrored_piece # update the piece in the queue
             piece_board = new_shape * piece_bags[0][0] # update the piece board
-            refresh_ghost_board()
+            update_ghost_piece()
             break
 
 def hold_piece():
@@ -337,10 +388,8 @@ def hold_piece():
             piece_bags[0].insert(0, hold_pieces[0]) # insert the next hold piece as the new current piece
             hold_pieces.pop(0) # remove the inserted hold piece from the hold queue
         else:
-            # refresh the next queue (only ever necessary if the hold queue wasn't already full)
-            next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
-            next_boards = gen_ui_boards(next_boards, next_pieces)
-            gen_ui_boards(next_boards, next_pieces)
+            # only ever necessary if the hold queue wasn't already full
+            gen_next_boards()
     
     # regen bags if the bag is emptied because of hold
     if not piece_bags[0]:
@@ -349,13 +398,14 @@ def hold_piece():
         
     # refresh current active piece
     piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
-    refresh_ghost_board()
-    hold_boards = gen_ui_boards(hold_boards, hold_pieces)
+    update_ghost_piece()
+    gen_hold_boards()
 
-def hold_piece_guideline(infinite_holds = False):
+def hold_guideline(infinite_holds = False):
     global piece_bags, hold_pieces, hold_boards, next_boards, game_state_changed, holds_left
     global piece_x, piece_y, piece_rotation, piece_board
     game_state_changed = True
+
     if holds_left > 0 or infinite_holds:
         hold_pieces.append(piece_bags[0][0]) # take the current piece and add it to hold queue
         piece_bags[0].pop(0) # remove the current piece from piece bag
@@ -365,10 +415,8 @@ def hold_piece_guideline(infinite_holds = False):
             piece_bags[0].insert(0, hold_pieces[0]) # insert the next hold piece as the new current piece
             hold_pieces.pop(0) # remove the inserted hold piece from the hold queue
         else:
-            # refresh the next queue (only ever necessary if the hold queue wasn't already full)
-            next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
-            next_boards = gen_ui_boards(next_boards, next_pieces)
-            gen_ui_boards(next_boards, next_pieces)
+            # only ever necessary if the hold queue wasn't already full
+            gen_next_boards()
         
         # regen bags if the bag is emptied because of hold
         if not piece_bags[0]:
@@ -382,8 +430,8 @@ def hold_piece_guideline(infinite_holds = False):
         piece_rotation = PIECE_STARTING_ROTATION
         holds_left -= 1
 
-        refresh_ghost_board()
-        hold_boards = gen_ui_boards(hold_boards, hold_pieces)
+        update_ghost_piece()
+        gen_hold_boards()
 
         # top-out check
         if check_collisions(0, 0, piece_board):
@@ -407,35 +455,47 @@ def move_piece(move_x, move_y):
             break
     
     piece_board = current_shape * piece_bags[0][0]
-    if move_x != 0: refresh_ghost_board()
+    if move_x != 0: update_ghost_piece()
     return remaining_steps
 
-def gen_ui_boards(boards_list, pieces_list):
-    boards_list = [] # clear previous
-    for piece_id in pieces_list:
+def gen_next_boards():
+    global next_boards
+    
+    next_boards = []
+    next_list = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
+
+    for piece_id in next_list:
         piece_shape = pieces_dict[piece_id]["shapes"][0]
         board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
         for coords in numpy.argwhere(piece_shape != 0):
             board[coords[0], coords[1]] = piece_id
-        boards_list.append(board)
-    return boards_list
+        next_boards.append(board)
 
-def find_completed_lines():
+def gen_hold_boards():
+    global hold_boards
+
+    hold_boards = []
+
+    for piece_id in hold_pieces:
+        piece_shape = pieces_dict[piece_id]["shapes"][0]
+        board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
+        for coords in numpy.argwhere(piece_shape != 0):
+            board[coords[0], coords[1]] = piece_id
+        hold_boards.append(board)
+        
+def clear_lines():
+    global game_board, lines_cleared
     # returns a 1d array of booleans for each line, true if its completed, false if not
     lines_to_clear = numpy.all(game_board != 0, axis=1)
-    if lines_to_clear.size > 0:
-        clear_lines(lines_to_clear)
-        
-def clear_lines(lines_to_clear):
-    global game_board, total_lines_cleared
-    lines_cleared = numpy.where(lines_to_clear)[0].size
-    total_lines_cleared += lines_cleared
-    board_mask = game_board[~lines_to_clear] # masks the board, removing lines where the mask returned true
-    new_lines = numpy.zeros((lines_cleared, settings.BOARD_WIDTH), dtype=numpy.int8)
-    new_board = numpy.vstack((new_lines, board_mask), dtype=numpy.int8)
-    update_game_board(new_board)
+    line_clear_count = numpy.where(lines_to_clear)[0].size
+    if line_clear_count > 0:
+        lines_cleared += line_clear_count
+        board_mask = game_board[~lines_to_clear] # masks the board, removing lines where the mask returned true
+        new_lines = numpy.zeros((line_clear_count, settings.BOARD_WIDTH), dtype=numpy.int8)
+        new_board = numpy.vstack((new_lines, board_mask), dtype=numpy.int8)
+        update_game_board(new_board)
 
-def handle_lockdown_classic(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entry reset style.
+def lockdown_classic(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entry reset style.
     global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
     lockdown_timer += frametime
 
@@ -448,18 +508,18 @@ def handle_lockdown_classic(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entr
         prevent_harddrop_timer = 0 # start the harddrop delay timer
         prevent_harddrop_timer_started = True
         prevent_harddrop_clock.tick()
-        lock_to_board()
+        lock_piece()
     
-def handle_lockdown_simple(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entry reset style.
+def lockdown_simple(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entry reset style.
     global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
     lockdown_timer += frametime
     if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
         prevent_harddrop_timer = 0 # start the harddrop delay timer
         prevent_harddrop_timer_started = True
         prevent_harddrop_clock.tick()
-        lock_to_board()
+        lock_piece()
 
-def handle_lockdown_step(frametime): # NEED TO IMPLEMENT PIECE FLASHING. step reset (TGM) style.
+def lockdown_step(frametime): # NEED TO IMPLEMENT PIECE FLASHING. step reset (TGM) style.
     global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started, lockdown_start_y
 
     if lockdown_timer == 0: lockdown_start_y = piece_y # set the initial variable
@@ -472,9 +532,9 @@ def handle_lockdown_step(frametime): # NEED TO IMPLEMENT PIECE FLASHING. step re
         prevent_harddrop_timer = 0 # start the harddrop delay timer
         prevent_harddrop_timer_started = True
         prevent_harddrop_clock.tick()
-        lock_to_board()
+        lock_piece()
 
-def handle_lockdown_guideline(frametime): # NEED TO IMPLEMENT PIECE FLASHING. move reset (guideline) style.
+def lockdown_guideline(frametime): # NEED TO IMPLEMENT PIECE FLASHING. move reset (guideline) style.
     global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
     global lockdown_start_x, lockdown_start_y, lockdown_start_rotation, lockdown_resets_left
 
@@ -491,32 +551,32 @@ def handle_lockdown_guideline(frametime): # NEED TO IMPLEMENT PIECE FLASHING. mo
         lockdown_start_x = piece_x # reset the position variables
         lockdown_start_y = piece_y
         lockdown_start_rotation = piece_rotation
-    print(lockdown_resets_left)
+
     if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
         lockdown_resets_left = settings.LOCKDOWN_RESETS_COUNT
         prevent_harddrop_timer = 0 # start the harddrop delay timer
         prevent_harddrop_timer_started = True
         prevent_harddrop_clock.tick()
-        lock_to_board()
+        lock_piece()
     
-def lock_to_board():
+def lock_piece():
     global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer
     new_board = game_board.copy()
     for coords in numpy.argwhere(piece_board != 0):
         new_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
-    update_game_board(new_board)
     piece_board = numpy.zeros_like(piece_board)
     piece_bags[0].pop(0)
     
     if not piece_bags[0]:
         piece_bags[0] = piece_bags[1]
         piece_bags[1] = generate_bag()
-    
+
     lockdown_timer = 0
     pieces_placed += 1
-    find_completed_lines()
     queue_spawn_piece = True
-    refresh_ghost_board()
+    update_game_board(new_board)
+    clear_lines()
+    update_ghost_piece()
     
 def handle_movement(keys):
     global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir
@@ -617,23 +677,22 @@ def handle_1kf(key, keydir = "DOWN"):
     game_state_changed = True
     move_piece(steps_to_move, 0) # done in two steps because otherwise it stops early when colliding with the wall
     move_piece(0, settings.BOARD_HEIGHT)
-    lock_to_board()
+    lock_piece()
          
 def top_out():
     # can add extra functionality later like displaying a score panel at the end
     reset_game()
     
 def reset_game():
-    global game_board, board_history, piece_board, piece_bags, hold_pieces, bag_counter, holds_left
-    global piece_x, piece_y, piece_rotation
+    global game_board, game_history, piece_board, piece_bags, hold_pieces, bag_count, holds_left
+    global piece_x, piece_y, piece_rotation, hold_boards, next_boards
     global das_timer, arr_timer, sdr_timer, das_reset_timer, prevent_harddrop_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started, prevent_harddrop_timer_started
-    global last_move_dir, gravity_timer, softdrop_overrides, timer, total_lines_cleared, pieces_placed, queue_spawn_piece
-    global hold_boards, next_boards
+    global last_move_dir, gravity_timer, softdrop_overrides, timer, lines_cleared, pieces_placed, queue_spawn_piece, STATE, game_state_changed
     
     # Clear boards
     game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-    board_history = numpy.zeros((settings.MAX_BOARD_HISTORY, settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+    game_history = [None] * settings.MAX_HISTORY
     piece_board = numpy.zeros((PIECES_WIDTH, PIECES_WIDTH), numpy.int8)
     
     # Reset timers
@@ -647,8 +706,9 @@ def reset_game():
     last_move_dir = 0
     gravity_timer = 0
     softdrop_overrides = True
-    bag_counter = 0
+    bag_count = 0
     queue_spawn_piece = True
+    game_state_changed = True
     
     # Reset hold
     hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
@@ -661,16 +721,14 @@ def reset_game():
     
     # Reset stats
     timer.reset()
-    total_lines_cleared = 0
+    lines_cleared = 0
     pieces_placed = 0
+    STATE = 2
 
-    # generate the next boards
-    next_pieces = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
-    next_boards = gen_ui_boards(next_boards, next_pieces)
-
-    refresh_ghost_board()
+    gen_next_boards()
+    update_ghost_piece()
     
-def handle_sonic_drop():
+def sonic_drop():
     global softdrop_overrides, game_state_changed
     game_state_changed = True
     softdrop_overrides = True
@@ -712,14 +770,12 @@ def handle_soft_drop(keys, frametime):
         sdr_timer_started = False
     return 0
         
-def handle_hard_drop():
+def hard_drop():
     global prevent_harddrop_clock, prevent_harddrop_timer, prevent_harddrop_timer_started, prevent_harddrop_clock
     prevent_harddrop_timer += prevent_harddrop_clock.tick()
     if not prevent_harddrop_timer_started or prevent_harddrop_timer >= settings.PREVENT_HARDDROP_THRESHOLD:
-        if prevent_harddrop_timer_started: print("decided not to eat input", prevent_harddrop_timer)
         move_piece(0, settings.BOARD_HEIGHT + 10)
-        lock_to_board()
-    else: print("ate input", prevent_harddrop_timer)
+        lock_piece()
 
     prevent_harddrop_timer = 0 # reset either way, because it only applies to the first hard drop after lockdown
     prevent_harddrop_clock.tick()
@@ -731,7 +787,7 @@ def handle_events():
         if event.type == pygame.KEYDOWN:
             if not settings.ONEKF_ENABLED:
                 if event.key == settings.KEY_HOLD:
-                    hold_piece_guideline(settings.INFINITE_HOLDS)
+                    hold_guideline(settings.INFINITE_HOLDS)
                 if event.key == settings.ROTATE_180:
                     rotate_piece(2)
                 if event.key == settings.ROTATE_CW:
@@ -741,24 +797,25 @@ def handle_events():
                 if event.key == settings.ROTATE_MIRROR:
                     mirror_piece()
                 if event.key == settings.MOVE_SONICDROP:
-                    handle_sonic_drop()
+                    sonic_drop()
                 if event.key == settings.MOVE_HARDDROP:
-                    handle_hard_drop()
+                    hard_drop()
                 if event.key == settings.KEY_RESET:
                     reset_game()
                 if event.key == settings.KEY_EXIT:
                     reset_game()
-                    STATE = 0
+                if event.key == settings.KEY_UNDO:
+                    undo(1)
             else:
                 if numpy.isin(event.key, onekf_key_array):
                     handle_1kf(event.key)
                 if event.key == settings.ONEKF_HOLD:
-                    hold_piece_guideline()
+                    hold_guideline()
 
         if event.type == pygame.QUIT:
             running = False
             
-def handle_gravity(frametime):
+def do_gravity(frametime):
     global gravity_timer, current_gravity, game_state_changed
     
     if current_gravity >= 19.8: # make instant drop at 20g regardless of framerate
@@ -777,11 +834,11 @@ def handle_gravity(frametime):
             return remaining_steps
     return 0
             
-def handle_leftover_gravity(remaining_steps): # for when a piece falls, touches the ground, then loses ground inside the same frame. prevents hanging for a frame.
+def do_leftover_gravity(remaining_steps): # for when a piece falls, touches the ground, then loses ground inside the same frame. prevents hanging for a frame.
     if remaining_steps != 0: # check if the piece can move at all
         move_piece(0, remaining_steps) # move the piece by the leftover amount from this frame
 
-def handle_swap_mode(usepenta):
+def swap_mode(usepenta):
     global pieces_dict, piece_inversions, hold_pieces_count, holds_left
     if not skinloader.has_penta and usepenta:
         print("Your skin does not support pentaminos!")

@@ -51,7 +51,6 @@ if has_penta:
         raw_skin = sprite_sheet.subsurface(cell_rect)
         scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
         penta_skins.append(scaled_skin)
-    
         
 # --- Load other skins (right of top-left column) preserving original transparency ---
 other_skins = []

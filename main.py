@@ -21,12 +21,13 @@ except:
 # pre game stuff
 def load_game():
     skinloader.set_other_skins()
-    engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
-    engine.piece_bags[1] = engine.generate_bag()
-    next_pieces = (engine.piece_bags[0] + engine.piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
-    engine.next_boards = engine.gen_ui_boards(engine.next_boards, next_pieces)
+    # engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
+    # engine.piece_bags[1] = engine.generate_bag()
+    engine.piece_bags[0] = [1,1,1,1,1,1,1] # generate the first two bags
+    engine.piece_bags[1] = [1,1,1,1,1,1,1]
+    engine.gen_next_boards()
     engine.spawn_piece()
-    engine.refresh_ghost_board()
+    engine.update_ghost_piece()
     engine.unpack_1kf_binds()
         
 def menu_loop():
@@ -34,19 +35,20 @@ def menu_loop():
     # handle menu input, maybe transition to next state
     pass
     
-def card_screen_loop(): # doesnt exist :3
+def mod_screen_loop(): # doesnt exist :3
     engine.STATE -= 1
-    #ui.draw_card_screen()
+    #ui.draw_mod_screen()
     pass
     
 def go_back():
     engine.STATE -= 1
-    
-btn = menu.Button(10, 10, 50, 50, "X", color=settings.PANEL_COLOR, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], font=font, callback=lambda: go_back())
+
 load_game()
 mouse_was_down = False
 remaining_steps = 0 # remaining steps for gravity or soft-drop
 engine.game_state_changed = True # always true on the first frame
+engine.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+engine.timer.start()
 
 def game_loop():
     global mouse_was_down
@@ -54,17 +56,17 @@ def game_loop():
     keys = pygame.key.get_pressed()
     if engine.queue_spawn_piece:
         engine.spawn_piece()
-        
     remaining_grav = engine.handle_soft_drop(keys, frametime)
-    remaining_grav += engine.handle_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
+    remaining_grav += engine.do_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
-    if keys[settings.KEY_UNDO]: engine.undo_board(1)
-    if engine.check_touching_ground():
-        engine.handle_lockdown_step(frametime)
+
     if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
+        if engine.check_touching_ground():
+            engine.lockdown_step(frametime)
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)
-        engine.handle_leftover_gravity(remaining_grav)
+        engine.do_leftover_gravity(remaining_grav)
+
     if engine.game_state_changed:
         screen = engine.MAIN_SCREEN
         screen.blit(ui.draw_background(), (0, 0))
@@ -78,30 +80,22 @@ def game_loop():
         ui.draw_board()
         ui.draw_piece_board()
         ui.draw_topout_board()
-        btn.draw(screen)
     engine.game_state_changed = False # reset it for next frame
+    
     mins_secs, dot_ms = engine.timer.split_strings()
     engine.update_pps()
     ui.draw_stats_panel_text(
         PPS=str(engine.pps),
         TIMES=mins_secs,
         TIMEMS=dot_ms,
-        CLEARED=str(engine.total_lines_cleared)
+        CLEARED=str(engine.lines_cleared)
     )
-    
-    mouse_down = pygame.mouse.get_pressed()[0]
-    if mouse_down and not mouse_was_down and btn.rect.collidepoint(pygame.mouse.get_pos()):
-        btn.callback()
-        
-    mouse_was_down = mouse_down
 
 state_funcs = {
     0: menu_loop,
-    1: card_screen_loop,
+    1: mod_screen_loop,
     2: game_loop,
 }
-
-engine.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
 while engine.running:
     engine.frametime_clock.tick()
@@ -119,5 +113,3 @@ while engine.running:
 
     if not engine.running: # wait for the main loop to finish running to quit properly
         pygame.quit()
-    
-            
