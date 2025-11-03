@@ -233,7 +233,7 @@ def draw_topout_board():
     
     # Compute horizontal alignment in board cells
     main_cols = settings.BOARD_WIDTH
-    start_col = engine.PIECE_STARTING_X # piece_starting x is the regular piece offset
+    start_col = engine.starting_x # piece_starting x is the regular piece offset
     start_row = -1  # shift up 1 cell (negative y)
     
     # Draw each block aligned to main board's grid

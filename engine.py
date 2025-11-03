@@ -98,26 +98,26 @@ hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
 next_boards = numpy.zeros((settings.NEXT_PIECES_COUNT, 5, 5), dtype=numpy.int8)
 topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
-PIECES_WIDTH = pieces_dict[1]["shapes"][0].shape[1] # gets the first shape of the first piece for reference.
-game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
-game_history = [None] * settings.MAX_HISTORY
-piece_board = numpy.zeros((PIECES_WIDTH, PIECES_WIDTH), numpy.int8)
-ghost_board = numpy.zeros_like(piece_board)
-
 onekf_key_array = numpy.zeros((4, 10), dtype=int) # int8 is too small
 
-PIECE_STARTING_X = (settings.BOARD_WIDTH//2) - (PIECES_WIDTH//2) # dynamically calculate starting position based on board and piece size.
-PIECE_STARTING_Y = settings.BOARD_EXTRA_HEIGHT - (PIECES_WIDTH//5 + 1)
-PIECE_STARTING_ROTATION = 0
+piece_width = 4
+starting_x = 3
+starting_y = 2
+STARTING_ROTATION = 0
 
-piece_x = PIECE_STARTING_X
-piece_y = PIECE_STARTING_Y
-piece_rotation = PIECE_STARTING_ROTATION
-ghost_piece_x = PIECE_STARTING_X
-ghost_piece_y = PIECE_STARTING_Y
-lockdown_start_x = PIECE_STARTING_X
+game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+game_history = [None] * settings.MAX_HISTORY
+piece_board = numpy.zeros((piece_width, piece_width), numpy.int8)
+ghost_board = numpy.zeros_like(piece_board)
+
+piece_x = starting_x
+piece_y = starting_y
+piece_rotation = STARTING_ROTATION
+ghost_piece_x = starting_x
+ghost_piece_y = starting_y
+lockdown_start_x = starting_x
 lockdown_start_y = -settings.BOARD_EXTRA_HEIGHT
-lockdown_start_rotation = PIECE_STARTING_ROTATION
+lockdown_start_rotation = STARTING_ROTATION
 lockdown_resets_left = 15
 
 class Timer:
@@ -158,6 +158,12 @@ class Timer:
     
 timer = Timer()
 
+def update_starting_coords():
+    global piece_width, starting_x, starting_y
+    piece_width = pieces_dict[piece_bags[0][0]]["shapes"][STARTING_ROTATION].shape[1]
+    starting_x = (settings.BOARD_WIDTH - piece_width) // 2 # dynamically calculate starting position based on board and piece size.
+    starting_y = settings.BOARD_EXTRA_HEIGHT - (piece_width//5 + 1)
+
 def update_pps():
     global pps
     total_time = timer.get_seconds()
@@ -181,9 +187,10 @@ def generate_bag():
 def spawn_piece():
     global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_left, game_state_changed
     queue_spawn_piece = False
-    piece_x = PIECE_STARTING_X
-    piece_y = PIECE_STARTING_Y
-    piece_rotation = PIECE_STARTING_ROTATION
+    update_starting_coords()
+    piece_x = starting_x
+    piece_y = starting_y
+    piece_rotation = STARTING_ROTATION
     holds_left = hold_pieces_count
     game_state_changed = True
     
@@ -242,9 +249,9 @@ def undo(amount):
     bag_count = state["bag_count"]
 
     # reset position
-    piece_x = PIECE_STARTING_X
-    piece_y = PIECE_STARTING_Y
-    piece_rotation = PIECE_STARTING_ROTATION
+    piece_x = 3
+    piece_y = 2
+    piece_rotation = STARTING_ROTATION
     holds_left = hold_pieces_count
     random.setstate(rng_state)
 
@@ -256,12 +263,13 @@ def undo(amount):
 
 def gen_topout_board():
     global topout_board
-    board_size = PIECES_WIDTH
+    next_width = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][piece_rotation].shape[0]
+    board_size = next_width
     topout_board = numpy.zeros((board_size, board_size), dtype=numpy.int8)
-    next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][PIECE_STARTING_ROTATION]
+    next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][STARTING_ROTATION]
 
     # --- Check top 4/5 rows for occupancy ---
-    top_rows = settings.BOARD_EXTRA_HEIGHT + PIECES_WIDTH + math.floor(settings.BOARD_HEIGHT/8) - 1 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
+    top_rows = settings.BOARD_EXTRA_HEIGHT + next_width + math.floor(settings.BOARD_HEIGHT/8) - 1 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
     top_rows = game_board[:top_rows]
     if numpy.all(top_rows == 0):
         topout_board = None
@@ -424,10 +432,11 @@ def hold_guideline(infinite_holds = False):
             piece_bags[1] = generate_bag()
             
         # refresh current active piece
-        piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][PIECE_STARTING_ROTATION] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
-        piece_x = PIECE_STARTING_X
-        piece_y = PIECE_STARTING_Y
-        piece_rotation = PIECE_STARTING_ROTATION
+        piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][STARTING_ROTATION] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
+        update_starting_coords()
+        piece_x = starting_x
+        piece_y = starting_y
+        piece_rotation = STARTING_ROTATION
         holds_left -= 1
 
         update_ghost_piece()
@@ -691,18 +700,18 @@ def reset_game():
     global last_move_dir, gravity_timer, softdrop_overrides, timer, lines_cleared, pieces_placed, queue_spawn_piece, STATE, game_state_changed
     
     # Clear boards
-    game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
+    game_board = numpy.zeros_like(game_board)
     game_history = [None] * settings.MAX_HISTORY
-    piece_board = numpy.zeros((PIECES_WIDTH, PIECES_WIDTH), numpy.int8)
+    piece_board = numpy.zeros_like(piece_board)
     
     # Reset timers
     das_timer = arr_timer = sdr_timer = das_reset_timer = prevent_harddrop_timer = 0
     das_timer_started = arr_timer_started = sdr_timer_started = das_reset_timer_started = prevent_harddrop_timer_started = False
     
     # Reset active piece
-    piece_x = PIECE_STARTING_X
-    piece_y = PIECE_STARTING_Y
-    piece_rotation = PIECE_STARTING_ROTATION
+    piece_x = starting_x
+    piece_y = starting_y
+    piece_rotation = STARTING_ROTATION
     last_move_dir = 0
     gravity_timer = 0
     softdrop_overrides = True

@@ -19,12 +19,10 @@ except:
     font = pygame.font.SysFont(None, font_size)
 
 # pre game stuff
-def load_game():
+def load_game(): # all this stuff is done a second time when reset_game is called. it should be smarter.
     skinloader.set_other_skins()
-    # engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
-    # engine.piece_bags[1] = engine.generate_bag()
-    engine.piece_bags[0] = [1,1,1,1,1,1,1] # generate the first two bags
-    engine.piece_bags[1] = [1,1,1,1,1,1,1]
+    engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
+    engine.piece_bags[1] = engine.generate_bag()
     engine.gen_next_boards()
     engine.spawn_piece()
     engine.update_ghost_piece()
@@ -81,7 +79,7 @@ def game_loop():
         ui.draw_piece_board()
         ui.draw_topout_board()
     engine.game_state_changed = False # reset it for next frame
-    
+
     mins_secs, dot_ms = engine.timer.split_strings()
     engine.update_pps()
     ui.draw_stats_panel_text(
