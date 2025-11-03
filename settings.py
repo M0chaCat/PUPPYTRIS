@@ -68,7 +68,7 @@ ROTATE_CCW = pygame.K_x
 ROTATE_180 = pygame.K_a
 KEY_HOLD = pygame.K_c
 ROTATE_MIRROR = pygame.K_s
-KEY_UNDO = pygame.K_z
+KEY_UNDO = pygame.K_LCTRL
 KEY_RESET = pygame.K_r
 KEY_EXIT = pygame.K_ESCAPE
 
