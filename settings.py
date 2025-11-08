@@ -1,10 +1,11 @@
 # Settings
 
-import pygame
-import os
 import json
+import os
 
-DISPLAY_WIDTH = 3440 # for fullscreen? implement this later!!!
+import pygame
+
+DISPLAY_WIDTH = 3440  # for fullscreen? implement this later!!!
 DISPLAY_HEIGHT = 1440
 
 BOARD_WIDTH = 10
@@ -12,8 +13,8 @@ BOARD_MAIN_HEIGHT = 20
 BOARD_EXTRA_HEIGHT = 4
 BOARD_HEIGHT = BOARD_MAIN_HEIGHT + BOARD_EXTRA_HEIGHT
 
-DESIGN_WINDOW_WIDTH = 1400 # DONT CHANGE!!!!!
-DESIGN_WINDOW_HEIGHT = 1000 # ME NEITHER!!!! SPARE ME!!!!!
+DESIGN_WINDOW_WIDTH = 1400  # DONT CHANGE!!!!!
+DESIGN_WINDOW_HEIGHT = 1000  # ME NEITHER!!!! SPARE ME!!!!!
 
 WINDOW_WIDTH = 1400
 WINDOW_HEIGHT = 1000
@@ -25,9 +26,13 @@ SCALE = min(WINDOW_WIDTH / DESIGN_WINDOW_WIDTH, WINDOW_HEIGHT / DESIGN_WINDOW_HE
 MAX_FRAMERATE = 60
 
 if BOARD_WIDTH / WINDOW_WIDTH < BOARD_HEIGHT / WINDOW_HEIGHT:
-    CELL_SIZE = WINDOW_HEIGHT//(BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 5) # +5 so its not too zoomed in
-else: # if the board is REALLY wide
-    CELL_SIZE = WINDOW_WIDTH//(BOARD_WIDTH + 20) # TODO: improve the formula for calculating CELL_SIZE
+    CELL_SIZE = WINDOW_HEIGHT // (
+        BOARD_HEIGHT - BOARD_EXTRA_HEIGHT + 5
+    )  # +5 so its not too zoomed in
+else:  # if the board is REALLY wide
+    CELL_SIZE = WINDOW_WIDTH // (
+        BOARD_WIDTH + 20
+    )  # TODO: improve the formula for calculating CELL_SIZE
 
 # --- Config / constants ---
 PIECE_TYPES_TETRA = 7
@@ -42,8 +47,8 @@ is_penta = False
 
 DAS_THRESHOLD = 100
 ARR_THRESHOLD = 0
-SDR_THRESHOLD = 0 # SDR = soft drop rate
-DAS_RESET_THRESHOLD = 0 # experimental mechanic that causes DAS to stay charged for the duration of the value in MS
+SDR_THRESHOLD = 0  # SDR = soft drop rate
+DAS_RESET_THRESHOLD = 0  # experimental mechanic that causes DAS to stay charged for the duration of the value in MS
 PREVENT_HARDDROP_THRESHOLD = 300
 
 # not user variables
