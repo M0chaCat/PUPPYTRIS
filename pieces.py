@@ -8,404 +8,760 @@ tetra_dict = {
     1: {
         "id": "Z",
         "shapes": [
-            numpy.array([[0, 0, 0], [1, 1, 0], [0, 1, 1]]),
-            numpy.array([[0, 0, 1], [0, 1, 1], [0, 1, 0]]),
-            numpy.array([[0, 0, 0], [1, 1, 0], [0, 1, 1]]),
-            numpy.array([[0, 1, 0], [1, 1, 0], [1, 0, 0]]),
+            numpy.array([
+                [0,0,0],
+                [1,1,0],
+                [0,1,1]
+            ]),
+            numpy.array([
+                [0,0,1],
+                [0,1,1],
+                [0,1,0]
+            ]),
+            numpy.array([
+                [0,0,0],
+                [1,1,0],
+                [0,1,1]
+            ]),
+            numpy.array([
+                [0,1,0],
+                [1,1,0],
+                [1,0,0]
+            ])
         ],
         "color": (243, 139, 168),  # red
-        "skin": skinloader.tetra_skins[0],
-    },
+        "skin": skinloader.tetra_skins[0]
+        },
     2: {
         "name": "L",
         "shapes": [
-            numpy.array([[0, 0, 0], [0, 0, 1], [1, 1, 1]]),
-            numpy.array([[0, 1, 0], [0, 1, 0], [0, 1, 1]]),
-            numpy.array([[0, 0, 0], [1, 1, 1], [1, 0, 0]]),
-            numpy.array([[1, 1, 0], [0, 1, 0], [0, 1, 0]]),
+            numpy.array([
+                [0,0,0],
+                [0,0,1],
+                [1,1,1]
+            ]),
+            numpy.array([
+                [0,1,0],
+                [0,1,0],
+                [0,1,1]
+            ]),
+            numpy.array([
+                [0,0,0],
+                [1,1,1],
+                [1,0,0]
+            ]),
+            numpy.array([
+                [1,1,0],
+                [0,1,0],
+                [0,1,0]
+            ])
         ],
         "color": (250, 179, 135),  # orange
-        "skin": skinloader.tetra_skins[1],
+        "skin": skinloader.tetra_skins[1]
     },
     3: {
         "name": "O",
         "shapes": [
-            numpy.array([[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]]),
-            numpy.array([[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]]),
-            numpy.array([[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]]),
-            numpy.array([[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]]),
+            numpy.array([
+                [0,0,0,0],
+                [0,1,1,0],
+                [0,1,1,0],
+                [0,0,0,0]
+            ]),
+            numpy.array([
+                [0,0,0,0],
+                [0,1,1,0],
+                [0,1,1,0],
+                [0,0,0,0]
+            ]),
+            numpy.array([
+                [0,0,0,0],
+                [0,1,1,0],
+                [0,1,1,0],
+                [0,0,0,0]
+            ]),
+            numpy.array([
+                [0,0,0,0],
+                [0,1,1,0],
+                [0,1,1,0],
+                [0,0,0,0]
+            ])
         ],
         "color": (249, 226, 175),  # yellow
-        "skin": skinloader.tetra_skins[2],
+        "skin": skinloader.tetra_skins[2]
     },
     4: {
         "name": "S",
         "shapes": [
-            numpy.array([[0, 0, 0], [0, 1, 1], [1, 1, 0]]),
-            numpy.array([[0, 1, 0], [0, 1, 1], [0, 0, 1]]),
-            numpy.array([[0, 0, 0], [0, 1, 1], [1, 1, 0]]),
-            numpy.array([[1, 0, 0], [1, 1, 0], [0, 1, 0]]),
+            numpy.array([
+                [0,0,0],
+                [0,1,1],
+                [1,1,0]
+            ]),
+            numpy.array([
+                [0,1,0],
+                [0,1,1],
+                [0,0,1]
+            ]),
+            numpy.array([
+                [0,0,0],
+                [0,1,1],
+                [1,1,0]
+            ]),
+            numpy.array([
+                [1,0,0],
+                [1,1,0],
+                [0,1,0]
+            ])
         ],
         "color": (166, 227, 161),  # green
-        "skin": skinloader.tetra_skins[3],
+        "skin": skinloader.tetra_skins[3]
     },
     5: {
         "name": "I",
         "shapes": [
-            numpy.array([[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]]),
-            numpy.array([[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]]),
-            numpy.array([[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]]),
-            numpy.array([[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]),
+            numpy.array([
+                [0,0,0,0],
+                [0,0,0,0],
+                [1,1,1,1],
+                [0,0,0,0]
+            ]),
+            numpy.array([
+                [0,0,1,0],
+                [0,0,1,0],
+                [0,0,1,0],
+                [0,0,1,0]
+            ]),
+            numpy.array([
+                [0,0,0,0],
+                [0,0,0,0],
+                [1,1,1,1],
+                [0,0,0,0]
+            ]),
+            numpy.array([
+                [0,1,0,0],
+                [0,1,0,0],
+                [0,1,0,0],
+                [0,1,0,0]
+            ])
         ],
         "color": (137, 220, 235),  # cyan
-        "skin": skinloader.tetra_skins[4],
+        "skin": skinloader.tetra_skins[4]
     },
     6: {
         "name": "J",
         "shapes": [
-            numpy.array([[0, 0, 0], [1, 0, 0], [1, 1, 1]]),
-            numpy.array([[0, 1, 1], [0, 1, 0], [0, 1, 0]]),
-            numpy.array([[0, 0, 0], [1, 1, 1], [0, 0, 1]]),
-            numpy.array([[0, 1, 0], [0, 1, 0], [1, 1, 0]]),
+            numpy.array([
+                [0,0,0],
+                [1,0,0],
+                [1,1,1]
+            ]),
+            numpy.array([
+                [0,1,1],
+                [0,1,0],
+                [0,1,0]
+            ]),
+            numpy.array([
+                [0,0,0],
+                [1,1,1],
+                [0,0,1]
+            ]),
+            numpy.array([
+                [0,1,0],
+                [0,1,0],
+                [1,1,0]
+            ])
         ],
         "color": (137, 180, 250),  # blue
-        "skin": skinloader.tetra_skins[5],
+        "skin": skinloader.tetra_skins[5]
     },
     7: {
         "name": "T",
         "shapes": [
-            numpy.array([[0, 1, 0], [1, 1, 1], [0, 0, 0]]),
-            numpy.array([[0, 1, 0], [0, 1, 1], [0, 1, 0]]),
-            numpy.array([[0, 0, 0], [1, 1, 1], [0, 1, 0]]),
-            numpy.array([[0, 1, 0], [1, 1, 0], [0, 1, 0]]),
+            numpy.array([
+                [0,1,0],
+                [1,1,1],
+                [0,0,0]
+            ]),
+            numpy.array([
+                [0,1,0],
+                [0,1,1],
+                [0,1,0]
+            ]),
+            numpy.array([
+                [0,0,0],
+                [1,1,1],
+                [0,1,0]
+            ]),
+            numpy.array([
+                [0,1,0],
+                [1,1,0],
+                [0,1,0]
+            ])
         ],
         "color": (203, 166, 247),  # purple
-        "skin": skinloader.tetra_skins[6],
-    },
+        "skin": skinloader.tetra_skins[6]
+    }
 }
 if skinloader.has_penta:
     penta_dict = {
         1: {
             "name": "F",
             "shapes": [
-                numpy.array(
-                    [
-                        [0, 1, 0],
-                        [1, 1, 1],
-                        [0, 0, 1],
-                    ]
-                ),
-                numpy.array([[0, 1, 0], [0, 1, 1], [1, 1, 0]]),
-                numpy.array([[1, 0, 0], [1, 1, 1], [0, 1, 0]]),
-                numpy.array([[0, 1, 1], [1, 1, 0], [0, 1, 0]]),
+                numpy.array([
+                    [0,1,0],
+                    [1,1,1],
+                    [0,0,1],
+                ]),
+                numpy.array([
+                    [0,1,0],
+                    [0,1,1],
+                    [1,1,0]
+                ]),
+                numpy.array([
+                    [1,0,0],
+                    [1,1,1],
+                    [0,1,0]
+                ]),
+                numpy.array([
+                    [0,1,1],
+                    [1,1,0],
+                    [0,1,0]
+                ])
             ],
             "color": (243, 139, 168),  # red
-            "skin": skinloader.penta_skins[0],  # red
-        },
+            "skin": skinloader.penta_skins[0] #red
+            },
         2: {
-            "name": "F",  # mirror
+            "name": "F", # mirror
             "shapes": [
-                numpy.array([[0, 1, 0], [1, 1, 1], [1, 0, 0]]),
-                numpy.array([[1, 1, 0], [0, 1, 1], [0, 1, 0]]),
-                numpy.array([[0, 0, 1], [1, 1, 1], [0, 1, 0]]),
-                numpy.array([[0, 1, 0], [1, 1, 0], [0, 1, 1]]),
+                numpy.array([
+                    [0,1,0],
+                    [1,1,1],
+                    [1,0,0]
+                ]),
+                numpy.array([
+                    [1,1,0],
+                    [0,1,1],
+                    [0,1,0]
+                ]),
+                numpy.array([
+                    [0,0,1],
+                    [1,1,1],
+                    [0,1,0]
+                ]),
+                numpy.array([
+                    [0,1,0],
+                    [1,1,0],
+                    [0,1,1]
+                ])
             ],
             "color": (243, 139, 168),  # red
-            "skin": skinloader.penta_skins[1],  # orang
-        },
+            "skin": skinloader.penta_skins[1] # orang
+            },
         3: {
             "name": "I",
             "shapes": [
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0],
-                        [1, 1, 1, 1, 1],
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0],
-                        [1, 1, 1, 1, 1],
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                    ]
-                ),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [1,1,1,1,1],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,1,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [1,1,1,1,1],
+                    [0,0,0,0,0],
+                    [0,0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,1,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0]
+                ])
             ],
             "color": (250, 179, 135),  # orange
-            "skin": skinloader.penta_skins[2],  # orange yelo
+            "skin": skinloader.penta_skins[2] #orange yelo
         },
         4: {
             "name": "P",
             "shapes": [
-                numpy.array([[0, 0, 0, 0], [0, 1, 1, 1], [0, 1, 1, 0], [0, 0, 0, 0]]),
-                numpy.array([[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 1, 0]]),
-                numpy.array([[0, 0, 0, 0], [0, 1, 1, 0], [1, 1, 1, 0], [0, 0, 0, 0]]),
-                numpy.array([[0, 1, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]]),
+                numpy.array([
+                    [0,0,0,0],
+                    [0,1,1,1],
+                    [0,1,1,0],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0],
+                    [0,1,1,0],
+                    [0,1,1,0],
+                    [0,0,1,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0],
+                    [0,1,1,0],
+                    [1,1,1,0],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,1,0,0],
+                    [0,1,1,0],
+                    [0,1,1,0],
+                    [0,0,0,0]
+                ])
             ],
             "color": (249, 226, 175),  # yellow
-            "skin": skinloader.penta_skins[3],  # yelo
+            "skin": skinloader.penta_skins[3] #yelo
         },
         5: {
-            "name": "P",  # mirror
+            "name": "P", # mirror
             "shapes": [
-                numpy.array([[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 1], [0, 0, 0, 0]]),
-                numpy.array([[0, 0, 0, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 1, 0, 0]]),
-                numpy.array([[0, 0, 0, 0], [1, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]]),
-                numpy.array([[0, 0, 1, 0], [0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0]]),
+                numpy.array([
+                    [0,0,0,0],
+                    [0,1,1,0],
+                    [0,1,1,1],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0],
+                    [0,1,1,0],
+                    [0,1,1,0],
+                    [0,1,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0],
+                    [1,1,1,0],
+                    [0,1,1,0],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,1,0],
+                    [0,1,1,0],
+                    [0,1,1,0],
+                    [0,0,0,0]
+                ])
             ],
             "color": (249, 226, 175),  # yellow
-            "skin": skinloader.penta_skins[4],  # lime
+            "skin": skinloader.penta_skins[4] #lime
         },
         6: {
             "name": "L",
             "shapes": [
-                numpy.array([[0, 0, 0, 0], [1, 1, 1, 1], [1, 0, 0, 0], [0, 0, 0, 0]]),
-                numpy.array([[0, 1, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]]),
-                numpy.array([[0, 0, 0, 0], [0, 0, 0, 1], [1, 1, 1, 1], [0, 0, 0, 0]]),
-                numpy.array([[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 1, 0]]),
+                numpy.array([
+                    [0,0,0,0],
+                    [1,1,1,1],
+                    [1,0,0,0],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,1,1,0],
+                    [0,0,1,0],
+                    [0,0,1,0],
+                    [0,0,1,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0],
+                    [0,0,0,1],
+                    [1,1,1,1],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,1,0,0],
+                    [0,1,0,0],
+                    [0,1,0,0],
+                    [0,1,1,0]
+                ])
             ],
             "color": (166, 227, 161),  # green
-            "skin": skinloader.penta_skins[5],  # geen
+            "skin": skinloader.penta_skins[5] #geen
         },
         7: {
-            "name": "L",  # mirror
+            "name": "L", # mirror
             "shapes": [
-                numpy.array([[0, 0, 0, 0], [1, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]]),
-                numpy.array([[0, 1, 1, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]),
-                numpy.array([[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 1], [0, 0, 0, 0]]),
-                numpy.array([[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 1, 1, 0]]),
+                numpy.array([
+                    [0,0,0,0],
+                    [1,0,0,0],
+                    [1,1,1,1],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,1,1,0],
+                    [0,1,0,0],
+                    [0,1,0,0],
+                    [0,1,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0],
+                    [1,1,1,1],
+                    [0,0,0,1],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,1,0],
+                    [0,0,1,0],
+                    [0,0,1,0],
+                    [0,1,1,0]
+                ])
             ],
             "color": (166, 227, 161),  # green
-            "skin": skinloader.penta_skins[6],  # geen
+            "skin": skinloader.penta_skins[6] #geen
         },
         8: {
             "name": "N",
             "shapes": [
-                numpy.array([[0, 0, 0, 0], [1, 1, 0, 0], [0, 1, 1, 1], [0, 0, 0, 0]]),
-                numpy.array([[0, 0, 1, 0], [0, 1, 1, 0], [0, 1, 0, 0], [0, 1, 0, 0]]),
-                numpy.array([[0, 0, 0, 0], [1, 1, 1, 0], [0, 0, 1, 1], [0, 0, 0, 0]]),
-                numpy.array([[0, 0, 1, 0], [0, 0, 1, 0], [0, 1, 1, 0], [0, 1, 0, 0]]),
+                numpy.array([
+                    [0,0,0,0],
+                    [1,1,0,0],
+                    [0,1,1,1],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,1,0],
+                    [0,1,1,0],
+                    [0,1,0,0],
+                    [0,1,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0],
+                    [1,1,1,0],
+                    [0,0,1,1],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,1,0],
+                    [0,0,1,0],
+                    [0,1,1,0],
+                    [0,1,0,0]
+                ]),
             ],
             "color": (137, 220, 235),  # cyan
-            "skin": skinloader.penta_skins[7],  # geenish blu
+            "skin": skinloader.penta_skins[7] # geenish blu
         },
         9: {
-            "name": "N",  # mirror
+            "name": "N", #mirror
             "shapes": [
-                numpy.array([[0, 0, 0, 0], [0, 0, 1, 1], [1, 1, 1, 0], [0, 0, 0, 0]]),
-                numpy.array(
-                    [
-                        [0, 1, 0, 0],
-                        [0, 1, 0, 0],
-                        [0, 1, 1, 0],
-                        [0, 0, 1, 0],
-                    ]
-                ),
-                numpy.array([[0, 0, 0, 0], [0, 1, 1, 1], [1, 1, 0, 0], [0, 0, 0, 0]]),
-                numpy.array([[0, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]]),
+                numpy.array([
+                    [0,0,0,0],
+                    [0,0,1,1],
+                    [1,1,1,0],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,1,0,0],
+                    [0,1,0,0],
+                    [0,1,1,0],
+                    [0,0,1,0],
+                ]),
+                numpy.array([
+                    [0,0,0,0],
+                    [0,1,1,1],
+                    [1,1,0,0],
+                    [0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,1,0,0],
+                    [0,1,1,0],
+                    [0,0,1,0],
+                    [0,0,1,0]
+                ])
             ],
             "color": (137, 220, 235),  # cyan
-            "skin": skinloader.penta_skins[8],  # bluish geen
+            "skin": skinloader.penta_skins[8] # bluish geen
         },
         10: {
             "name": "T",
             "shapes": [
-                numpy.array([[1, 1, 1], [0, 1, 0], [0, 1, 0]]),
-                numpy.array([[0, 0, 1], [1, 1, 1], [0, 0, 1]]),
-                numpy.array([[0, 1, 0], [0, 1, 0], [1, 1, 1]]),
-                numpy.array([[1, 0, 0], [1, 1, 1], [1, 0, 0]]),
+                numpy.array([
+                    [1,1,1],
+                    [0,1,0],
+                    [0,1,0]
+                ]),
+                numpy.array([
+                    [0,0,1],
+                    [1,1,1],
+                    [0,0,1]
+                ]),
+                numpy.array([
+                    [0,1,0],
+                    [0,1,0],
+                    [1,1,1]
+                ]),
+                numpy.array([
+                    [1,0,0],
+                    [1,1,1],
+                    [1,0,0]
+                ])
             ],
             "color": (137, 180, 250),  # blue
-            "skin": skinloader.penta_skins[9],  # cyan
+            "skin": skinloader.penta_skins[9] #cyan
         },
         11: {
             "name": "U",
             "shapes": [
-                numpy.array([[0, 0, 0], [1, 1, 1], [1, 0, 1]]),
-                numpy.array([[0, 1, 1], [0, 0, 1], [0, 1, 1]]),
-                numpy.array([[0, 0, 0], [1, 0, 1], [1, 1, 1]]),
-                numpy.array([[1, 1, 0], [1, 0, 0], [1, 1, 0]]),
+                numpy.array([
+                    [0,0,0],
+                    [1,1,1],
+                    [1,0,1]
+                ]),
+                numpy.array([
+                    [0,1,1],
+                    [0,0,1],
+                    [0,1,1]
+                ]),
+                numpy.array([
+                    [0,0,0],
+                    [1,0,1],
+                    [1,1,1]
+                ]),
+                numpy.array([
+                    [1,1,0],
+                    [1,0,0],
+                    [1,1,0]
+                ])
             ],
             "color": (203, 166, 247),  # purple
-            "skin": skinloader.penta_skins[10],  # blue
+            "skin": skinloader.penta_skins[10] #blue
         },
         12: {
             "name": "V",
             "shapes": [
-                numpy.array([[1, 1, 1], [1, 0, 0], [1, 0, 0]]),
-                numpy.array([[1, 1, 1], [0, 0, 1], [0, 0, 1]]),
-                numpy.array([[0, 0, 1], [0, 0, 1], [1, 1, 1]]),
-                numpy.array([[1, 0, 0], [1, 0, 0], [1, 1, 1]]),
+                numpy.array([
+                    [1,1,1],
+                    [1,0,0],
+                    [1,0,0]
+                ]),
+                numpy.array([
+                    [1,1,1],
+                    [0,0,1],
+                    [0,0,1]
+                ]),
+                numpy.array([
+                    [0,0,1],
+                    [0,0,1],
+                    [1,1,1]
+                ]),
+                numpy.array([
+                    [1,0,0],
+                    [1,0,0],
+                    [1,1,1]
+                ])
             ],
             "color": (203, 166, 247),  # purple
-            "skin": skinloader.penta_skins[11],  # dark blu
+            "skin": skinloader.penta_skins[11] # dark blu
         },
         13: {
             "name": "W",
             "shapes": [
-                numpy.array([[1, 0, 0], [1, 1, 0], [0, 1, 1]]),
-                numpy.array([[0, 1, 1], [1, 1, 0], [1, 0, 0]]),
-                numpy.array([[1, 1, 0], [0, 1, 1], [0, 0, 1]]),
-                numpy.array([[0, 0, 1], [0, 1, 1], [1, 1, 0]]),
+                numpy.array([
+                    [1,0,0],
+                    [1,1,0],
+                    [0,1,1]
+                ]),
+                numpy.array([
+                    [0,1,1],
+                    [1,1,0],
+                    [1,0,0]
+                ]),
+                numpy.array([
+                    [1,1,0],
+                    [0,1,1],
+                    [0,0,1]
+                ]),
+                numpy.array([
+                    [0,0,1],
+                    [0,1,1],
+                    [1,1,0]
+                ])
             ],
             "color": (203, 166, 247),  # purple
-            "skin": skinloader.penta_skins[12],  # rly dark blu
+            "skin": skinloader.penta_skins[12] # rly dark blu
         },
         14: {
             "name": "X",
             "rare": True,
             "shapes": [
-                numpy.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]]),
-                numpy.array([[0, 0, 1, 0, 0], [0, 1, 1, 1, 0], [0, 0, 1, 0, 0]]),
-                numpy.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]]),
-                numpy.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]]),
+                numpy.array([
+                    [0,1,0],
+                    [1,1,1],
+                    [0,1,0]
+                ]),
+                numpy.array([
+                    [0,0,1,0,0],
+                    [0,1,1,1,0],
+                    [0,0,1,0,0]
+                ]),
+                numpy.array([
+                    [0,1,0],
+                    [1,1,1],
+                    [0,1,0]
+                ]),
+                numpy.array([
+                    [0,1,0],
+                    [1,1,1],
+                    [0,1,0]
+                ])
             ],
             "color": (203, 166, 247),  # purple
-            "skin": skinloader.penta_skins[13],  # urple
+            "skin": skinloader.penta_skins[13] # urple
         },
         15: {
             "name": "Y",
             "shapes": [
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0],
-                        [0, 1, 1, 1, 1],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 0, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 1, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [1, 1, 1, 1, 0],
-                        [0, 0, 0, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 1, 0],
-                        [0, 0, 1, 0, 0],
-                    ]
-                ),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,1,1,1,1],
+                    [0,0,1,0,0],
+                    [0,0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [0,1,1,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [1,1,1,1,0],
+                    [0,0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,1,0],
+                    [0,0,1,0,0]
+                ])
             ],
             "color": (203, 166, 247),  # purple
-            "skin": skinloader.penta_skins[14],  # urple-er
+            "skin": skinloader.penta_skins[14] # urple-er
         },
         16: {
-            "name": "Y",  # mirror
+            "name": "Y", # mirror
             "shapes": [
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 1, 1, 1, 1],
-                        [0, 0, 0, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 1, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0],
-                        [1, 1, 1, 1, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 0, 0, 0],
-                    ]
-                ),
-                numpy.array(
-                    [
-                        [0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                        [0, 1, 1, 0, 0],
-                        [0, 0, 1, 0, 0],
-                    ]
-                ),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [0,1,1,1,1],
+                    [0,0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,1,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,0,0,0],
+                    [1,1,1,1,0],
+                    [0,0,1,0,0],
+                    [0,0,0,0,0]
+                ]),
+                numpy.array([
+                    [0,0,0,0,0],
+                    [0,0,1,0,0],
+                    [0,0,1,0,0],
+                    [0,1,1,0,0],
+                    [0,0,1,0,0]
+                ])
             ],
             "color": (203, 166, 247),  # purple
-            "skin": skinloader.penta_skins[15],  # pimk
+            "skin": skinloader.penta_skins[15] #pimk
         },
         17: {
             "name": "Z",
             "shapes": [
-                numpy.array([[0, 0, 1], [1, 1, 1], [1, 0, 0]]),
-                numpy.array([[1, 1, 0], [0, 1, 0], [0, 1, 1]]),
-                numpy.array([[0, 0, 1], [1, 1, 1], [1, 0, 0]]),
-                numpy.array([[1, 1, 0], [0, 1, 0], [0, 1, 1]]),
+                numpy.array([
+                    [0,0,1],
+                    [1,1,1],
+                    [1,0,0]
+                ]),
+                numpy.array([
+                    [1,1,0],
+                    [0,1,0],
+                    [0,1,1]
+                ]),
+                numpy.array([
+                    [0,0,1],
+                    [1,1,1],
+                    [1,0,0]
+                ]),
+                numpy.array([
+                    [1,1,0],
+                    [0,1,0],
+                    [0,1,1]
+                ])
             ],
             "color": (203, 166, 247),  # purple
-            "skin": skinloader.penta_skins[16],  # prety
+            "skin": skinloader.penta_skins[16] # prety
         },
         18: {
-            "name": "Z",  # mirror
+            "name": "Z", # mirror
             "shapes": [
-                numpy.array([[1, 0, 0], [1, 1, 1], [0, 0, 1]]),
-                numpy.array([[0, 1, 1], [0, 1, 0], [1, 1, 0]]),
-                numpy.array([[1, 0, 0], [1, 1, 1], [0, 0, 1]]),
-                numpy.array([[0, 1, 1], [0, 1, 0], [1, 1, 0]]),
+                numpy.array([
+                    [1,0,0],
+                    [1,1,1],
+                    [0,0,1]
+                ]),
+                numpy.array([
+                    [0,1,1],
+                    [0,1,0],
+                    [1,1,0]
+                ]),
+                numpy.array([
+                    [1,0,0],
+                    [1,1,1],
+                    [0,0,1]
+                ]),
+                numpy.array([
+                    [0,1,1],
+                    [0,1,0],
+                    [1,1,0]
+
+                ])
             ],
             "color": (203, 166, 247),  # purple
-            "skin": skinloader.penta_skins[17],  # rubyish?
-        },
+            "skin": skinloader.penta_skins[17] # rubyish?
+        }
     }
-
-tetra_inversions = {1: 4, 2: 6, 3: 3, 4: 1, 5: 5, 6: 2, 7: 7}
+    
+tetra_inversions = {
+    1: 4,
+    2: 6,
+    3: 3,
+    4: 1,
+    5: 5,
+    6: 2,
+    7: 7
+}
 
 penta_inversions = {
     1: 2,
     2: 1,
     3: 3,
-    4: 5,
+    4: 5, 
     5: 4,
-    6: 7,
+    6: 7, 
     7: 6,
-    8: 9,
+    8: 9, 
     9: 8,
     10: 10,
     11: 11,
@@ -415,43 +771,13 @@ penta_inversions = {
     15: 16,
     16: 15,
     17: 18,
-    18: 17,
+    18: 17
 }
 
-kick_list_right = [
-    (0, 0),
-    (0, 1),
-    (-1, 1),
-    (1, 1),
-    (-1, 0),
-    (1, 0),
-    (-2, 0),
-    (2, 0),
-    (0, -1),
-]  # checks left to right if kicking right
-kick_list_left = [
-    (0, 0),
-    (0, 1),
-    (1, 1),
-    (-1, 1),
-    (1, 0),
-    (-1, 0),
-    (2, 0),
-    (-2, 0),
-    (0, -1),
-]  # checks right to left if kicking left
-# there are some rotation states where using the biased lists wouldn't make sense, for example rotating a state 4 I piece to a state 1 or 3.
+kick_list_right = [(0, 0), (0, 1), (-1, 1), (1, 1), (-1, 0), (1, 0), (-2, 0), (2, 0), (0, -1)] # checks left to right if kicking right
+kick_list_left = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)] # checks right to left if kicking left
+# there are some rotation states where using the biased lists wouldn't make sense, for example rotating a state 4 I piece to a state 1 or 3. 
 # it should be fine though because it only affects kick order, and if anything gives advanced players more control.
 
 
-kick_list_mirror = [
-    (0, 0),
-    (0, 1),
-    (1, 1),
-    (-1, 1),
-    (1, 0),
-    (-1, 0),
-    (2, 0),
-    (-2, 0),
-    (0, -1),
-]
+kick_list_mirror = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)]
