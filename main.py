@@ -2,11 +2,7 @@
 
 import pygame
 
-import engine
-import menu
-import settings
-import skinloader
-import ui
+import engine, ui, settings, skinloader, menu
 
 pygame.init()
 
@@ -22,43 +18,35 @@ try:
 except:
     font = pygame.font.SysFont(None, font_size)
 
-
 # pre game stuff
-def load_game():  # all this stuff is done a second time when reset_game is called. it should be smarter.
+def load_game(): # all this stuff is done a second time when reset_game is called. it should be smarter.
     skinloader.set_other_skins()
-    engine.piece_bags[0] = engine.generate_bag()  # generate the first two bags
+    engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
     engine.piece_bags[1] = engine.generate_bag()
     engine.gen_next_boards()
     engine.spawn_piece()
     engine.update_ghost_piece()
     engine.unpack_1kf_binds()
-
-
+        
 def menu_loop():
     menu.draw_menu()
     # handle menu input, maybe transition to next state
     pass
-
-
-def mod_screen_loop():  # doesnt exist :3
+    
+def mod_screen_loop(): # doesnt exist :3
     engine.STATE -= 1
-    # ui.draw_mod_screen()
+    #ui.draw_mod_screen()
     pass
-
-
+    
 def go_back():
     engine.STATE -= 1
 
-
 load_game()
 mouse_was_down = False
-remaining_steps = 0  # remaining steps for gravity or soft-drop
-engine.game_state_changed = True  # always true on the first frame
-engine.MAIN_SCREEN = pygame.display.set_mode(
-    (settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
-)
+remaining_steps = 0 # remaining steps for gravity or soft-drop
+engine.game_state_changed = True # always true on the first frame
+engine.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 engine.timer.start()
-
 
 def game_loop():
     global mouse_was_down
@@ -67,12 +55,10 @@ def game_loop():
     if engine.queue_spawn_piece:
         engine.spawn_piece()
     remaining_grav = engine.handle_soft_drop(keys, frametime)
-    remaining_grav += engine.do_gravity(
-        frametime
-    )  # this logic works the same as max() would, since one of them is always bound to be zero
+    remaining_grav += engine.do_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
 
-    if not engine.queue_spawn_piece:  # if no more piece, skip remaining movement logic
+    if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
         if engine.check_touching_ground():
             engine.lockdown_step(frametime)
         if not settings.ONEKF_ENABLED:
@@ -92,7 +78,7 @@ def game_loop():
         ui.draw_board()
         ui.draw_piece_board()
         ui.draw_topout_board()
-    engine.game_state_changed = False  # reset it for next frame
+    engine.game_state_changed = False # reset it for next frame
 
     mins_secs, dot_ms = engine.timer.split_strings()
     engine.update_pps()
@@ -100,9 +86,8 @@ def game_loop():
         PPS=str(engine.pps),
         TIMES=mins_secs,
         TIMEMS=dot_ms,
-        CLEARED=str(engine.lines_cleared),
+        CLEARED=str(engine.lines_cleared)
     )
-
 
 state_funcs = {
     0: menu_loop,
@@ -113,25 +98,16 @@ state_funcs = {
 while engine.running:
     engine.frametime_clock.tick()
     fps = str(int(engine.frametime_clock.get_fps()))
-
+    
     # Run current state’s logic
     state_funcs[engine.STATE]()
 
     # Draw FPS (universal part)
     fps_surf = font.render(fps + " FPS", True, settings.TEXT_COLOR)
-    ui.draw_rect(
-        -10,
-        settings.WINDOW_HEIGHT - 40,
-        120,
-        50,
-        settings.BOARD_COLOR,
-        cut_corners=["top-right"],
-        cut_size=10,
-        outline_color=settings.PANEL_OUTLINE,
-    )
-    engine.MAIN_SCREEN.blit(fps_surf, (10, settings.WINDOW_HEIGHT - 30))
-
+    ui.draw_rect(-10, settings.WINDOW_HEIGHT - 40, 120, 50, settings.BOARD_COLOR, cut_corners=['top-right'], cut_size=10, outline_color=settings.PANEL_OUTLINE)
+    engine.MAIN_SCREEN.blit(fps_surf, (10, settings.WINDOW_HEIGHT-30))
+    
     pygame.display.flip()
 
-    if not engine.running:  # wait for the main loop to finish running to quit properly
+    if not engine.running: # wait for the main loop to finish running to quit properly
         pygame.quit()
