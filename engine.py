@@ -18,9 +18,6 @@ STATE = 0
 
 running = True # so we can turn the game loop on and off
 
-MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
-GUI_manager = pygame_gui.UIManager((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
-
 # DISPLAY_WIDTH = 3440
 # DISPLAY_HEIGHT = 1440 # implement this later!!!
 
@@ -803,7 +800,7 @@ def handle_events():
 def do_gravity(frametime):
     global gravity_timer, current_gravity, game_state_changed
     
-    if current_gravity >= 19.8: # make instant drop at 20g regardless of framerate
+    if current_gravity >= 15.8: # make instant drop at 20g regardless of framerate
         remaining_steps = move_piece(0, settings.BOARD_HEIGHT + 10)
         return remaining_steps
     

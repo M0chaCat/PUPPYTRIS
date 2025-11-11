@@ -1,9 +1,15 @@
 # UI
 
 import pygame
+import pygame_gui
 import numpy
 
 import engine, settings, skinloader
+
+MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+GUI_MANAGER = pygame_gui.UIManager((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+BACKGROUND_SURFACE = pygame.Surface((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+BOARD_SURFACE = pygame.Surface((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT), pygame.SRCALPHA)
 
 def draw_rect(x, y, width, height, color=(200, 200, 200, 255),
               cut_corners=None, cut_size=10, outline_color=None):
@@ -39,7 +45,7 @@ def draw_rect(x, y, width, height, color=(200, 200, 200, 255),
             pygame.draw.polygon(surf, outline_color, points, 1)
             
     # Blit to main screen
-    engine.MAIN_SCREEN.blit(surf, (x, y))
+    MAIN_SCREEN.blit(surf, (x, y))
     
 def draw_text(surface, text, font, color, x, y, line_spacing=4):
     """Draw text with \n newlines manually handled and transparent background."""
@@ -52,7 +58,6 @@ def draw_text(surface, text, font, color, x, y, line_spacing=4):
 def draw_background():
     """Return a surface with the background drawn, scaled wallpaper or color."""
     win_w, win_h = settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT
-    background_surf = pygame.Surface((win_w, win_h), pygame.SRCALPHA)
     
     if hasattr(settings, "WALLPAPER") and settings.WALLPAPER:
         wp = settings.WALLPAPER
@@ -65,17 +70,18 @@ def draw_background():
         offset_y = (new_h - win_h) // 2
         
         # Draw wallpaper onto our surface
-        background_surf.blit(scaled_wp, (-offset_x, -offset_y))
+        BACKGROUND_SURFACE.blit(scaled_wp, (-offset_x, -offset_y))
     else:
-        background_surf.fill(settings.BACKGROUND_COLOR)
-        
-    return background_surf
+        BACKGROUND_SURFACE.fill(settings.BACKGROUND_COLOR)
 
 def draw_board():
     """
     Draw the full board including the extra hidden rows (no clipping).
     After drawing pieces, call draw_board_corners() to mask triangular cuts.
     """
+
+    BOARD_SURFACE.fill((0, 0, 0, 0)) # clear the board
+
     cell = settings.CELL_SIZE
     grid_start_x = engine.BOARD_PX_OFFSET_X
     grid_start_y = engine.BOARD_PX_OFFSET_Y
@@ -91,7 +97,7 @@ def draw_board():
             x = grid_start_x + col * cell
             y = grid_start_y + row * cell
             
-            engine.MAIN_SCREEN.blit(engine.pieces_dict[val]["skin"], (x, y))
+            BOARD_SURFACE.blit(engine.pieces_dict[val]["skin"], (x, y))
 
 def draw_piece_board():
     """
@@ -112,7 +118,7 @@ def draw_piece_board():
             x = grid_start_x + col * cell
             y = grid_start_y + row * cell
             
-            engine.MAIN_SCREEN.blit(engine.pieces_dict[val]["skin"], (x, y))
+            MAIN_SCREEN.blit(engine.pieces_dict[val]["skin"], (x, y))
             
 def draw_board_background(cut_size=None):
         """Draw board background with top-left & top-right cut by `cut_size`.
@@ -155,7 +161,7 @@ def draw_grid_lines():
                 
             if y0 < grid_start_y:
                 y0 = grid_start_y
-            pygame.draw.line(engine.MAIN_SCREEN, settings.GRID_COLOR,
+            pygame.draw.line(MAIN_SCREEN, settings.GRID_COLOR,
                             (x, y0),
                             (x, grid_start_y + height))
             
@@ -176,17 +182,17 @@ def draw_grid_lines():
             if x1 > grid_start_x + width:
                 x1 = grid_start_x + width
                 
-            pygame.draw.line(engine.MAIN_SCREEN, settings.GRID_COLOR,
+            pygame.draw.line(MAIN_SCREEN, settings.GRID_COLOR,
                             (x0, y),
                             (x1, y))
             
         # Diagonal lines across the top-left and top-right cuts
         # top-left
-        pygame.draw.line(engine.MAIN_SCREEN, settings.GRID_COLOR,
+        pygame.draw.line(MAIN_SCREEN, settings.GRID_COLOR,
                         (grid_start_x, grid_start_y + cut),
                         (grid_start_x + cut, grid_start_y))
         # top-right
-        pygame.draw.line(engine.MAIN_SCREEN, settings.GRID_COLOR,
+        pygame.draw.line(MAIN_SCREEN, settings.GRID_COLOR,
                         (grid_start_x + width - cut, grid_start_y),
                         (grid_start_x + width, grid_start_y + cut))
 
@@ -216,7 +222,7 @@ def draw_ghost_board():
             skin = skinloader.other_skins[0]  # semi-transparent ghost piece
             x = grid_start_x + (start_col + col) * cell
             y = grid_start_y + (start_row + row) * cell
-            engine.MAIN_SCREEN.blit(skin, (x, y))
+            MAIN_SCREEN.blit(skin, (x, y))
             
 def draw_topout_board():
     """Draw the top-out piece directly on the main board, aligned to the grid, shifted up/right 1 cell."""
@@ -245,7 +251,7 @@ def draw_topout_board():
             skin = skinloader.other_skins[4]  # semi-transparent topout piece
             x = grid_start_x + (start_col + col) * cell
             y = grid_start_y + (start_row + row) * cell
-            engine.MAIN_SCREEN.blit(skin, (x, y))
+            MAIN_SCREEN.blit(skin, (x, y))
             
 def draw_next_panel():
     text = "Next"
@@ -280,7 +286,7 @@ def draw_next_panel():
     text_surf = font.render(text, True, settings.TEXT_COLOR)
     padding = 10
     text_rect = text_surf.get_rect(topleft=(next_x + padding, next_y + padding))
-    engine.MAIN_SCREEN.blit(text_surf, text_rect)
+    MAIN_SCREEN.blit(text_surf, text_rect)
     
     # --- Draw next pieces ---
     if hasattr(engine, "next_boards") and engine.next_boards is not None:
@@ -324,7 +330,7 @@ def draw_next_panel():
                     y = area_start_y + row * cell_scaled + offset_y
                     piece_skin = engine.pieces_dict[val]["skin"]
                     piece_skin_scaled = pygame.transform.smoothscale(piece_skin, (cell_scaled, cell_scaled))
-                    engine.MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
+                    MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
     
     
 def draw_hold_panel():
@@ -359,7 +365,7 @@ def draw_hold_panel():
     text_surf = font.render(text, True, settings.TEXT_COLOR)
     padding = 10
     text_rect = text_surf.get_rect(topright=(hold_x + hold_width - padding, hold_y + padding))
-    engine.MAIN_SCREEN.blit(text_surf, text_rect)
+    MAIN_SCREEN.blit(text_surf, text_rect)
     
     # --- Draw held pieces ---
     if hasattr(engine, "hold_boards") and engine.hold_boards is not None:
@@ -403,7 +409,7 @@ def draw_hold_panel():
                     y = area_start_y + row * cell_scaled + offset_y
                     piece_skin = engine.pieces_dict[val]["skin"]
                     piece_skin_scaled = pygame.transform.smoothscale(piece_skin, (cell_scaled, cell_scaled))
-                    engine.MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
+                    MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
                     
                     
 # Precompute panel rect for later use
@@ -433,13 +439,13 @@ def draw_stats_panel_bg():
                             outline_color=settings.PANEL_OUTLINE)
     
         # Save the background so we can restore it before updating text
-        saved_stats_bg = engine.MAIN_SCREEN.subsurface(stats_panel_rect).copy()
+        saved_stats_bg = MAIN_SCREEN.subsurface(stats_panel_rect).copy()
     
     
 def draw_stats_panel_text(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69"):
         """Draw only the stats text, restoring background first."""
         if saved_stats_bg:
-                engine.MAIN_SCREEN.blit(saved_stats_bg, stats_panel_rect.topleft)
+                MAIN_SCREEN.blit(saved_stats_bg, stats_panel_rect.topleft)
             
         stats_x, stats_y = stats_panel_rect.topleft
         panel_height = stats_panel_rect.height
@@ -459,19 +465,19 @@ def draw_stats_panel_text(PPS='50.2', TIMES='3:28', TIMEMS='3:28', CLEARED="69")
         y_Cleared_value  = stats_y + int(panel_height * 0.83)
     
         # Draw labels
-        draw_text(engine.MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_PPS_label)
-        draw_text(engine.MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Time_label)
-        draw_text(engine.MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Lines_label)
-        draw_text(engine.MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Cleared_label)
+        draw_text(MAIN_SCREEN, "PPS:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_PPS_label)
+        draw_text(MAIN_SCREEN, "Time:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Time_label)
+        draw_text(MAIN_SCREEN, "Lines", fontsmall, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Lines_label)
+        draw_text(MAIN_SCREEN, "Cleared:", font, settings.TEXT_COLOR, stats_x + 0.1*stats_panel_rect.width, y_Cleared_label)
     
         # Draw values
-        draw_text(engine.MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_PPS_value)
-        draw_text(engine.MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_Time_value)
-        draw_text(engine.MAIN_SCREEN, TIMEMS, fontsmall, settings.TEXT_COLOR,
+        draw_text(MAIN_SCREEN, PPS, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_PPS_value)
+        draw_text(MAIN_SCREEN, TIMES, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_Time_value)
+        draw_text(MAIN_SCREEN, TIMEMS, fontsmall, settings.TEXT_COLOR,
                             stats_x + 0.2*stats_panel_rect.width + fontbig.size(TIMES)[0],
                             y_Time_value + fontbig.get_ascent() - fontsmall.get_ascent())
 
-        draw_text(engine.MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_Cleared_value)
+        draw_text(MAIN_SCREEN, CLEARED, fontbig, settings.TEXT_COLOR, stats_x + 0.2*stats_panel_rect.width, y_Cleared_value)
     
     
 def draw_score_panel(Level="50", Score="50,000"):
@@ -500,20 +506,20 @@ def draw_score_panel(Level="50", Score="50,000"):
     padding_y = int(0.1 * height)  # 10% of panel height from top
     
     # Draw Level
-    draw_text(engine.MAIN_SCREEN, "Level:", font, settings.TEXT_COLOR, x + padding_x, y + padding_y)
-    draw_text(engine.MAIN_SCREEN, Level, fontbig, settings.TEXT_COLOR, x + padding_x + font.size("Level:")[0] + 5, y + padding_y)
+    draw_text(MAIN_SCREEN, "Level:", font, settings.TEXT_COLOR, x + padding_x, y + padding_y)
+    draw_text(MAIN_SCREEN, Level, fontbig, settings.TEXT_COLOR, x + padding_x + font.size("Level:")[0] + 5, y + padding_y)
     
     # Vertical line separator
     line_offset = x + padding_x + font.size("Level:")[0] + fontbig.size(Level)[0] + int(0.02 * width)
     pygame.draw.line(
-        engine.MAIN_SCREEN, settings.PANEL_OUTLINE,
+        MAIN_SCREEN, settings.PANEL_OUTLINE,
         (line_offset, y),
         (line_offset + int(0.3 * height), y + height), # 0.3 is the width the line takes up
         1
     )
     
     # Draw Score
-    draw_text(engine.MAIN_SCREEN, "Score:", font, settings.TEXT_COLOR, line_offset + int(0.03 * width), y + padding_y)
+    draw_text(MAIN_SCREEN, "Score:", font, settings.TEXT_COLOR, line_offset + int(0.03 * width), y + padding_y)
     score_width = fontbig.size(Score)[0]
-    draw_text(engine.MAIN_SCREEN, Score, fontbig, settings.TEXT_COLOR, x + width - right_padding_x - score_width, y + padding_y)
+    draw_text(MAIN_SCREEN, Score, fontbig, settings.TEXT_COLOR, x + width - right_padding_x - score_width, y + padding_y)
     

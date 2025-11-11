@@ -45,7 +45,10 @@ load_game()
 mouse_was_down = False
 remaining_steps = 0 # remaining steps for gravity or soft-drop
 engine.game_state_changed = True # always true on the first frame
-engine.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+ui.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+ui.BACKGROUND_SURFACE = pygame.Surface((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT), pygame.SRCALPHA)
+ui.draw_background()
+
 engine.timer.start()
 
 def game_loop():
@@ -64,20 +67,21 @@ def game_loop():
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)
         engine.do_leftover_gravity(remaining_grav)
+    else:
+        ui.draw_board() # if the board state has changed, update the board surface
 
     if engine.game_state_changed:
-        screen = engine.MAIN_SCREEN
-        screen.blit(ui.draw_background(), (0, 0))
+        ui.MAIN_SCREEN.blit(ui.BACKGROUND_SURFACE)
+        ui.draw_board_background()
+        ui.draw_grid_lines()
+        ui.draw_ghost_board()
+        ui.MAIN_SCREEN.blit(ui.BOARD_SURFACE)
+        ui.draw_piece_board()
+        ui.draw_topout_board()
         ui.draw_stats_panel_bg()
         ui.draw_next_panel()
         ui.draw_hold_panel()
         ui.draw_score_panel(Level="99", Score="99,999")
-        ui.draw_board_background()
-        ui.draw_grid_lines()
-        ui.draw_ghost_board()
-        ui.draw_board()
-        ui.draw_piece_board()
-        ui.draw_topout_board()
     engine.game_state_changed = False # reset it for next frame
 
     mins_secs, dot_ms = engine.timer.split_strings()
@@ -105,9 +109,10 @@ while engine.running:
     # Draw FPS (universal part)
     fps_surf = font.render(fps + " FPS", True, settings.TEXT_COLOR)
     ui.draw_rect(-10, settings.WINDOW_HEIGHT - 40, 120, 50, settings.BOARD_COLOR, cut_corners=['top-right'], cut_size=10, outline_color=settings.PANEL_OUTLINE)
-    engine.MAIN_SCREEN.blit(fps_surf, (10, settings.WINDOW_HEIGHT-30))
+    ui.MAIN_SCREEN.blit(fps_surf, (10, settings.WINDOW_HEIGHT-30))
     
     pygame.display.flip()
 
     if not engine.running: # wait for the main loop to finish running to quit properly
+
         pygame.quit()
