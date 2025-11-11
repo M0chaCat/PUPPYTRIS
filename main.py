@@ -57,10 +57,10 @@ def game_loop():
     remaining_grav = engine.handle_soft_drop(keys, frametime)
     remaining_grav += engine.do_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
+    if engine.check_touching_ground():
+        engine.lockdown("STEP", frametime)
 
     if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
-        if engine.check_touching_ground():
-            engine.lockdown_step(frametime)
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)
         engine.do_leftover_gravity(remaining_grav)

@@ -118,7 +118,7 @@ ghost_piece_y = starting_y
 lockdown_start_x = starting_x
 lockdown_start_y = -settings.BOARD_EXTRA_HEIGHT
 lockdown_start_rotation = STARTING_ROTATION
-lockdown_resets_left = 15
+lockdown_resets = 15
 
 class Timer:
     def __init__(self):
@@ -159,12 +159,13 @@ class Timer:
 timer = Timer()
 
 def update_starting_coords():
-    global piece_width, piece_x, piece_y, starting_x, starting_y
+    global piece_width, piece_x, piece_y, starting_x, starting_y, piece_rotation
     piece_width = pieces_dict[piece_bags[0][0]]["shapes"][STARTING_ROTATION].shape[1]
     starting_x = (settings.BOARD_WIDTH - piece_width) // 2 # dynamically calculate starting position based on board and piece size.
     starting_y = settings.BOARD_EXTRA_HEIGHT - (piece_width//5 + 1)
     piece_x = starting_x
     piece_y = starting_y
+    piece_rotation = STARTING_ROTATION
 
 def update_pps():
     global pps
@@ -190,7 +191,6 @@ def spawn_piece():
     global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_left, game_state_changed
     queue_spawn_piece = False
     update_starting_coords()
-    piece_rotation = STARTING_ROTATION
     holds_left = hold_pieces_count
     game_state_changed = True
     
@@ -250,7 +250,6 @@ def undo(amount):
 
         # reset position
         update_starting_coords()
-        piece_rotation = STARTING_ROTATION
         holds_left = hold_pieces_count
         random.setstate(rng_state)
 
@@ -276,7 +275,7 @@ def gen_topout_board():
         topout_board = next_shape
 
 def update_ghost_piece(): # make sure piece_board has been updated before calling this function
-    global ghost_piece_x, ghost_piece_y, ghost_board, piece_y, piece_board
+    global ghost_piece_x, ghost_piece_y, ghost_board, piece_y
     if settings.ONEKF_ENABLED: # return an empty board if 1kf is enabled
         ghost_board = numpy.zeros_like(ghost_board)
         return
@@ -377,7 +376,13 @@ def mirror_piece():
             update_ghost_piece()
             break
 
-def hold_piece():
+def hold_piece(type, infinite):
+    if type == "PUPPY":
+        hold_puppy()
+    elif type == "GUIDELINE":
+        hold_guideline(infinite)
+
+def hold_puppy():
     global piece_bags, hold_pieces, hold_boards, next_boards, piece_board, game_state_changed
     game_state_changed = True
 
@@ -433,7 +438,6 @@ def hold_guideline(infinite_holds = False):
         # refresh current active piece
         piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][STARTING_ROTATION] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
         update_starting_coords()
-        piece_rotation = STARTING_ROTATION
         holds_left -= 1
 
         update_ghost_piece()
@@ -501,70 +505,45 @@ def clear_lines():
         new_board = numpy.vstack((new_lines, board_mask), dtype=numpy.int8)
         update_game_board(new_board)
 
-def lockdown_classic(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entry reset style.
+def lockdown(type, frametime):
     global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
-    lockdown_timer += frametime
+    global lockdown_start_x, lockdown_start_y, lockdown_start_rotation, lockdown_resets
 
-    if current_gravity == 0:
-        fall_time = math.inf
-    else:
-        fall_time = 16.6666667/current_gravity
+    lockdown_threshold = settings.LOCKDOWN_THRESHOLD # default setting, won't be overriden for any mode but classic
 
-    if lockdown_timer >= fall_time:
-        prevent_harddrop_timer = 0 # start the harddrop delay timer
-        prevent_harddrop_timer_started = True
-        prevent_harddrop_clock.tick()
-        lock_piece()
-    
-def lockdown_simple(frametime): # NEED TO IMPLEMENT PIECE FLASHING. entry reset style.
-    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
-    lockdown_timer += frametime
-    if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
-        prevent_harddrop_timer = 0 # start the harddrop delay timer
-        prevent_harddrop_timer_started = True
-        prevent_harddrop_clock.tick()
-        lock_piece()
-
-def lockdown_step(frametime): # NEED TO IMPLEMENT PIECE FLASHING. step reset (TGM) style.
-    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started, lockdown_start_y
-
-    if lockdown_timer == 0: lockdown_start_y = piece_y # set the initial variable
-    lockdown_timer += frametime
-    if lockdown_start_y < piece_y:
-        lockdown_timer = 0 # if the piece has fallen, reset the timer
-        lockdown_start_y = piece_y # reset the position variable
-
-    if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
-        prevent_harddrop_timer = 0 # start the harddrop delay timer
-        prevent_harddrop_timer_started = True
-        prevent_harddrop_clock.tick()
-        lock_piece()
-
-def lockdown_guideline(frametime): # NEED TO IMPLEMENT PIECE FLASHING. move reset (guideline) style.
-    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
-    global lockdown_start_x, lockdown_start_y, lockdown_start_rotation, lockdown_resets_left
-
-    if lockdown_timer == 0:
-        lockdown_start_x = piece_x # set the initial variables
+    if type == "GUIDELINE" or type == "STEP" and lockdown_timer == 0: # calculate starting coords for step and guideline style
+        lockdown_start_x = piece_x
         lockdown_start_y = piece_y
-        lockdown_start_rotation = piece_rotation
+
+    elif type == "CLASSIC": # calculate piece falling time for classic style
+        if current_gravity == 0:
+            lockdown_threshold = math.inf
+        else:
+            lockdown_threshold = 16.6666667/current_gravity
 
     lockdown_timer += frametime
-    piece_moved = lockdown_start_x != piece_x or lockdown_start_y != piece_y or lockdown_start_rotation != piece_rotation
-    if piece_moved and lockdown_resets_left > 0: # if the piece has moved at all
-        lockdown_resets_left -= 1
-        lockdown_timer = 0 # if the piece has moved, reset the timer
-        lockdown_start_x = piece_x # reset the position variables
-        lockdown_start_y = piece_y
-        lockdown_start_rotation = piece_rotation
 
-    if lockdown_timer >= settings.LOCKDOWN_THRESHOLD:
-        lockdown_resets_left = settings.LOCKDOWN_RESETS_COUNT
+    if type == "GUIDELINE": # update position if guideline type
+        piece_moved = lockdown_start_x != piece_x or lockdown_start_y != piece_y or lockdown_start_rotation != piece_rotation
+        if piece_moved and lockdown_resets > 0: # if the piece has moved at all
+            lockdown_resets -= 1
+            lockdown_timer = 0 # if the piece has moved, reset the timer
+            lockdown_start_x = piece_x # reset the position variables
+            lockdown_start_y = piece_y
+            lockdown_start_rotation = piece_rotation
+
+    elif type == "STEP":
+        if lockdown_start_y < piece_y:
+            lockdown_timer = 0 # if the piece has fallen, reset the timer
+            lockdown_start_y = piece_y # reset the position variable
+
+    if lockdown_timer >= lockdown_threshold:
+        lockdown_resets = settings.LOCKDOWN_RESETS_COUNT
         prevent_harddrop_timer = 0 # start the harddrop delay timer
         prevent_harddrop_timer_started = True
         prevent_harddrop_clock.tick()
         lock_piece()
-    
+
 def lock_piece():
     global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer
     new_board = game_board.copy()
@@ -809,7 +788,7 @@ def handle_events():
                 if event.key == settings.KEY_RESET:
                     reset_game()
                 if event.key == settings.KEY_EXIT:
-                    reset_game()
+                    STATE -= 1
                 if event.key == settings.KEY_UNDO:
                     undo(1)
             else:
