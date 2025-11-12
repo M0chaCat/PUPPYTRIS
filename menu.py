@@ -124,5 +124,5 @@ def draw_menu():
             
     # Draw buttons
     for btn in buttons:
-        btn.draw(engine.MAIN_SCREEN)
+        btn.draw(ui.MAIN_SCREEN)
         
