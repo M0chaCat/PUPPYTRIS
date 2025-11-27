@@ -5,7 +5,6 @@ import pygame
 import math
 import numpy
 import random
-import pygame_gui
 import os
 import time
 import copy
@@ -157,9 +156,11 @@ timer = Timer()
 
 def update_starting_coords():
     global piece_width, piece_x, piece_y, starting_x, starting_y, piece_rotation
-    piece_width = pieces_dict[piece_bags[0][0]]["shapes"][STARTING_ROTATION].shape[1]
+    piece_shape = pieces_dict[piece_bags[0][0]]["shapes"][STARTING_ROTATION]
+    piece_width = piece_shape.shape[1]
+    height_offset = numpy.where(numpy.any(piece_shape != 0, axis=1))[0][0]
     starting_x = (settings.BOARD_WIDTH - piece_width) // 2 # dynamically calculate starting position based on board and piece size.
-    starting_y = settings.BOARD_EXTRA_HEIGHT - (piece_width//5 + 1)
+    starting_y = settings.BOARD_EXTRA_HEIGHT - piece_width//5 - height_offset # need to subtract the blank space in the piece here
     piece_x = starting_x
     piece_y = starting_y
     piece_rotation = STARTING_ROTATION
@@ -838,4 +839,5 @@ def swap_mode(usepenta):
         pieces_dict = pieces.penta_dict
         piece_inversions = pieces.penta_inversions
         hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
+
         holds_left = settings.HOLD_PIECES_COUNT_TETRA
