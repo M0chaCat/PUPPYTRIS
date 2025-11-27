@@ -237,7 +237,7 @@ def undo(amount):
 
         # revert history
         state = game_history[history_index]
-        game_board = state["board"].copy()
+        game_board = copy.deepcopy(state["board"])
         pieces_placed = state["pieces"]
         lines_cleared = state["lines"]
         piece_bags = copy.deepcopy(state["next"])
@@ -560,13 +560,14 @@ def lock_piece():
     queue_spawn_piece = True
     
     # update the next piece early so it looks nice
-    update_starting_coords()
-    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board early so it looks nice
+    #update_starting_coords()
+    #piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board early so it looks nice
 
-    update_history()
     update_game_board(new_board)
     clear_lines()
     update_ghost_piece()
+    # this has to happen at the very end
+    update_history()
     
 def handle_movement(keys):
     global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir
