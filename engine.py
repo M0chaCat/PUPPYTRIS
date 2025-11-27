@@ -558,6 +558,11 @@ def lock_piece():
     lockdown_timer = 0
     pieces_placed += 1
     queue_spawn_piece = True
+    
+    # update the next piece early so it looks nice
+    update_starting_coords()
+    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board early so it looks nice
+
     update_history()
     update_game_board(new_board)
     clear_lines()
