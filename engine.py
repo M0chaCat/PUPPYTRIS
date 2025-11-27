@@ -195,7 +195,6 @@ def spawn_piece():
     piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
     gen_next_boards()
     gen_topout_board()
-    update_history()
     update_ghost_piece()
     # top-out check
     if check_collisions(0, 0, piece_board):
@@ -227,17 +226,17 @@ def update_history():
 
 def undo(amount):
     global game_board, pieces_placed, lines_cleared, piece_bags, hold_pieces, rng_state, pps, bag_count
-    global piece_x, piece_y, piece_rotation, holds_left, piece_board
+    global piece_x, piece_y, piece_rotation, holds_left, piece_board, queue_spawn_piece
     global game_state_changed, history_index
-
-    if pieces_placed - amount >= 0:
+    print(pieces_placed, amount)
+    if pieces_placed - amount > 0:
         game_state_changed = True
         history_index -= amount
         if history_index < 0:
             history_index = settings.MAX_HISTORY - amount # make sure this doesn't miss one
-        state = game_history[history_index]
 
         # revert history
+        state = game_history[history_index]
         game_board = state["board"].copy()
         pieces_placed = state["pieces"]
         lines_cleared = state["lines"]
@@ -251,7 +250,9 @@ def undo(amount):
         holds_left = hold_pieces_count
         random.setstate(rng_state)
 
-        piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board
+        piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board early so it looks nice
+        queue_spawn_piece = True
+        # updating all these even thought spawn_piece does it for us because want it to update on frame 0
         gen_topout_board()
         gen_hold_boards()
         gen_next_boards()
@@ -543,7 +544,7 @@ def lockdown(type, frametime):
         lock_piece()
 
 def lock_piece():
-    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer
+    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer, history_index
     new_board = game_board.copy()
     for coords in numpy.argwhere(piece_board != 0):
         new_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
@@ -557,6 +558,7 @@ def lock_piece():
     lockdown_timer = 0
     pieces_placed += 1
     queue_spawn_piece = True
+    update_history()
     update_game_board(new_board)
     clear_lines()
     update_ghost_piece()

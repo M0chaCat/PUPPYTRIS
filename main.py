@@ -99,7 +99,7 @@ state_funcs = {
 }
 
 while engine.running:
-    engine.frametime_clock.tick()
+    engine.frametime_clock.tick(settings.MAX_FRAMERATE)
     fps = str(int(engine.frametime_clock.get_fps()))
     
     # Run current state’s logic
