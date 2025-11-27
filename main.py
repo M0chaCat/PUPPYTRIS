@@ -45,13 +45,12 @@ load_game()
 mouse_was_down = False
 remaining_steps = 0 # remaining steps for gravity or soft-drop
 engine.game_state_changed = True # always true on the first frame
-ui.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
-ui.BACKGROUND_SURFACE = pygame.Surface((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT), pygame.SRCALPHA)
 ui.draw_background()
 
 engine.timer.start()
 
 def game_loop():
+    #engine.piece_bags[0] = [5,5,5,5,5,5]
     global mouse_was_down
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
