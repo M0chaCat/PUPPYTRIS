@@ -160,7 +160,7 @@ def update_starting_coords():
     piece_width = piece_shape.shape[1]
     height_offset = numpy.where(numpy.any(piece_shape != 0, axis=1))[0][0]
     starting_x = (settings.BOARD_WIDTH - piece_width) // 2 # dynamically calculate starting position based on board and piece size.
-    starting_y = settings.BOARD_EXTRA_HEIGHT - piece_width//5 - height_offset # need to subtract the blank space in the piece here
+    starting_y = settings.BOARD_EXTRA_HEIGHT - piece_width//5 - height_offset + settings.SPAWN_Y_OFFSET # need to subtract the blank space in the piece here
     piece_x = starting_x
     piece_y = starting_y
     piece_rotation = STARTING_ROTATION

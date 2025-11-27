@@ -237,10 +237,13 @@ def draw_topout_board():
     grid_start_x = engine.BOARD_PX_OFFSET_X
     grid_start_y = engine.BOARD_PX_OFFSET_Y + settings.BOARD_EXTRA_HEIGHT * cell
     
-    # Compute horizontal alignment in board cells
-    main_cols = settings.BOARD_WIDTH
-    start_col = engine.starting_x # piece_starting x is the regular piece offset
-    start_row = -1  # shift up 1 cell (negative y)
+    # Calculate the piece spawning offset (code copied from engine.py)
+    next_piece = (engine.piece_bags[0] + engine.piece_bags[1])[1]
+    piece_shape = engine.pieces_dict[next_piece]["shapes"][engine.STARTING_ROTATION]
+    piece_width = piece_shape.shape[1]
+    height_offset = numpy.where(numpy.any(piece_shape != 0, axis=1))[0][0]
+    start_col = (settings.BOARD_WIDTH - piece_width) // 2 # dynamically calculate starting position based on board and piece size.
+    start_row = piece_width//5 - height_offset + settings.SPAWN_Y_OFFSET# need to subtract the blank space in the piece here.
     
     # Draw each block aligned to main board's grid
     for row in range(board_rows):
