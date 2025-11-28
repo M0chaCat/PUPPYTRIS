@@ -46,6 +46,7 @@ mouse_was_down = False
 remaining_steps = 0 # remaining steps for gravity or soft-drop
 engine.game_state_changed = True # always true on the first frame
 ui.draw_background()
+print(pygame.K_QUOTE)
 
 engine.timer.start()
 
@@ -57,6 +58,7 @@ def game_loop():
     if engine.queue_spawn_piece:
         engine.spawn_piece()
     remaining_grav = engine.handle_soft_drop(keys, frametime)
+    remaining_grav += engine.handle_sonic_drop(keys)
     remaining_grav += engine.do_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
     if engine.check_touching_ground():

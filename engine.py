@@ -719,11 +719,14 @@ def reset_game():
     gen_next_boards()
     update_ghost_piece()
     
-def sonic_drop():
+def handle_sonic_drop(keys):
+    print("runnign")
     global softdrop_overrides, game_state_changed
-    game_state_changed = True
-    softdrop_overrides = True
-    return move_piece(0, settings.BOARD_HEIGHT)
+    if keys[settings.MOVE_SONICDROP]:
+        print("softingdroping")
+        softdrop_overrides = True
+        return move_piece(0, settings.BOARD_HEIGHT)
+    return 0
 
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
@@ -787,8 +790,6 @@ def handle_events():
                     rotate_piece(3)
                 if event.key == settings.ROTATE_MIRROR:
                     mirror_piece()
-                if event.key == settings.MOVE_SONICDROP:
-                    sonic_drop()
                 if event.key == settings.MOVE_HARDDROP:
                     hard_drop()
                 if event.key == settings.KEY_RESET:
