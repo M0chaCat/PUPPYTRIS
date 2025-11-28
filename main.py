@@ -8,16 +8,6 @@ pygame.init()
 
 pygame.display.set_caption("puppytris!!!!!")
 
-if settings.WALLPAPER_PATH:
-    settings.WALLPAPER = pygame.image.load(settings.WALLPAPER_PATH).convert_alpha()
-
-# Text (top-left)
-font_size = 24
-try:
-    font = pygame.font.Font(settings.font_dir, font_size)
-except:
-    font = pygame.font.SysFont(None, font_size)
-
 # pre game stuff
 def load_game(): # all this stuff is done a second time when reset_game is called. it should be smarter.
     skinloader.set_other_skins()
@@ -108,9 +98,7 @@ while engine.running:
     state_funcs[engine.STATE]()
 
     # Draw FPS (universal part)
-    fps_surf = font.render(fps + " FPS", True, settings.TEXT_COLOR)
-    ui.draw_rect(-10, settings.WINDOW_HEIGHT - 40, 120, 50, settings.BOARD_COLOR, cut_corners=['top-right'], cut_size=10, outline_color=settings.PANEL_OUTLINE)
-    ui.MAIN_SCREEN.blit(fps_surf, (10, settings.WINDOW_HEIGHT-30))
+    ui.draw_fps(fps)
     
     pygame.display.flip()
 

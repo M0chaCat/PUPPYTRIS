@@ -720,10 +720,8 @@ def reset_game():
     update_ghost_piece()
     
 def handle_sonic_drop(keys):
-    print("runnign")
     global softdrop_overrides, game_state_changed
     if keys[settings.MOVE_SONICDROP]:
-        print("softingdroping")
         softdrop_overrides = True
         return move_piece(0, settings.BOARD_HEIGHT)
     return 0

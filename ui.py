@@ -11,6 +11,25 @@ GUI_MANAGER = pygame_gui.UIManager((settings.WINDOW_WIDTH, settings.WINDOW_HEIGH
 BACKGROUND_SURFACE = pygame.Surface((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 BOARD_SURFACE = pygame.Surface((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT), pygame.SRCALPHA)
 
+if settings.WALLPAPER_PATH:
+    settings.WALLPAPER = pygame.image.load(settings.WALLPAPER_PATH).convert_alpha()
+
+# Text (top-left)
+font_size = 24
+try:
+    font = pygame.font.Font(settings.font_dir, font_size)
+except:
+    font = pygame.font.SysFont(None, font_size)
+
+fps_cache = {}
+
+def draw_fps(fps):
+    if fps not in fps_cache:
+        print(fps)
+        fps_cache[fps] = font.render(fps + " FPS", True, settings.TEXT_COLOR)
+    draw_rect(-10, settings.WINDOW_HEIGHT - 40, 120, 50, settings.BOARD_COLOR, cut_corners=['top-right'], cut_size=10, outline_color=settings.PANEL_OUTLINE)
+    MAIN_SCREEN.blit(fps_cache[fps], (10, settings.WINDOW_HEIGHT-30))
+
 def draw_rect(x, y, width, height, color=(200, 200, 200, 255),
               cut_corners=None, cut_size=10, outline_color=None):
     """
