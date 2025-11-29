@@ -51,7 +51,7 @@ def game_loop():
     remaining_grav += engine.do_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
     if engine.check_touching_ground():
-        engine.lockdown("CLASSIC", frametime)
+        engine.lockdown(engine.lockdown_type, frametime)
 
     if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
         if not settings.ONEKF_ENABLED:
@@ -70,7 +70,7 @@ def game_loop():
         ui.draw_topout_board()
         ui.draw_stats_panel_bg()
         ui.draw_next_panel()
-        ui.draw_hold_panel()
+        if engine.hold_pieces_count > 0: ui.draw_hold_panel()
         ui.draw_score_panel(Level="99", Score="99,999")
     engine.game_state_changed = False # reset it for next frame
 

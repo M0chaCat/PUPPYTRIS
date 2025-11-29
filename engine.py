@@ -81,18 +81,23 @@ hold_pieces = []
 
 pieces_dict = pieces.tetra_dict
 piece_inversions = pieces.tetra_inversions
-hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
-holds_left = hold_pieces_count
 piece_gen_type = "CLASSIC"
 lockdown_type = "CLASSIC"
 next_queue_size = 1 # next pieces count is the user settings max
 # next_queue_size will sometimes be smaller than the max depending on the gamemode
+das_threshold = 266.6666666
+arr_threshold = 100
+sdr_threshold = 33.33333333
+hold_pieces_count = 0
+infinite_holds = False
+
+holds_used = 0
 
 # if pentas exist and should be active, switch
 if skinloader.has_penta and settings.is_penta:
     pieces_dict = pieces.penta_dict
     piece_inversions = pieces.penta_inversions
-    hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
+    hold_pieces_count = 2
     
 hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
 next_boards = numpy.zeros((next_queue_size, 5, 5), dtype=numpy.int8)
@@ -210,10 +215,10 @@ def generate_bag(type="BAG"):
     return generated_bag
 
 def spawn_piece():
-    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_left, game_state_changed
+    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_used, game_state_changed
     queue_spawn_piece = False
     update_starting_coords()
-    holds_left = hold_pieces_count
+    holds_used = 0
     game_state_changed = True
     
     piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
@@ -250,7 +255,7 @@ def update_history():
 
 def undo(amount):
     global game_board, pieces_placed, lines_cleared, piece_bags, hold_pieces, rng_state, pps, bag_count
-    global piece_x, piece_y, piece_rotation, holds_left, piece_board, queue_spawn_piece
+    global piece_x, piece_y, piece_rotation, holds_used, piece_board, queue_spawn_piece
     global game_state_changed, history_index
     if pieces_placed - amount >= 0:
         game_state_changed = True
@@ -270,7 +275,7 @@ def undo(amount):
 
         # reset position
         update_starting_coords()
-        holds_left = hold_pieces_count
+        holds_used = 0
         random.setstate(rng_state)
 
         piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board early so it looks nice
@@ -436,11 +441,11 @@ def hold_puppy():
     gen_hold_boards()
 
 def hold_guideline(infinite_holds = False):
-    global piece_bags, hold_pieces, hold_boards, next_boards, game_state_changed, holds_left
+    global piece_bags, hold_pieces, hold_boards, next_boards, game_state_changed, holds_used
     global piece_x, piece_y, piece_rotation, piece_board
     game_state_changed = True
 
-    if holds_left > 0 or infinite_holds:
+    if holds_used < hold_pieces_count or infinite_holds:
         hold_pieces.append(piece_bags[0][0]) # take the current piece and add it to hold queue
         piece_bags[0].pop(0) # remove the current piece from piece bag
             
@@ -460,7 +465,7 @@ def hold_guideline(infinite_holds = False):
         # refresh current active piece
         piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][STARTING_ROTATION] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
         update_starting_coords()
-        holds_left -= 1
+        holds_used += 1
 
         update_ghost_piece()
         gen_hold_boards()
@@ -624,24 +629,24 @@ def handle_movement(keys):
         else:
             das_timer += das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
             
-            if (das_timer > settings.DAS_THRESHOLD):
-                if not arr_timer_started and settings.ARR_THRESHOLD != 0:
+            if (das_timer > das_threshold):
+                if not arr_timer_started and arr_threshold != 0:
                     move_piece(move_dir, 0)
                     arr_timer_started = True # start the ARR timer
                     arr_timer = 0
                     arr_clock.tick()
                 else:
                     arr_timer += arr_clock.tick()
-                    if arr_timer >= settings.ARR_THRESHOLD:
-                        if settings.ARR_THRESHOLD == 0: # avoids divide by 0 error
+                    if arr_timer >= arr_threshold:
+                        if arr_threshold == 0: # avoids divide by 0 error
                             steps_to_move = settings.BOARD_WIDTH
                         else:
-                            steps_to_move = int(arr_timer / settings.ARR_THRESHOLD)
+                            steps_to_move = int(arr_timer / arr_threshold)
                         move_piece(steps_to_move * move_dir, 0)
-                        if settings.ARR_THRESHOLD == 0: # avoids divide by 0 error
+                        if arr_threshold == 0: # avoids divide by 0 error
                             arr_timer = 0
                         else:
-                            arr_timer = arr_timer % settings.ARR_THRESHOLD
+                            arr_timer = arr_timer % arr_threshold
                             
     elif das_timer_started: # saves performance by only checking this stuff when das_timer is still running
         if not das_reset_timer_started:
@@ -700,7 +705,7 @@ def top_out():
     reset_game()
     
 def reset_game():
-    global game_board, game_history, piece_board, piece_bags, hold_pieces, bag_count, holds_left
+    global game_board, game_history, piece_board, piece_bags, hold_pieces, bag_count, holds_used
     global piece_x, piece_y, piece_rotation, hold_boards, next_boards
     global das_timer, arr_timer, sdr_timer, das_reset_timer, prevent_harddrop_timer
     global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started, prevent_harddrop_timer_started
@@ -729,7 +734,7 @@ def reset_game():
     # Reset hold
     hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
     hold_pieces = []
-    holds_left = hold_pieces_count
+    holds_used = 0
     
     # Reset piece bag
     piece_bags[0] = generate_bag(piece_gen_type)
@@ -755,16 +760,16 @@ def handle_sonic_drop(keys):
 def handle_soft_drop(keys, frametime):
     global sdr_timer, sdr_timer_started, softdrop_overrides
     if current_gravity > 0.001:
-        softdrop_overrides = (settings.SDR_THRESHOLD <= 16.666667 / current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
+        softdrop_overrides = (sdr_threshold <= 16.666667 / current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
     elif keys[settings.MOVE_SOFTDROP]:
         softdrop_overrides = True # returns true always if gravity is 0 (prevents divide by 0)
     else:
         softdrop_overrides = False
         
-    if settings.SDR_THRESHOLD == 0:
+    if sdr_threshold == 0:
         steps_to_move = settings.BOARD_HEIGHT + 10
     else:
-        steps_to_move = max(int(frametime / settings.SDR_THRESHOLD), 1) # predicts how much softdrop should move for first button press
+        steps_to_move = max(int(frametime / sdr_threshold), 1) # predicts how much softdrop should move for first button press
         
     if softdrop_overrides:
         if not sdr_timer_started:
@@ -774,13 +779,13 @@ def handle_soft_drop(keys, frametime):
             return move_piece(0, steps_to_move) # returns remaining steps
         else:
             sdr_timer += sdr_clock.tick()
-            if sdr_timer >= settings.SDR_THRESHOLD:
-                if settings.SDR_THRESHOLD == 0: # avoids divide by 0 error
+            if sdr_timer >= sdr_threshold:
+                if sdr_threshold == 0: # avoids divide by 0 error
                     steps_to_move == settings.BOARD_HEIGHT + 10
                     sdr_timer = 0
                 else:
-                    steps_to_move = int(sdr_timer / settings.SDR_THRESHOLD)
-                    sdr_timer = sdr_timer % settings.SDR_THRESHOLD
+                    steps_to_move = int(sdr_timer / sdr_threshold)
+                    sdr_timer = sdr_timer % sdr_threshold
 
                 return move_piece(0, steps_to_move) # returns remaining steps
     else:
@@ -805,7 +810,7 @@ def handle_events():
         if event.type == pygame.KEYDOWN:
             if not settings.ONEKF_ENABLED:
                 if event.key == settings.KEY_HOLD:
-                    hold_guideline(settings.INFINITE_HOLDS)
+                    hold_guideline(infinite_holds)
                 if event.key == settings.ROTATE_180:
                     rotate_piece(2)
                 if event.key == settings.ROTATE_CW:
@@ -855,7 +860,7 @@ def do_leftover_gravity(remaining_steps): # for when a piece falls, touches the 
         move_piece(0, remaining_steps) # move the piece by the leftover amount from this frame
 
 def swap_mode(usepenta):
-    global pieces_dict, piece_inversions, hold_pieces_count, holds_left
+    global pieces_dict, piece_inversions, hold_pieces_count, holds_used
     if not skinloader.has_penta and usepenta:
         print("Your skin does not support pentaminos!")
         return
@@ -864,13 +869,13 @@ def swap_mode(usepenta):
     PIECE_TYPES = settings.PIECE_TYPES_PENTA if settings.is_penta else settings.PIECE_TYPES_TETRA
     pieces_dict = pieces.tetra_dict
     piece_inversions = pieces.tetra_inversions
-    hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
-    holds_left = settings.HOLD_PIECES_COUNT_TETRA
+    hold_pieces_count = 1
+    holds_used = 0
     
     # if pentas exist and should be active, switch
     if skinloader.has_penta and settings.is_penta:
         pieces_dict = pieces.penta_dict
         piece_inversions = pieces.penta_inversions
-        hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
+        hold_pieces_count = 2
 
-        holds_left = settings.HOLD_PIECES_COUNT_TETRA
+        holds_used = 0
