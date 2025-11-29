@@ -84,6 +84,9 @@ piece_inversions = pieces.tetra_inversions
 hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
 holds_left = hold_pieces_count
 piece_gen_type = "CLASSIC"
+lockdown_type = "CLASSIC"
+next_queue_size = 1 # next pieces count is the user settings max
+# next_queue_size will sometimes be smaller than the max depending on the gamemode
 
 # if pentas exist and should be active, switch
 if skinloader.has_penta and settings.is_penta:
@@ -92,7 +95,7 @@ if skinloader.has_penta and settings.is_penta:
     hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
     
 hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
-next_boards = numpy.zeros((settings.NEXT_PIECES_COUNT, 5, 5), dtype=numpy.int8)
+next_boards = numpy.zeros((next_queue_size, 5, 5), dtype=numpy.int8)
 topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
 onekf_key_array = numpy.zeros((4, 10), dtype=int) # int8 is too small
@@ -491,7 +494,7 @@ def gen_next_boards():
     global next_boards
     
     next_boards = []
-    next_list = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
+    next_list = (piece_bags[0] + piece_bags[1])[1:next_queue_size + 1] # gets a truncated next_pieces list
 
     for piece_id in next_list:
         piece_shape = pieces_dict[piece_id]["shapes"][0]
