@@ -25,7 +25,6 @@ fps_cache = {}
 
 def draw_fps(fps):
     if fps not in fps_cache:
-        print(fps)
         fps_cache[fps] = font.render(fps + " FPS", True, settings.TEXT_COLOR)
     draw_rect(-10, settings.WINDOW_HEIGHT - 40, 120, 50, settings.BOARD_COLOR, cut_corners=['top-right'], cut_size=10, outline_color=settings.PANEL_OUTLINE)
     MAIN_SCREEN.blit(fps_cache[fps], (10, settings.WINDOW_HEIGHT-30))
