@@ -537,7 +537,9 @@ def lockdown(type, frametime):
     global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
     global lockdown_start_x, lockdown_start_y, lockdown_start_rotation, lockdown_resets
 
-    lockdown_threshold = settings.LOCKDOWN_THRESHOLD # default setting, won't be overriden for any mode but classic
+    if current_gravity > 0.01:
+        lockdown_threshold = settings.LOCKDOWN_THRESHOLD # default setting, won't be overriden for any mode but classic
+    else: lockdown_threshold = math.inf
 
     if type == "GUIDELINE" or type == "STEP" and lockdown_timer == 0: # calculate starting coords for step and guideline style
         lockdown_start_x = piece_x
