@@ -6,7 +6,7 @@ import skinloader
 
 tetra_dict = {
     1: {
-        "id": "Z",
+        "name": "Z",
         "shapes": [
             numpy.array([
                 [0,0,0],

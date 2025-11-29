@@ -83,6 +83,7 @@ pieces_dict = pieces.tetra_dict
 piece_inversions = pieces.tetra_inversions
 hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
 holds_left = hold_pieces_count
+piece_gen_type = "CLASSIC"
 
 # if pentas exist and should be active, switch
 if skinloader.has_penta and settings.is_penta:
@@ -171,18 +172,38 @@ def update_pps():
     pps = pieces_placed / total_time
     pps = round(pps, 2)
 
-def generate_bag():
+def generate_bag(type="BAG"):
     global bag_count
     bag_count += 1
-    
     generated_bag = []
     
-    for piece, data in pieces_dict.items(): # put all the pieces in the bag
-        # Skip if rare piece (x) and we're on an odd bag
-        if data.get("rare", False) and bag_count % 2 == 1:
-            continue
-        generated_bag.append(piece)
-    random.shuffle(generated_bag)
+    if (type == "BAG"):
+        
+        for piece, data in pieces_dict.items(): # put all the pieces in the bag
+            # Skip if rare piece (x) and we're on an odd bag
+            if data.get("rare", False) and bag_count % 2 == 1:
+                continue
+            generated_bag.append(piece)
+        random.shuffle(generated_bag)
+
+    elif (type == "RANDOM"):
+        for i in range(7):
+            piece = random.randint(1, PIECE_TYPES)
+            generated_bag.append(piece)
+
+    elif (type == "CLASSIC"):
+        for i in range(7):
+            if not piece_bags[0] and i == 0:
+                prev_piece = -1
+            elif i == 0:
+                prev_piece = (piece_bags[0] + piece_bags[1])[0]
+            else:
+                prev_piece = generated_bag[0]
+            piece = random.randint(0, PIECE_TYPES)
+            if (piece == 0 or piece == prev_piece):
+                piece = random.randint(1, PIECE_TYPES)
+            generated_bag.insert(0, piece)
+
     return generated_bag
 
 def spawn_piece():
@@ -228,22 +249,30 @@ def undo(amount):
     global game_board, pieces_placed, lines_cleared, piece_bags, hold_pieces, rng_state, pps, bag_count
     global piece_x, piece_y, piece_rotation, holds_left, piece_board, queue_spawn_piece
     global game_state_changed, history_index
-    print(pieces_placed, amount)
-    if pieces_placed - amount > 0:
+    if pieces_placed - amount >= 0:
         game_state_changed = True
         history_index -= amount
         if history_index < 0:
             history_index = settings.MAX_HISTORY - amount # make sure this doesn't miss one
 
         # revert history
+        print("1")
         state = game_history[history_index]
+        print("2")
         game_board = copy.deepcopy(state["board"])
+        print("3")
         pieces_placed = state["pieces"]
+        print("4")
         lines_cleared = state["lines"]
+        print("5")
         piece_bags = copy.deepcopy(state["next"])
+        print("6")
         hold_pieces = copy.deepcopy(state["hold"])
+        print("7")
         rng_state = state["rng"]
+        print("8")
         bag_count = state["bag_count"]
+        print("9")
 
         # reset position
         update_starting_coords()
@@ -405,7 +434,7 @@ def hold_puppy():
     # regen bags if the bag is emptied because of hold
     if not piece_bags[0]:
         piece_bags[0] = piece_bags[1]
-        piece_bags[1] = generate_bag()
+        piece_bags[1] = generate_bag(piece_gen_type)
         
     # refresh current active piece
     piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][piece_rotation] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
@@ -432,7 +461,7 @@ def hold_guideline(infinite_holds = False):
         # regen bags if the bag is emptied because of hold
         if not piece_bags[0]:
             piece_bags[0] = piece_bags[1]
-            piece_bags[1] = generate_bag()
+            piece_bags[1] = generate_bag(piece_gen_type)
             
         # refresh current active piece
         piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][STARTING_ROTATION] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
@@ -553,7 +582,7 @@ def lock_piece():
     
     if not piece_bags[0]:
         piece_bags[0] = piece_bags[1]
-        piece_bags[1] = generate_bag()
+        piece_bags[1] = generate_bag(piece_gen_type)
 
     lockdown_timer = 0
     pieces_placed += 1
@@ -707,8 +736,8 @@ def reset_game():
     holds_left = hold_pieces_count
     
     # Reset piece bag
-    piece_bags[0] = generate_bag()
-    piece_bags[1] = generate_bag()
+    piece_bags[0] = generate_bag(piece_gen_type)
+    piece_bags[1] = generate_bag(piece_gen_type)
     
     # Reset stats
     timer.reset()
@@ -718,6 +747,7 @@ def reset_game():
 
     gen_next_boards()
     update_ghost_piece()
+    update_history()
     
 def handle_sonic_drop(keys):
     global softdrop_overrides, game_state_changed

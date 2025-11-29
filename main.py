@@ -11,12 +11,13 @@ pygame.display.set_caption("puppytris!!!!!")
 # pre game stuff
 def load_game(): # all this stuff is done a second time when reset_game is called. it should be smarter.
     skinloader.set_other_skins()
-    engine.piece_bags[0] = engine.generate_bag() # generate the first two bags
-    engine.piece_bags[1] = engine.generate_bag()
+    engine.piece_bags[0] = engine.generate_bag(engine.piece_gen_type) # generate the first two bags
+    engine.piece_bags[1] = engine.generate_bag(engine.piece_gen_type)
     engine.gen_next_boards()
     engine.spawn_piece()
     engine.update_ghost_piece()
     engine.unpack_1kf_binds()
+    engine.update_history()
         
 def menu_loop():
     menu.draw_menu()
@@ -36,12 +37,10 @@ mouse_was_down = False
 remaining_steps = 0 # remaining steps for gravity or soft-drop
 engine.game_state_changed = True # always true on the first frame
 ui.draw_background()
-print(pygame.K_QUOTE)
 
 engine.timer.start()
 
 def game_loop():
-    #engine.piece_bags[0] = [5,5,5,5,5,5]
     global mouse_was_down
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
