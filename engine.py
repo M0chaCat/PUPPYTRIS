@@ -256,23 +256,14 @@ def undo(amount):
             history_index = settings.MAX_HISTORY - amount # make sure this doesn't miss one
 
         # revert history
-        print("1")
         state = game_history[history_index]
-        print("2")
         game_board = copy.deepcopy(state["board"])
-        print("3")
         pieces_placed = state["pieces"]
-        print("4")
         lines_cleared = state["lines"]
-        print("5")
         piece_bags = copy.deepcopy(state["next"])
-        print("6")
         hold_pieces = copy.deepcopy(state["hold"])
-        print("7")
         rng_state = state["rng"]
-        print("8")
         bag_count = state["bag_count"]
-        print("9")
 
         # reset position
         update_starting_coords()
