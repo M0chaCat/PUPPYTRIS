@@ -23,27 +23,21 @@ MAX_FRAMERATE = 60
 # --- Config / constants ---
 PIECE_TYPES_TETRA = 7
 PIECE_TYPES_PENTA = 18
-HOLD_PIECES_COUNT_TETRA = 1
-HOLD_PIECES_COUNT_PENTA = 2
 NEXT_PIECES_COUNT = 5
 LOCKDOWN_RESETS_COUNT = 14
-INFINITE_HOLDS = False
-
-is_penta = False
 
 DAS_THRESHOLD = 100
 ARR_THRESHOLD = 0
 SDR_THRESHOLD = 0 # SDR = soft drop rate
-DAS_RESET_THRESHOLD = 0 # experimental mechanic that causes DAS to stay charged for the duration of the value in MS
+DAS_RESET_THRESHOLD = 0 # experimental mechanic that causes DAS to stay charged after release
+                        # for the duration of the value (in MS)
 PREVENT_HARDDROP_THRESHOLD = 300
 
 # not user variables
-STARTING_GRAVITY = 0
 MAX_HISTORY = 2000
 LOCKDOWN_THRESHOLD = 1000
 LOCKDOWN_THRESHOLD_STEP = 400
 LOCKDOWN_THRESHOLD_GUIDELINE = 400
-SPAWN_Y_OFFSET = 0
 
 ONEKF_ENABLED = False
 ONEKF_PRACTICE = True

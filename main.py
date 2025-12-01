@@ -2,7 +2,7 @@
 
 import pygame
 
-import engine, ui, settings, skinloader, menu
+import engine, skinloader, ui, settings, menu, pieces
 
 pygame.init()
 
@@ -11,10 +11,11 @@ pygame.display.set_caption("puppytris!!!!!")
 # pre game stuff
 def load_game(): # all this stuff is done a second time when reset_game is called. it should be smarter.
     skinloader.set_other_skins()
+    pieces.init_skins()
     engine.piece_bags[0] = engine.generate_bag(engine.piece_gen_type) # generate the first two bags
     engine.piece_bags[1] = engine.generate_bag(engine.piece_gen_type)
     engine.gen_next_boards()
-    engine.spawn_piece()
+    engine.spawn_piece() # later want delayed spawn first piece mechanic
     engine.update_ghost_piece()
     engine.unpack_1kf_binds()
     engine.update_history()
@@ -42,6 +43,7 @@ engine.timer.start()
 
 def game_loop():
     global mouse_was_down
+    engine.add_mino(7, 7)
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
     if engine.queue_spawn_piece:
@@ -51,7 +53,7 @@ def game_loop():
     remaining_grav += engine.do_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
     engine.handle_events()
     if engine.check_touching_ground():
-        engine.lockdown("STEP", frametime)
+        engine.lockdown(engine.lockdown_type, frametime)
 
     if not engine.queue_spawn_piece: # if no more piece, skip remaining movement logic
         if not settings.ONEKF_ENABLED:
@@ -70,7 +72,7 @@ def game_loop():
         ui.draw_topout_board()
         ui.draw_stats_panel_bg()
         ui.draw_next_panel()
-        ui.draw_hold_panel()
+        if engine.hold_pieces_count > 0: ui.draw_hold_panel()
         ui.draw_score_panel(Level="99", Score="99,999")
     engine.game_state_changed = False # reset it for next frame
 

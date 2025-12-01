@@ -9,18 +9,13 @@ import os
 import time
 import copy
 
-import settings, pieces, skinloader
+import pieces, settings
 
 pygame.init()
 
 STATE = 0
 
 running = True # so we can turn the game loop on and off
-
-# DISPLAY_WIDTH = 3440
-# DISPLAY_HEIGHT = 1440 # implement this later!!!
-
-PIECE_TYPES = 18 if settings.is_penta else 7 
 
 BOARD_WIDTH_PX = settings.CELL_SIZE * settings.BOARD_WIDTH
 BOARD_HEIGHT_PX = settings.CELL_SIZE * (settings.BOARD_HEIGHT - settings.BOARD_EXTRA_HEIGHT)
@@ -37,81 +32,74 @@ tetra_skins = []
 # --- Load penta skins (top-right column) ---
 penta_skins = []
 
+other_skins = []
+
+
 frametime_clock = pygame.time.Clock()
 arr_clock = pygame.time.Clock()
 das_clock = pygame.time.Clock()
 sdr_clock = pygame.time.Clock()
 das_reset_clock = pygame.time.Clock()
+are_clock = pygame.time.Clock()
 gravity_clock = pygame.time.Clock()
 lockdown_clock = pygame.time.Clock()
 onekf_prac_clock = pygame.time.Clock()
 prevent_harddrop_clock = pygame.time.Clock()
 
-lines_cleared = 0
-pieces_placed = 0
-pps = 0
-bag_count = 0
+lines_cleared, pieces_placed, pps, bag_count, history_index, last_move_dir = 0, 0, 0, 0, 0, 0
 rng_seed = random.getstate()
 rng_state = rng_seed
 history_index = 0
-das_timer = 0
-arr_timer = 0
-sdr_timer = 0
-das_reset_timer = 0
-gravity_timer = 0
-lockdown_timer = 0
-onekf_prac_timer = 0
-prevent_harddrop_timer = 0
-das_timer_started = False
-arr_timer_started = False
-sdr_timer_started = False
-das_reset_timer_started = False
-onekf_prac_timer_started = False
-prevent_harddrop_timer_started = False
+das_timer, arr_timer, sdr_timer, das_reset_timer, onekf_prac_timer = 0, 0, 0, 0, 0
+are_timer, gravity_timer, lockdown_timer, prevent_harddrop_timer = 0, 0, 0, 0
+das_started, arr_started, sdr_started, das_reset_started, onekf_prac_started = False, False, False, False, False
+prevent_harddrop_started = False
 softdrop_overrides = True
 game_state_changed = False
 queue_spawn_piece = True
 
-last_move_dir = 0
-gravity_timer = 0
-current_gravity = settings.STARTING_GRAVITY # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency))
-
 piece_bags = [[],[]]
 hold_pieces = []
 
+# gamemode specific vars (placeholder)
 pieces_dict = pieces.tetra_dict
-piece_inversions = pieces.tetra_inversions
-hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
-holds_left = hold_pieces_count
-piece_gen_type = "CLASSIC"
+piece_inversions = pieces.TETRA_INVERSIONS
+piece_gen_type = "BAG"
+lockdown_type = "GUIDELINE"
+next_queue_size = 4 # next pieces count is the user settings max
+                    # next_queue_size will sometimes be smaller than the max depending on the gamemode
+das_threshold = settings.DAS_THRESHOLD # 266.6666666
+arr_threshold = settings.ARR_THRESHOLD # 100
+sdr_threshold = settings.SDR_THRESHOLD # 33.33333333
+are_threshold = 1000
+hold_pieces_count = 0
+spawn_y_offset = 0
+infinite_holds = False
+starting_gravity = 0 # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency)
+piece_size = 4
+piece_types = 7
 
-# if pentas exist and should be active, switch
-if skinloader.has_penta and settings.is_penta:
-    pieces_dict = pieces.penta_dict
-    piece_inversions = pieces.penta_inversions
-    hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
+holds_used = 0
+current_gravity = starting_gravity
     
 hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
-next_boards = numpy.zeros((settings.NEXT_PIECES_COUNT, 5, 5), dtype=numpy.int8)
+next_boards = numpy.zeros((next_queue_size, 5, 5), dtype=numpy.int8)
 topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
 onekf_key_array = numpy.zeros((4, 10), dtype=int) # int8 is too small
 
-piece_width = 4
 starting_x = 3
 starting_y = 2
 STARTING_ROTATION = 0
 
 game_board = numpy.zeros((settings.BOARD_HEIGHT, settings.BOARD_WIDTH), numpy.int8)
 game_history = [None] * settings.MAX_HISTORY
-piece_board = numpy.zeros((piece_width, piece_width), numpy.int8)
+piece_board = numpy.zeros((piece_size, piece_size), numpy.int8)
 ghost_board = numpy.zeros_like(piece_board)
 
-piece_x = starting_x
-piece_y = starting_y
+piece_x, ghost_piece_x = starting_x, starting_x
+piece_y, ghost_piece_y = starting_y, starting_y
 piece_rotation = STARTING_ROTATION
-ghost_piece_x = starting_x
-ghost_piece_y = starting_y
 lockdown_start_x = starting_x
 lockdown_start_y = -settings.BOARD_EXTRA_HEIGHT
 lockdown_start_rotation = STARTING_ROTATION
@@ -156,12 +144,12 @@ class Timer:
 timer = Timer()
 
 def update_starting_coords():
-    global piece_width, piece_x, piece_y, starting_x, starting_y, piece_rotation
+    global piece_size, piece_x, piece_y, starting_x, starting_y, piece_rotation
     piece_shape = pieces_dict[piece_bags[0][0]]["shapes"][STARTING_ROTATION]
-    piece_width = piece_shape.shape[1]
+    piece_size = piece_shape.shape[1]
     height_offset = numpy.where(numpy.any(piece_shape != 0, axis=1))[0][0]
-    starting_x = (settings.BOARD_WIDTH - piece_width) // 2 # dynamically calculate starting position based on board and piece size.
-    starting_y = settings.BOARD_EXTRA_HEIGHT - piece_width//5 - height_offset + settings.SPAWN_Y_OFFSET # need to subtract the blank space in the piece here
+    starting_x = (settings.BOARD_WIDTH - piece_size) // 2 # dynamically calculate starting position based on board and piece size.
+    starting_y = settings.BOARD_EXTRA_HEIGHT - piece_size//5 - height_offset + spawn_y_offset # need to subtract the blank space in the piece here
     piece_x = starting_x
     piece_y = starting_y
     piece_rotation = STARTING_ROTATION
@@ -188,7 +176,7 @@ def generate_bag(type="BAG"):
 
     elif (type == "RANDOM"):
         for i in range(7):
-            piece = random.randint(1, PIECE_TYPES)
+            piece = random.randint(1, piece_types)
             generated_bag.append(piece)
 
     elif (type == "CLASSIC"):
@@ -199,18 +187,18 @@ def generate_bag(type="BAG"):
                 prev_piece = (piece_bags[0] + piece_bags[1])[0]
             else:
                 prev_piece = generated_bag[0]
-            piece = random.randint(0, PIECE_TYPES)
+            piece = random.randint(0, piece_types)
             if (piece == 0 or piece == prev_piece):
-                piece = random.randint(1, PIECE_TYPES)
+                piece = random.randint(1, piece_types)
             generated_bag.insert(0, piece)
 
     return generated_bag
 
 def spawn_piece():
-    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_left, game_state_changed
+    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_used, game_state_changed
     queue_spawn_piece = False
     update_starting_coords()
-    holds_left = hold_pieces_count
+    holds_used = 0
     game_state_changed = True
     
     piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
@@ -247,7 +235,7 @@ def update_history():
 
 def undo(amount):
     global game_board, pieces_placed, lines_cleared, piece_bags, hold_pieces, rng_state, pps, bag_count
-    global piece_x, piece_y, piece_rotation, holds_left, piece_board, queue_spawn_piece
+    global piece_x, piece_y, piece_rotation, holds_used, piece_board, queue_spawn_piece
     global game_state_changed, history_index
     if pieces_placed - amount >= 0:
         game_state_changed = True
@@ -256,27 +244,18 @@ def undo(amount):
             history_index = settings.MAX_HISTORY - amount # make sure this doesn't miss one
 
         # revert history
-        print("1")
         state = game_history[history_index]
-        print("2")
         game_board = copy.deepcopy(state["board"])
-        print("3")
         pieces_placed = state["pieces"]
-        print("4")
         lines_cleared = state["lines"]
-        print("5")
         piece_bags = copy.deepcopy(state["next"])
-        print("6")
         hold_pieces = copy.deepcopy(state["hold"])
-        print("7")
         rng_state = state["rng"]
-        print("8")
         bag_count = state["bag_count"]
-        print("9")
 
         # reset position
         update_starting_coords()
-        holds_left = hold_pieces_count
+        holds_used = 0
         random.setstate(rng_state)
 
         piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board early so it looks nice
@@ -289,18 +268,26 @@ def undo(amount):
 
 def gen_topout_board():
     global topout_board
-    next_width = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][piece_rotation].shape[0]
-    board_size = next_width
-    topout_board = numpy.zeros((board_size, board_size), dtype=numpy.int8)
+    extra_height = settings.BOARD_EXTRA_HEIGHT
+    topout_board = numpy.zeros((piece_size, piece_size), dtype=numpy.int8)
     next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][STARTING_ROTATION]
 
-    # --- Check top 4/5 rows for occupancy ---
-    top_rows = settings.BOARD_EXTRA_HEIGHT + next_width + math.floor(settings.BOARD_HEIGHT/8) - 1 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
-    top_rows = game_board[:top_rows]
-    if numpy.all(top_rows == 0):
-        topout_board = None
-    else:
+    # create the two boards to compare
+    top_rows = extra_height + math.floor(settings.BOARD_HEIGHT/8) + 2 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
+    top_rows = game_board[:top_rows].copy()
+    top_mask = top_rows.copy()
+    full_rows_index = extra_height + piece_size - 3 # min index of rows that should be all 1
+    for i, row in enumerate(top_mask):
+        if i < full_rows_index:
+            top_mask[i] = 1
+        else:
+            top_mask[i][0:i-full_rows_index] = 0
+            top_mask[i][i-full_rows_index:settings.BOARD_WIDTH-(i-full_rows_index)] = 1
+            top_mask[i][settings.BOARD_WIDTH-(i-full_rows_index):settings.BOARD_WIDTH] = 0
+    if numpy.any((top_rows != 0) & (top_mask != 0)):
         topout_board = next_shape
+    else:
+        topout_board = None
 
 def update_ghost_piece(): # make sure piece_board has been updated before calling this function
     global ghost_piece_x, ghost_piece_y, ghost_board, piece_y
@@ -442,11 +429,11 @@ def hold_puppy():
     gen_hold_boards()
 
 def hold_guideline(infinite_holds = False):
-    global piece_bags, hold_pieces, hold_boards, next_boards, game_state_changed, holds_left
+    global piece_bags, hold_pieces, hold_boards, next_boards, game_state_changed, holds_used
     global piece_x, piece_y, piece_rotation, piece_board
     game_state_changed = True
 
-    if holds_left > 0 or infinite_holds:
+    if holds_used < hold_pieces_count or infinite_holds:
         hold_pieces.append(piece_bags[0][0]) # take the current piece and add it to hold queue
         piece_bags[0].pop(0) # remove the current piece from piece bag
             
@@ -466,7 +453,7 @@ def hold_guideline(infinite_holds = False):
         # refresh current active piece
         piece_board = pieces_dict[(piece_bags[0] + piece_bags[1])[0]]["shapes"][STARTING_ROTATION] * piece_bags[0][0] # gets the next piece, this implementation is required cause holding can sometimes empty bag 1
         update_starting_coords()
-        holds_left -= 1
+        holds_used += 1
 
         update_ghost_piece()
         gen_hold_boards()
@@ -500,7 +487,7 @@ def gen_next_boards():
     global next_boards
     
     next_boards = []
-    next_list = (piece_bags[0] + piece_bags[1])[1:settings.NEXT_PIECES_COUNT + 1] # gets a truncated next_pieces list
+    next_list = (piece_bags[0] + piece_bags[1])[1:next_queue_size + 1] # gets a truncated next_pieces list
 
     for piece_id in next_list:
         piece_shape = pieces_dict[piece_id]["shapes"][0]
@@ -534,10 +521,12 @@ def clear_lines():
         update_game_board(new_board)
 
 def lockdown(type, frametime):
-    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_timer_started
+    global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_started
     global lockdown_start_x, lockdown_start_y, lockdown_start_rotation, lockdown_resets
 
-    lockdown_threshold = settings.LOCKDOWN_THRESHOLD # default setting, won't be overriden for any mode but classic
+    if current_gravity > 0.01:
+        lockdown_threshold = settings.LOCKDOWN_THRESHOLD # default setting, won't be overriden for any mode but classic
+    else: lockdown_threshold = math.inf
 
     if type == "GUIDELINE" or type == "STEP" and lockdown_timer == 0: # calculate starting coords for step and guideline style
         lockdown_start_x = piece_x
@@ -568,7 +557,7 @@ def lockdown(type, frametime):
     if lockdown_timer >= lockdown_threshold:
         lockdown_resets = settings.LOCKDOWN_RESETS_COUNT
         prevent_harddrop_timer = 0 # start the harddrop delay timer
-        prevent_harddrop_timer_started = True
+        prevent_harddrop_started = True
         prevent_harddrop_clock.tick()
         lock_piece()
 
@@ -597,9 +586,12 @@ def lock_piece():
     update_ghost_piece()
     # this has to happen at the very end
     update_history()
+
+def add_mino(x, y): # used for drawing directly on the board and other whatever else might add a single mino
+    game_board[x, y] == -2
     
 def handle_movement(keys):
-    global running, das_timer, arr_timer, das_timer_started, arr_timer_started, das_reset_timer, das_reset_timer_started, last_move_dir
+    global running, das_timer, arr_timer, das_started, arr_started, das_reset_timer, das_reset_started, last_move_dir
     
     # find which horizontal input the user pressed (0 if none)
     if keys[settings.MOVE_LEFT] and not keys[settings.MOVE_RIGHT]:
@@ -613,57 +605,57 @@ def handle_movement(keys):
     if move_dir != 0:
         if (last_move_dir != move_dir and settings.DAS_RESET_THRESHOLD <= 0): # if switching movement direction (and DAS_RESET_THRESHOLD is set to 0), reset DAS and ARR
             das_timer = 0                                           # last_move_dir is set to 0 by default so it will reset for the first movement, but that doesn't matter because it starts that way anyways
-            das_timer_started = False
+            das_started = False
             arr_timer = 0
-            arr_timer_started = False
+            arr_started = False
         
         last_move_dir = move_dir
         
-        if not das_timer_started:
+        if not das_started:
             move_piece(move_dir, 0)
-            das_timer_started = True # start the DAS timer
+            das_started = True # start the DAS timer
             das_timer = 0
             das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
             
         else:
             das_timer += das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
             
-            if (das_timer > settings.DAS_THRESHOLD):
-                if not arr_timer_started and settings.ARR_THRESHOLD != 0:
+            if (das_timer > das_threshold):
+                if not arr_started and arr_threshold != 0:
                     move_piece(move_dir, 0)
-                    arr_timer_started = True # start the ARR timer
+                    arr_started = True # start the ARR timer
                     arr_timer = 0
                     arr_clock.tick()
                 else:
                     arr_timer += arr_clock.tick()
-                    if arr_timer >= settings.ARR_THRESHOLD:
-                        if settings.ARR_THRESHOLD == 0: # avoids divide by 0 error
+                    if arr_timer >= arr_threshold:
+                        if arr_threshold == 0: # avoids divide by 0 error
                             steps_to_move = settings.BOARD_WIDTH
                         else:
-                            steps_to_move = int(arr_timer / settings.ARR_THRESHOLD)
+                            steps_to_move = int(arr_timer / arr_threshold)
                         move_piece(steps_to_move * move_dir, 0)
-                        if settings.ARR_THRESHOLD == 0: # avoids divide by 0 error
+                        if arr_threshold == 0: # avoids divide by 0 error
                             arr_timer = 0
                         else:
-                            arr_timer = arr_timer % settings.ARR_THRESHOLD
+                            arr_timer = arr_timer % arr_threshold
                             
-    elif das_timer_started: # saves performance by only checking this stuff when das_timer is still running
-        if not das_reset_timer_started:
+    elif das_started: # saves performance by only checking this stuff when das_timer is still running
+        if not das_reset_started:
             das_reset_timer = 0
             das_reset_clock.tick()
-            das_reset_timer_started = True
+            das_reset_started = True
             
         else:
             das_reset_timer += das_reset_clock.tick()
             
         if (das_reset_timer >= settings.DAS_RESET_THRESHOLD): # if das reset timer goes through, then reset all timers
             das_timer = 0
-            das_timer_started = False
+            das_started = False
             das_reset_timer = 0
-            das_reset_timer_started = False
+            das_reset_started = False
     
         arr_timer = 0 # reset the ARR timer only to keep things clean
-        arr_timer_started = False
+        arr_started = False
 
 def unpack_1kf_binds():
     global onekf_key_array
@@ -704,10 +696,10 @@ def top_out():
     reset_game()
     
 def reset_game():
-    global game_board, game_history, piece_board, piece_bags, hold_pieces, bag_count, holds_left
+    global game_board, game_history, piece_board, piece_bags, hold_pieces, bag_count, holds_used
     global piece_x, piece_y, piece_rotation, hold_boards, next_boards
     global das_timer, arr_timer, sdr_timer, das_reset_timer, prevent_harddrop_timer
-    global das_timer_started, arr_timer_started, sdr_timer_started, das_reset_timer_started, prevent_harddrop_timer_started
+    global das_started, arr_started, sdr_started, das_reset_started, prevent_harddrop_started
     global last_move_dir, gravity_timer, softdrop_overrides, timer, lines_cleared, pieces_placed, queue_spawn_piece, STATE, game_state_changed
     
     # Clear boards
@@ -717,7 +709,7 @@ def reset_game():
     
     # Reset timers
     das_timer = arr_timer = sdr_timer = das_reset_timer = prevent_harddrop_timer = 0
-    das_timer_started = arr_timer_started = sdr_timer_started = das_reset_timer_started = prevent_harddrop_timer_started = False
+    das_started = arr_started = sdr_started = das_reset_started = prevent_harddrop_started = False
     
     # Reset active piece
     piece_x = starting_x
@@ -733,7 +725,7 @@ def reset_game():
     # Reset hold
     hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
     hold_pieces = []
-    holds_left = hold_pieces_count
+    holds_used = 0
     
     # Reset piece bag
     piece_bags[0] = generate_bag(piece_gen_type)
@@ -757,51 +749,51 @@ def handle_sonic_drop(keys):
     return 0
 
 def handle_soft_drop(keys, frametime):
-    global sdr_timer, sdr_timer_started, softdrop_overrides
+    global sdr_timer, sdr_started, softdrop_overrides
     if current_gravity > 0.001:
-        softdrop_overrides = (settings.SDR_THRESHOLD <= 16.666667 / current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
+        softdrop_overrides = (sdr_threshold <= 16.666667 / current_gravity and keys[settings.MOVE_SOFTDROP]) # returns true if softdrop is pressed and is faster than gravity
     elif keys[settings.MOVE_SOFTDROP]:
         softdrop_overrides = True # returns true always if gravity is 0 (prevents divide by 0)
     else:
         softdrop_overrides = False
         
-    if settings.SDR_THRESHOLD == 0:
+    if sdr_threshold == 0:
         steps_to_move = settings.BOARD_HEIGHT + 10
     else:
-        steps_to_move = max(int(frametime / settings.SDR_THRESHOLD), 1) # predicts how much softdrop should move for first button press
+        steps_to_move = max(int(frametime / sdr_threshold), 1) # predicts how much softdrop should move for first button press
         
     if softdrop_overrides:
-        if not sdr_timer_started:
+        if not sdr_started:
             sdr_timer = 0
             sdr_clock.tick()
-            sdr_timer_started = True
+            sdr_started = True
             return move_piece(0, steps_to_move) # returns remaining steps
         else:
             sdr_timer += sdr_clock.tick()
-            if sdr_timer >= settings.SDR_THRESHOLD:
-                if settings.SDR_THRESHOLD == 0: # avoids divide by 0 error
+            if sdr_timer >= sdr_threshold:
+                if sdr_threshold == 0: # avoids divide by 0 error
                     steps_to_move == settings.BOARD_HEIGHT + 10
                     sdr_timer = 0
                 else:
-                    steps_to_move = int(sdr_timer / settings.SDR_THRESHOLD)
-                    sdr_timer = sdr_timer % settings.SDR_THRESHOLD
+                    steps_to_move = int(sdr_timer / sdr_threshold)
+                    sdr_timer = sdr_timer % sdr_threshold
 
                 return move_piece(0, steps_to_move) # returns remaining steps
     else:
         sdr_timer = 0
-        sdr_timer_started = False
+        sdr_started = False
     return 0
         
 def hard_drop():
-    global prevent_harddrop_clock, prevent_harddrop_timer, prevent_harddrop_timer_started, prevent_harddrop_clock
+    global prevent_harddrop_clock, prevent_harddrop_timer, prevent_harddrop_started, prevent_harddrop_clock
     prevent_harddrop_timer += prevent_harddrop_clock.tick()
-    if not prevent_harddrop_timer_started or prevent_harddrop_timer >= settings.PREVENT_HARDDROP_THRESHOLD:
+    if not prevent_harddrop_started or prevent_harddrop_timer >= settings.PREVENT_HARDDROP_THRESHOLD:
         move_piece(0, settings.BOARD_HEIGHT + 10)
         lock_piece()
 
     prevent_harddrop_timer = 0 # reset either way, because it only applies to the first hard drop after lockdown
     prevent_harddrop_clock.tick()
-    prevent_harddrop_timer_started = False # remove the timer flag
+    prevent_harddrop_started = False # remove the timer flag
     
 def handle_events():
     global running, STATE, game_state_changed
@@ -809,7 +801,7 @@ def handle_events():
         if event.type == pygame.KEYDOWN:
             if not settings.ONEKF_ENABLED:
                 if event.key == settings.KEY_HOLD:
-                    hold_guideline(settings.INFINITE_HOLDS)
+                    hold_guideline(infinite_holds)
                 if event.key == settings.ROTATE_180:
                     rotate_piece(2)
                 if event.key == settings.ROTATE_CW:
@@ -858,23 +850,24 @@ def do_leftover_gravity(remaining_steps): # for when a piece falls, touches the 
     if remaining_steps != 0: # check if the piece can move at all
         move_piece(0, remaining_steps) # move the piece by the leftover amount from this frame
 
-def swap_mode(usepenta):
-    global pieces_dict, piece_inversions, hold_pieces_count, holds_left
-    if not skinloader.has_penta and usepenta:
-        print("Your skin does not support pentaminos!")
+def handle_entry_delay(frametime, threshold = are_threshold): # currently buggy. need to fix
+    global are_timer, queue_spawn_piece
+    if threshold == 0 or not queue_spawn_piece: # if piece not spawning 
         return
-    global PIECE_TYPES, pieces_dict, piece_inversions
-    settings.is_penta = usepenta
-    PIECE_TYPES = settings.PIECE_TYPES_PENTA if settings.is_penta else settings.PIECE_TYPES_TETRA
-    pieces_dict = pieces.tetra_dict
-    piece_inversions = pieces.tetra_inversions
-    hold_pieces_count = settings.HOLD_PIECES_COUNT_TETRA
-    holds_left = settings.HOLD_PIECES_COUNT_TETRA
-    
-    # if pentas exist and should be active, switch
-    if skinloader.has_penta and settings.is_penta:
-        pieces_dict = pieces.penta_dict
-        piece_inversions = pieces.penta_inversions
-        hold_pieces_count = settings.HOLD_PIECES_COUNT_PENTA
+    elif queue_spawn_piece and are_timer == 0: # if timer not started
+        are_timer += frametime*0.9 # estimate of this frame's frametime inbetween locking and spawning pieces will be
+    elif are_timer < threshold: # if timer not ready
+        are_timer += frametime
+    elif are_timer >= threshold:
+        print(are_timer, "spawning")
+        are_timer = 0
+        queue_spawn_piece = False
+        spawn_piece()
 
-        holds_left = settings.HOLD_PIECES_COUNT_TETRA
+def load_gamemode(gamemode):
+    global das_threshold, arr_threshold, sdr_threshold, are_threshold
+    global pieces_dict, piece_types
+    for attr, value in vars(gamemode).items():
+        globals()[attr] = value
+    
+

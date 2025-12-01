@@ -2,7 +2,7 @@
 
 import pygame
 
-import ui, engine, settings
+import ui, engine, settings, gamemodes
 
 from ui import draw_rect, draw_text
 
@@ -78,13 +78,13 @@ def draw_menu():
     spacing = 20  # vertical space between buttons
     
     def start_tetra():
-        engine.swap_mode(False)
         engine.reset_game()
+        engine.load_gamemode(gamemodes.tetramino_base)
         engine.STATE = 2
         
     def start_penta():
-        engine.swap_mode(True)
         engine.reset_game()
+        engine.load_gamemode(gamemodes.pentomino_base)
         engine.STATE = 2
     
     button_data = [

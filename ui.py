@@ -4,7 +4,7 @@ import pygame
 import pygame_gui
 import numpy
 
-import engine, settings, skinloader
+import engine, settings, pieces
 
 MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 GUI_MANAGER = pygame_gui.UIManager((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
@@ -114,7 +114,7 @@ def draw_board():
             
             x = grid_start_x + col * cell
             y = grid_start_y + row * cell
-            
+
             BOARD_SURFACE.blit(engine.pieces_dict[val]["skin"], (x, y))
 
 def draw_piece_board():
@@ -237,7 +237,7 @@ def draw_ghost_board():
             val = board[row, col]
             if val == 0:
                 continue
-            skin = skinloader.other_skins[0]  # semi-transparent ghost piece
+            skin = pieces.other_skins[0]  # semi-transparent ghost piece
             x = grid_start_x + (start_col + col) * cell
             y = grid_start_y + (start_row + row) * cell
             MAIN_SCREEN.blit(skin, (x, y))
@@ -261,7 +261,7 @@ def draw_topout_board():
     piece_width = piece_shape.shape[1]
     height_offset = numpy.where(numpy.any(piece_shape != 0, axis=1))[0][0]
     start_col = (settings.BOARD_WIDTH - piece_width) // 2 # dynamically calculate starting position based on board and piece size.
-    start_row = piece_width//5 - height_offset + settings.SPAWN_Y_OFFSET# need to subtract the blank space in the piece here.
+    start_row = piece_width//5 - height_offset + engine.spawn_y_offset # need to subtract the blank space in the piece here.
     
     # Draw each block aligned to main board's grid
     for row in range(board_rows):
@@ -269,7 +269,7 @@ def draw_topout_board():
             val = board[row, col]
             if val == 0:
                 continue
-            skin = skinloader.other_skins[4]  # semi-transparent topout piece
+            skin = pieces.other_skins[4]  # semi-transparent topout piece
             x = grid_start_x + (start_col + col) * cell
             y = grid_start_y + (start_row + row) * cell
             MAIN_SCREEN.blit(skin, (x, y))
@@ -284,7 +284,7 @@ def draw_next_panel():
     
     next_height_per_piece = next_width * 0.68
     next_height_top = next_width * 0.3
-    next_height = (next_height_per_piece * settings.NEXT_PIECES_COUNT) + next_height_top
+    next_height = (next_height_per_piece * engine.next_queue_size) + next_height_top
     
     
     # --- Horizontal alignment: stick to the board ---
