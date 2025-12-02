@@ -56,6 +56,7 @@ das_started, arr_started, sdr_started, das_reset_started, onekf_prac_started = F
 prevent_harddrop_started = False
 softdrop_overrides = True
 game_state_changed = False
+board_state_changed = False
 queue_spawn_piece = True
 
 piece_bags = [[],[]]
@@ -260,6 +261,7 @@ def undo(amount):
 
         piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board early so it looks nice
         queue_spawn_piece = True
+        board_state_changed = True
         # updating all these even thought spawn_piece does it for us because want it to update on frame 0
         gen_topout_board()
         gen_hold_boards()
@@ -489,6 +491,7 @@ def gen_next_boards():
     next_boards = []
     next_list = (piece_bags[0] + piece_bags[1])[1:next_queue_size + 1] # gets a truncated next_pieces list
 
+    print(next_list)
     for piece_id in next_list:
         piece_shape = pieces_dict[piece_id]["shapes"][0]
         board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
@@ -562,7 +565,7 @@ def lockdown(type, frametime):
         lock_piece()
 
 def lock_piece():
-    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer, history_index
+    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer, history_index, board_state_changed
     new_board = game_board.copy()
     for coords in numpy.argwhere(piece_board != 0):
         new_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
@@ -576,6 +579,7 @@ def lock_piece():
     lockdown_timer = 0
     pieces_placed += 1
     queue_spawn_piece = True
+    board_state_changed = True
     
     # update the next piece early so it looks nice
     update_starting_coords()
@@ -696,11 +700,12 @@ def top_out():
     reset_game()
     
 def reset_game():
+    print("resetting")
     global game_board, game_history, piece_board, piece_bags, hold_pieces, bag_count, holds_used
     global piece_x, piece_y, piece_rotation, hold_boards, next_boards
     global das_timer, arr_timer, sdr_timer, das_reset_timer, prevent_harddrop_timer
     global das_started, arr_started, sdr_started, das_reset_started, prevent_harddrop_started
-    global last_move_dir, gravity_timer, softdrop_overrides, timer, lines_cleared, pieces_placed, queue_spawn_piece, STATE, game_state_changed
+    global last_move_dir, gravity_timer, softdrop_overrides, timer, lines_cleared, pieces_placed, queue_spawn_piece, STATE, board_state_changed, game_state_changed
     
     # Clear boards
     game_board = numpy.zeros_like(game_board)
@@ -721,13 +726,14 @@ def reset_game():
     bag_count = 0
     queue_spawn_piece = True
     game_state_changed = True
+    board_state_changed = True
     
     # Reset hold
     hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
     hold_pieces = []
     holds_used = 0
     
-    # Reset piece bag
+    # Reset piece bag, should usually be done again when loading gamemode
     piece_bags[0] = generate_bag(piece_gen_type)
     piece_bags[1] = generate_bag(piece_gen_type)
     
@@ -866,8 +872,13 @@ def handle_entry_delay(frametime, threshold = are_threshold): # currently buggy.
 
 def load_gamemode(gamemode):
     global das_threshold, arr_threshold, sdr_threshold, are_threshold
-    global pieces_dict, piece_types
+    global pieces_dict, piece_types, piece_inversions, piece_size
+    global hold_pieces_count 
     for attr, value in vars(gamemode).items():
         globals()[attr] = value
+    # regenerate the bags
+    piece_bags[0] = generate_bag(piece_gen_type)
+    piece_bags[1] = generate_bag(piece_gen_type)
+    
     
 
