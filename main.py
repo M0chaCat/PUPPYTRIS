@@ -21,6 +21,7 @@ def load_game(): # all this stuff is done a second time when reset_game is calle
     engine.update_history()
         
 def menu_loop():
+    engine.handle_events() # make sure this doesn't break anything!!!
     menu.draw_menu()
     # handle menu input, maybe transition to next state
     pass

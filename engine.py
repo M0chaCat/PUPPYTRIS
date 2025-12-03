@@ -844,7 +844,8 @@ def handle_events():
                 if event.key == settings.KEY_RESET:
                     reset_game()
                 if event.key == settings.KEY_EXIT:
-                    STATE -= 1
+                    if STATE == 0: running = False
+                    else: STATE -= 1
                 if event.key == settings.KEY_UNDO:
                     undo(1)
             else:
