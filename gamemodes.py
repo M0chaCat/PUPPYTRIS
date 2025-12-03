@@ -6,6 +6,7 @@ class pentomino_base():
     piece_inversions = pieces.PENTA_INVERSIONS
     hold_pieces_count = 2
     piece_size = 5
+    allow_mirror = False
     
 class tetramino_base():
     pieces_dict = pieces.tetra_dict
@@ -13,6 +14,7 @@ class tetramino_base():
     piece_inversions = pieces.TETRA_INVERSIONS
     hold_pieces_count = 1   
     piece_size = 4
+    allow_mirror = True
 
 class guideline():
     piece_gen_type = "BAG"
@@ -24,7 +26,7 @@ class guideline():
     sdr_threshold = 33.333333
     allow_sonic_drop = False
     allow_180 = False
-    
+
 class classic():
     piece_gen_type = "CLASSIC"
     lockdown_type = "CLASSIC"

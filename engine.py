@@ -74,6 +74,7 @@ arr_threshold = settings.ARR_THRESHOLD # 100
 sdr_threshold = settings.SDR_THRESHOLD # 33.33333333
 allow_sonic_drop = True
 allow_180 = True
+allow_mirror = False
 are_threshold = 1000
 entry_delay = 0
 hold_pieces_count = 0
