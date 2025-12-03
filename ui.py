@@ -83,7 +83,7 @@ def draw_background():
         scale_factor = max(win_w / wp_w, win_h / wp_h)
         new_w = int(wp_w * scale_factor)
         new_h = int(wp_h * scale_factor)
-        scaled_wp = pygame.transform.smoothscale(wp, (new_w, new_h))
+        scaled_wp = pygame.transform.smoothscale(wp, (new_w, new_h)).convert()
         offset_x = (new_w - win_w) // 2
         offset_y = (new_h - win_h) // 2
         
