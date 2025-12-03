@@ -62,7 +62,7 @@ queue_spawn_piece = True
 piece_bags = [[],[]]
 hold_pieces = []
 
-# gamemode specific vars (placeholder)
+# gamemode specific vars (defaults)
 pieces_dict = pieces.tetra_dict
 piece_inversions = pieces.TETRA_INVERSIONS
 piece_gen_type = "BAG"
@@ -72,7 +72,9 @@ next_queue_size = 4 # next pieces count is the user settings max
 das_threshold = settings.DAS_THRESHOLD # 266.6666666
 arr_threshold = settings.ARR_THRESHOLD # 100
 sdr_threshold = settings.SDR_THRESHOLD # 33.33333333
+allow_sonic_drop = True
 are_threshold = 1000
+entry_delay = 0
 hold_pieces_count = 0
 spawn_y_offset = 0
 infinite_holds = False
@@ -700,7 +702,6 @@ def top_out():
     reset_game()
     
 def reset_game():
-    print("resetting")
     global game_board, game_history, piece_board, piece_bags, hold_pieces, bag_count, holds_used
     global piece_x, piece_y, piece_rotation, hold_boards, next_boards
     global das_timer, arr_timer, sdr_timer, das_reset_timer, prevent_harddrop_timer
@@ -749,7 +750,7 @@ def reset_game():
     
 def handle_sonic_drop(keys):
     global softdrop_overrides, game_state_changed
-    if keys[settings.MOVE_SONICDROP]:
+    if keys[settings.MOVE_SONICDROP and allow_sonic_drop]:
         softdrop_overrides = True
         return move_piece(0, settings.BOARD_HEIGHT)
     return 0
