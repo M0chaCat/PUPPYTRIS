@@ -61,7 +61,6 @@ def game_loop():
         engine.do_leftover_gravity(remaining_grav)
     
     if engine.board_state_changed:
-        print("redrawing")
         ui.draw_board() # if the board state has changed, update the board surface
     if engine.game_state_changed:
         ui.MAIN_SCREEN.blit(ui.BACKGROUND_SURFACE)
