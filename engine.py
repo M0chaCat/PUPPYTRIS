@@ -73,6 +73,7 @@ das_threshold = settings.DAS_THRESHOLD # 266.6666666
 arr_threshold = settings.ARR_THRESHOLD # 100
 sdr_threshold = settings.SDR_THRESHOLD # 33.33333333
 allow_sonic_drop = True
+allow_180 = True
 are_threshold = 1000
 entry_delay = 0
 hold_pieces_count = 0
@@ -168,8 +169,7 @@ def generate_bag(type="BAG"):
     bag_count += 1
     generated_bag = []
     
-    if (type == "BAG"):
-        
+    if (type == "BAG"): 
         for piece, data in pieces_dict.items(): # put all the pieces in the bag
             # Skip if rare piece (x) and we're on an odd bag
             if data.get("rare", False) and bag_count % 2 == 1:
@@ -193,6 +193,27 @@ def generate_bag(type="BAG"):
             piece = random.randint(0, piece_types)
             if (piece == 0 or piece == prev_piece):
                 piece = random.randint(1, piece_types)
+            generated_bag.insert(0, piece)
+    elif type.startswith("4MEMR"): # ANY 4 memory, reroll 6 times is TGM2 style
+        reroll_count = int(type[-1]) # gets the last character
+        prev_pieces = [1, 1, 1, 1] # placeholder
+        for i in range(7):
+            if not piece_bags[0] and i == 0:
+                if piece_types == 7:
+                    prev_pieces = [1,4,1,4]
+                else: # assume piece_types must equal 18
+                    prev_pieces = [14, 14, 14, 14] # temp placeholder
+            elif i == 0:
+                prev_pieces = (piece_bags[0] + piece_bags[1])[:4]
+            else:
+                print(generated_bag)
+                prev_pieces.append(generated_bag[0])
+                prev_pieces.pop(0)
+            piece = random.randint(1, piece_types)
+            for _ in range(reroll_count):
+                if piece in prev_pieces:
+                    piece = random.randint(1, piece_types)
+                    print("rerolling")
             generated_bag.insert(0, piece)
 
     return generated_bag
@@ -810,7 +831,7 @@ def handle_events():
                 if event.key == settings.KEY_HOLD:
                     hold_guideline(infinite_holds)
                 if event.key == settings.ROTATE_180:
-                    rotate_piece(2)
+                    if allow_180: rotate_piece(2)
                 if event.key == settings.ROTATE_CW:
                     rotate_piece(1)
                 if event.key == settings.ROTATE_CCW:

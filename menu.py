@@ -80,6 +80,7 @@ def draw_menu():
     def start_tetra():
         engine.reset_game()
         engine.load_gamemode(gamemodes.tetramino_base)
+        engine.load_gamemode(gamemodes.classic)
         engine.STATE = 2
         
     def start_penta():
