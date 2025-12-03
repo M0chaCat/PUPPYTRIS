@@ -838,7 +838,7 @@ def handle_events():
                 if event.key == settings.ROTATE_CCW:
                     rotate_piece(3)
                 if event.key == settings.ROTATE_MIRROR:
-                    mirror_piece()
+                    if allow_mirror: mirror_piece()
                 if event.key == settings.MOVE_HARDDROP:
                     hard_drop()
                 if event.key == settings.KEY_RESET:

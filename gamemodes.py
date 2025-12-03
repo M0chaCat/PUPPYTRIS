@@ -6,7 +6,7 @@ class pentomino_base():
     piece_inversions = pieces.PENTA_INVERSIONS
     hold_pieces_count = 2
     piece_size = 5
-    allow_mirror = False
+    allow_mirror = True
     
 class tetramino_base():
     pieces_dict = pieces.tetra_dict
@@ -14,7 +14,7 @@ class tetramino_base():
     piece_inversions = pieces.TETRA_INVERSIONS
     hold_pieces_count = 1   
     piece_size = 4
-    allow_mirror = True
+    allow_mirror = False
 
 class guideline():
     piece_gen_type = "BAG"
