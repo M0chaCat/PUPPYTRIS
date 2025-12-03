@@ -56,12 +56,13 @@ das_started, arr_started, sdr_started, das_reset_started, onekf_prac_started = F
 prevent_harddrop_started = False
 softdrop_overrides = True
 game_state_changed = False
+board_state_changed = False
 queue_spawn_piece = True
 
 piece_bags = [[],[]]
 hold_pieces = []
 
-# gamemode specific vars (placeholder)
+# gamemode specific vars (defaults)
 pieces_dict = pieces.tetra_dict
 piece_inversions = pieces.TETRA_INVERSIONS
 piece_gen_type = "BAG"
@@ -71,7 +72,10 @@ next_queue_size = 4 # next pieces count is the user settings max
 das_threshold = settings.DAS_THRESHOLD # 266.6666666
 arr_threshold = settings.ARR_THRESHOLD # 100
 sdr_threshold = settings.SDR_THRESHOLD # 33.33333333
+allow_sonic_drop = True
+allow_180 = True
 are_threshold = 1000
+entry_delay = 0
 hold_pieces_count = 0
 spawn_y_offset = 0
 infinite_holds = False
@@ -165,8 +169,7 @@ def generate_bag(type="BAG"):
     bag_count += 1
     generated_bag = []
     
-    if (type == "BAG"):
-        
+    if (type == "BAG"): 
         for piece, data in pieces_dict.items(): # put all the pieces in the bag
             # Skip if rare piece (x) and we're on an odd bag
             if data.get("rare", False) and bag_count % 2 == 1:
@@ -190,6 +193,27 @@ def generate_bag(type="BAG"):
             piece = random.randint(0, piece_types)
             if (piece == 0 or piece == prev_piece):
                 piece = random.randint(1, piece_types)
+            generated_bag.insert(0, piece)
+    elif type.startswith("4MEMR"): # ANY 4 memory, reroll 6 times is TGM2 style
+        reroll_count = int(type[-1]) # gets the last character
+        prev_pieces = [1, 1, 1, 1] # placeholder
+        for i in range(7):
+            if not piece_bags[0] and i == 0:
+                if piece_types == 7:
+                    prev_pieces = [1,4,1,4]
+                else: # assume piece_types must equal 18
+                    prev_pieces = [14, 14, 14, 14] # temp placeholder
+            elif i == 0:
+                prev_pieces = (piece_bags[0] + piece_bags[1])[:4]
+            else:
+                print(generated_bag)
+                prev_pieces.append(generated_bag[0])
+                prev_pieces.pop(0)
+            piece = random.randint(1, piece_types)
+            for _ in range(reroll_count):
+                if piece in prev_pieces:
+                    piece = random.randint(1, piece_types)
+                    print("rerolling")
             generated_bag.insert(0, piece)
 
     return generated_bag
@@ -260,6 +284,7 @@ def undo(amount):
 
         piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0] # update piece board early so it looks nice
         queue_spawn_piece = True
+        board_state_changed = True
         # updating all these even thought spawn_piece does it for us because want it to update on frame 0
         gen_topout_board()
         gen_hold_boards()
@@ -489,6 +514,7 @@ def gen_next_boards():
     next_boards = []
     next_list = (piece_bags[0] + piece_bags[1])[1:next_queue_size + 1] # gets a truncated next_pieces list
 
+    print(next_list)
     for piece_id in next_list:
         piece_shape = pieces_dict[piece_id]["shapes"][0]
         board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
@@ -562,7 +588,7 @@ def lockdown(type, frametime):
         lock_piece()
 
 def lock_piece():
-    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer, history_index
+    global game_board, piece_board, piece_bags, queue_spawn_piece, pieces_placed, lockdown_timer, history_index, board_state_changed
     new_board = game_board.copy()
     for coords in numpy.argwhere(piece_board != 0):
         new_board[piece_y + coords[0], piece_x + coords[1]] = piece_board[coords[0], coords[1]]
@@ -576,6 +602,7 @@ def lock_piece():
     lockdown_timer = 0
     pieces_placed += 1
     queue_spawn_piece = True
+    board_state_changed = True
     
     # update the next piece early so it looks nice
     update_starting_coords()
@@ -700,7 +727,7 @@ def reset_game():
     global piece_x, piece_y, piece_rotation, hold_boards, next_boards
     global das_timer, arr_timer, sdr_timer, das_reset_timer, prevent_harddrop_timer
     global das_started, arr_started, sdr_started, das_reset_started, prevent_harddrop_started
-    global last_move_dir, gravity_timer, softdrop_overrides, timer, lines_cleared, pieces_placed, queue_spawn_piece, STATE, game_state_changed
+    global last_move_dir, gravity_timer, softdrop_overrides, timer, lines_cleared, pieces_placed, queue_spawn_piece, STATE, board_state_changed, game_state_changed
     
     # Clear boards
     game_board = numpy.zeros_like(game_board)
@@ -721,13 +748,14 @@ def reset_game():
     bag_count = 0
     queue_spawn_piece = True
     game_state_changed = True
+    board_state_changed = True
     
     # Reset hold
     hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
     hold_pieces = []
     holds_used = 0
     
-    # Reset piece bag
+    # Reset piece bag, should usually be done again when loading gamemode
     piece_bags[0] = generate_bag(piece_gen_type)
     piece_bags[1] = generate_bag(piece_gen_type)
     
@@ -743,7 +771,7 @@ def reset_game():
     
 def handle_sonic_drop(keys):
     global softdrop_overrides, game_state_changed
-    if keys[settings.MOVE_SONICDROP]:
+    if keys[settings.MOVE_SONICDROP and allow_sonic_drop]:
         softdrop_overrides = True
         return move_piece(0, settings.BOARD_HEIGHT)
     return 0
@@ -803,7 +831,7 @@ def handle_events():
                 if event.key == settings.KEY_HOLD:
                     hold_guideline(infinite_holds)
                 if event.key == settings.ROTATE_180:
-                    rotate_piece(2)
+                    if allow_180: rotate_piece(2)
                 if event.key == settings.ROTATE_CW:
                     rotate_piece(1)
                 if event.key == settings.ROTATE_CCW:
@@ -866,8 +894,13 @@ def handle_entry_delay(frametime, threshold = are_threshold): # currently buggy.
 
 def load_gamemode(gamemode):
     global das_threshold, arr_threshold, sdr_threshold, are_threshold
-    global pieces_dict, piece_types
+    global pieces_dict, piece_types, piece_inversions, piece_size
+    global hold_pieces_count 
     for attr, value in vars(gamemode).items():
         globals()[attr] = value
+    # regenerate the bags
+    piece_bags[0] = generate_bag(piece_gen_type)
+    piece_bags[1] = generate_bag(piece_gen_type)
+    
     
 

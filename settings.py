@@ -26,7 +26,7 @@ PIECE_TYPES_PENTA = 18
 NEXT_PIECES_COUNT = 5
 LOCKDOWN_RESETS_COUNT = 14
 
-DAS_THRESHOLD = 100
+DAS_THRESHOLD = 1000
 ARR_THRESHOLD = 0
 SDR_THRESHOLD = 0 # SDR = soft drop rate
 DAS_RESET_THRESHOLD = 0 # experimental mechanic that causes DAS to stay charged after release

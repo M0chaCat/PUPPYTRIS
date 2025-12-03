@@ -59,9 +59,9 @@ def game_loop():
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)
         engine.do_leftover_gravity(remaining_grav)
-    else:
+    
+    if engine.board_state_changed:
         ui.draw_board() # if the board state has changed, update the board surface
-
     if engine.game_state_changed:
         ui.MAIN_SCREEN.blit(ui.BACKGROUND_SURFACE)
         ui.draw_board_background()
