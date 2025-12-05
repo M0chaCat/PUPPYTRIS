@@ -1,4 +1,7 @@
-# Main
+"""
+main.py handles the main gameloop.
+Loads the game, handles all gameloop functions in order, then does the rendering.
+"""
 
 import pygame
 
@@ -9,7 +12,7 @@ pygame.init()
 pygame.display.set_caption("puppytris!!!!!")
 
 # pre game stuff
-def load_game(): # all this stuff is done a second time when reset_game is called. it should be smarter.
+def load_game(): # all this stuff is done twice after reset_game has called. it should be smarter.
     skinloader.set_other_skins()
     pieces.init_skins()
     engine.piece_bags[0] = engine.generate_bag(engine.piece_gen_type) # generate the first two bags
@@ -19,18 +22,16 @@ def load_game(): # all this stuff is done a second time when reset_game is calle
     engine.update_ghost_piece()
     engine.unpack_1kf_binds()
     engine.update_history()
-        
+
 def menu_loop():
     engine.handle_events() # make sure this doesn't break anything!!!
     menu.draw_menu()
     # handle menu input, maybe transition to next state
-    pass
-    
+
 def mod_screen_loop(): # doesnt exist :3
     engine.STATE -= 1
     #ui.draw_mod_screen()
-    pass
-    
+
 def go_back():
     engine.STATE -= 1
 
@@ -60,7 +61,7 @@ def game_loop():
         if not settings.ONEKF_ENABLED:
             engine.handle_movement(keys)
         engine.do_leftover_gravity(remaining_grav)
-    
+
     if engine.board_state_changed:
         ui.draw_board() # if the board state has changed, update the board surface
     if engine.game_state_changed:
@@ -74,15 +75,15 @@ def game_loop():
         ui.draw_stats_panel_bg()
         ui.draw_next_panel()
         if engine.hold_pieces_count > 0: ui.draw_hold_panel()
-        ui.draw_score_panel(Level="99", Score="99,999")
+        ui.draw_score_panel(level="99", score="99,999")
     engine.game_state_changed = False # reset it for next frame
 
     mins_secs, dot_ms = engine.timer.split_strings()
     engine.update_pps()
     ui.draw_stats_panel_text(
         PPS=str(engine.pps),
-        TIMES=mins_secs,
-        TIMEMS=dot_ms,
+        TIME_S=mins_secs,
+        TIME_MS=dot_ms,
         CLEARED=str(engine.lines_cleared)
     )
 
@@ -95,13 +96,13 @@ state_funcs = {
 while engine.running:
     engine.frametime_clock.tick(settings.MAX_FRAMERATE)
     fps = str(int(engine.frametime_clock.get_fps()))
-    
+
     # Run current state’s logic
     state_funcs[engine.STATE]()
 
     # Draw FPS (universal part)
     ui.draw_fps(fps)
-    
+
     pygame.display.flip()
 
     if not engine.running: # wait for the main loop to finish running to quit properly

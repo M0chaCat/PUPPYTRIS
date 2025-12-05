@@ -1,4 +1,11 @@
-# Piece maps
+"""
+pieces.py defines a bunch of constants relating to pieces, including:
+-shapes for all piece rotations
+-piece names and skins (initialized to placeholders)
+-piece mirror mappings (inversions)
+-constants for amount piece types
+-kick tables
+"""
 
 import numpy, skinloader
 
@@ -15,11 +22,11 @@ PENTA_INVERSIONS = {
     1: 2,
     2: 1,
     3: 3,
-    4: 5, 
+    4: 5,
     5: 4,
-    6: 7, 
+    6: 7,
     7: 6,
-    8: 9, 
+    8: 9,
     9: 8,
     10: 10,
     11: 11,
@@ -774,7 +781,12 @@ penta_dict = {
 }
 other_skins = []
 
+
 def init_skins():
+    """
+    Lazy loader for skin textures.
+    Replaces placeholders with surfaces from the arrays already declared in skinloader.py
+    """
     for i, piece in penta_dict.items():
         piece["skin"] = skinloader.penta_skins[i-1]
     for i, piece in tetra_dict.items():
@@ -782,8 +794,10 @@ def init_skins():
     for skin in skinloader.other_skins:
         other_skins.append(skin)
 
-kick_list_right = [(0, 0), (0, 1), (-1, 1), (1, 1), (-1, 0), (1, 0), (-2, 0), (2, 0), (0, -1)] # checks left to right if kicking right
-kick_list_left = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)] # checks right to left if kicking left
+# checks left to right if kicking right
+kick_list_right = [(0, 0), (0, 1), (-1, 1), (1, 1), (-1, 0), (1, 0), (-2, 0), (2, 0), (0, -1)]
+# checks right to left if kicking left
+kick_list_left = [(0, 0), (0, 1), (1, 1), (-1, 1), (1, 0), (-1, 0), (2, 0), (-2, 0), (0, -1)]
 # there are some rotation states where using the biased lists wouldn't make sense, for example rotating a state 4 I piece to a state 1 or 3. 
 # it should be fine though because it only affects kick order, and if anything gives advanced players more control.
 

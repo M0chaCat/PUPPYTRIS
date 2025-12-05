@@ -1,8 +1,14 @@
-# Settings
+"""
+settings.py declares (and a, a bit, calculates)
+defaults/placeholders for the player settings,
+as well as developer constants like lockdown_resets_count.
+It then loads the settings.json file, and replaces
+all the user settings with their user-specified values.
+"""
 
-import pygame
 import os
 import json
+import pygame
 
 DISPLAY_WIDTH = 3440 # for fullscreen? implement this later!!!
 DISPLAY_HEIGHT = 1440
@@ -78,7 +84,7 @@ WALLPAPER = None  # will hold the loaded surface after pygame.init()
 # load the settings
 script_dir = os.path.dirname(os.path.abspath(__file__))
 settings_dir = os.path.join(script_dir, "settings.json")
-with open(settings_dir, "r") as file:
+with open(settings_dir, "r", encoding="utf8") as file:
     user_settings = json.load(file)
     globals().update(user_settings)
 
@@ -86,8 +92,8 @@ with open(settings_dir, "r") as file:
 try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     font_dir = os.path.join(script_dir, "Konstruktor.otf")
-except Exception as e:
-    print("Font load failed:", e)
+except Exception as error:
+    print("Font load failed:", error)
 
 SCALEX = DESIGN_WINDOW_WIDTH / WINDOW_WIDTH
 SCALEY = DESIGN_WINDOW_HEIGHT / WINDOW_HEIGHT
