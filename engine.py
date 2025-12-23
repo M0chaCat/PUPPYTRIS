@@ -780,7 +780,7 @@ def reset_game():
 
 def handle_sonic_drop(keys):
     global softdrop_overrides, game_state_changed
-    if keys[settings.MOVE_SONICDROP and allow_sonic_drop]:
+    if keys[settings.MOVE_SONICDROP] and allow_sonic_drop:
         softdrop_overrides = True
         return move_piece(0, settings.BOARD_HEIGHT)
     return 0
@@ -907,3 +907,4 @@ def update_pps():
     total_time = timer.get_seconds()
     pps = pieces_placed / total_time
     pps = round(pps, 2)
+
