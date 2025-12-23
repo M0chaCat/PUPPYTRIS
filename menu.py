@@ -1,5 +1,5 @@
 """
-menu.py has UI functions and stuff for the menu I guess (kity put more info here?) TEST
+menu.py has UI functions and stuff for the menu I guess (kity put more info here?) TEST2
 """
 
 import pygame
