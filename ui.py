@@ -279,50 +279,73 @@ def draw_topout_board():
             MAIN_SCREEN.blit(skin, (x, y))
 
 def draw_next_panel():
+    cell = settings.CELL_SIZE
+    base_scale = 0.8  # original piece scale
+    shrink_factor = 0.95  # shrink entire area by 5%
+
+    # precompute scaled cell size
+    cell_scaled = int(cell * base_scale * shrink_factor)
+
     text = "Next"
     total_board_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
     board_width_px = engine.BOARD_WIDTH_PX
     board_height_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT * settings.SCALE  # vertical pixels
 
-    next_width = int(board_width_px * 0.4)
+    next_width = int(cell_scaled * (4 + 1))
 
-    next_height_per_piece = next_width * 0.68
-    next_height_top = next_width * 0.3
-    next_height = (next_height_per_piece * engine.next_queue_size) + next_height_top
-
-
-    # --- Horizontal alignment: stick to the board ---
-    next_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX
-
-    # --- Vertical alignment: start at a % down the board ---
-    vertical_pct = 0.3  # change this: 0.0 = top of board, 1.0 = bottom
-    next_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
-
+    next_height_per_piece = cell_scaled * 3
+    next_height_top = cell_scaled * 1
+    # next_height = (next_height_per_piece * engine.next_queue_size) + next_height_top
+    next_height = (len(engine.next_boards) * cell_scaled * 4) + next_height_top
     panel_color = settings.PANEL_COLOR
-    draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_size=20, cut_corners=['top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
+
+    too_big = False
+
+    if (next_height >= board_height_px):
+        # --- Horizontal alignment: next to board ---
+        next_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX + 50
+
+        # --- Vertical alignment: center of screen ---
+        next_y = (settings.DESIGN_WINDOW_HEIGHT - next_height) / 2
+
+        draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
+
+        too_big = True
+    elif (next_height < board_height_px):
+        # --- Horizontal alignment: stick to the board ---
+        next_x = engine.BOARD_PX_OFFSET_X + engine.BOARD_WIDTH_PX
+
+        # --- Vertical alignment: start at a % down the board ---
+        vertical_pct = 0.3  # change this: 0.0 = top of board, 1.0 = bottom
+        next_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
+
+        draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_size=20, cut_corners=['top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
 
     # --- Draw label ---
-    font_size = int(next_width * 0.15)
+    font_size = int(cell_scaled / 1.5)
     try:
         font = pygame.font.Font(settings.font_dir, font_size)
     except:
         font = pygame.font.SysFont(None, font_size)
 
     text_surf = font.render(text, True, settings.TEXT_COLOR)
-    padding = 10
-    text_rect = text_surf.get_rect(topleft=(next_x + padding, next_y + padding))
+
+    paddingy = cell_scaled / 3
+    paddingx = cell_scaled / 3
+
+    text_rect = text_surf.get_rect()
+
+    if too_big:
+        text_rect.centerx = next_x + next_width / 2
+        text_rect.top = next_y + paddingy
+    else:
+        text_rect.topleft = (next_x + paddingx, next_y + paddingy)
+
     MAIN_SCREEN.blit(text_surf, text_rect)
 
     # --- Draw next pieces ---
     if hasattr(engine, "next_boards") and engine.next_boards is not None:
-        cell = settings.CELL_SIZE
-        base_scale = 0.8  # original piece scale
-        shrink_factor = 0.95  # shrink entire area by 5%
-        spacing = -40  # space between stacked hold pieces
-
-        # precompute scaled cell size
-        cell_scaled = int(cell * base_scale * shrink_factor)
-
+        spacing = cell_scaled * -1 # space between stacked pieces (1 next cell)
         for i, board in enumerate(engine.next_boards):
             board_rows, board_cols = board.shape
 
@@ -358,37 +381,65 @@ def draw_next_panel():
                     MAIN_SCREEN.blit(piece_skin_scaled, (x, y))
 
 def draw_hold_panel():
+    cell = settings.CELL_SIZE
+    base_scale = 0.8  # original piece scale
+    shrink_factor = 0.95  # shrink entire area by 5%
+
+    # precompute scaled cell size
+    cell_scaled = int(cell * base_scale * shrink_factor)
+
     text = "Hold"
     total_board_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
     board_width_px = engine.BOARD_WIDTH_PX
     board_height_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT * settings.SCALE  # vertical pixels
 
-    hold_width = int(board_width_px * 0.4)
+    hold_width = int(cell_scaled * (4 + 0.5))
 
-    hold_height_per_piece = hold_width * 0.68
-    hold_height_top = hold_width * 0.3
-    hold_height = (hold_height_per_piece * engine.hold_pieces_count) + hold_height_top
+    hold_height_per_piece = cell_scaled * 3
+    hold_height_top = cell_scaled * 1
+    hold_height = (engine.hold_pieces_count * cell_scaled * 4) + hold_height_top
 
-    # --- Horizontal alignment: stick to the left of the board ---
-    hold_x = engine.BOARD_PX_OFFSET_X - hold_width
+    too_big = False
 
-    # --- Vertical alignment: start at a % down the board ---
-    vertical_pct = 0.3  # 0.0 = top, 1.0 = bottom
-    hold_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
+    if ((hold_height + (10 * cell_scaled)) >= board_height_px):
+        # --- Horizontal alignment: stick to the left of the board ---
+        hold_x = engine.BOARD_PX_OFFSET_X - hold_width - 50
 
-    panel_color = settings.PANEL_COLOR
-    draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
+        # --- Vertical alignment: start at a % down the screen ---
+        vertical_pct = 0.3  # 0.0 = top, 1.0 = bottom
+        hold_y = int(vertical_pct * total_board_px)
+
+        panel_color = settings.PANEL_COLOR
+        draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
+        too_big = True
+    elif (hold_height < board_height_px):
+        # --- Horizontal alignment: stick to the left of the board ---
+        hold_x = engine.BOARD_PX_OFFSET_X - hold_width
+
+        # --- Vertical alignment: start at a % down the board ---
+        vertical_pct = 0.3  # 0.0 = top, 1.0 = bottom
+        hold_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
+
+        panel_color = settings.PANEL_COLOR
+        draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
 
     # --- Draw label ---
-    font_size = int(hold_width * 0.15)
+    font_size = int(cell_scaled / 1.5)
     try:
         font = pygame.font.Font(settings.font_dir, font_size)
     except:
         font = pygame.font.SysFont(None, font_size)
 
     text_surf = font.render(text, True, settings.TEXT_COLOR)
-    padding = 10
-    text_rect = text_surf.get_rect(topright=(hold_x + hold_width - padding, hold_y + padding))
+    text_rect = text_surf.get_rect()
+    paddingy = cell_scaled / 3
+    paddingx = cell_scaled / 3
+    if too_big:
+        text_rect.centerx = hold_x + hold_width / 2
+        text_rect.top = hold_y + paddingy
+    else:
+        text_rect.topright=(hold_x + hold_width - paddingx, hold_y + paddingy)
+
     MAIN_SCREEN.blit(text_surf, text_rect)
 
     # --- Draw held pieces ---
@@ -440,25 +491,45 @@ stats_panel_rect = None
 saved_stats_bg = None
 
 def draw_stats_panel_bg():
+    cell = settings.CELL_SIZE
+    base_scale = 0.8  # original piece scale
+    shrink_factor = 0.95  # shrink entire area by 5%
+
+    # precompute scaled cell size
+    cell_scaled = int(cell * base_scale * shrink_factor)
+    total_board_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
+
     """Draw just the stats panel background and save it for later text updates."""
     global stats_panel_rect, saved_stats_bg
     total_board_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
 
     board_width_px = engine.BOARD_WIDTH_PX
-    stats_width = int(board_width_px * 0.37)
-    stats_height = int(stats_width * 2)
+    stats_width = int(cell_scaled * 5)
+    stats_height = int(cell_scaled * 10)
 
-    stats_x = engine.BOARD_PX_OFFSET_X - stats_width
-    vertical_pct = 0.7 
+    vertical_pct = 0.7
     stats_y = engine.BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
-
-    stats_panel_rect = pygame.Rect(stats_x, stats_y, stats_width, stats_height)
-
+    stats_x = engine.BOARD_PX_OFFSET_X - stats_width
+    hold_height = (engine.hold_pieces_count * cell_scaled * 4) + (cell_scaled)
     panel_color = settings.CRUST_COLOR
-    draw_rect(stats_x, stats_y, stats_width, stats_height,
-                        cut_size=20, color=panel_color,
-                        cut_corners=['top-left', 'bottom-left'],
-                        outline_color=settings.PANEL_OUTLINE)
+
+    if ((hold_height + stats_height) >= total_board_px):
+        vertical_pct = 0.7 + (0.15 * engine.hold_pieces_count)
+        stats_x = stats_x - 50
+        stats_y = int(vertical_pct * total_board_px)
+        stats_panel_rect = pygame.Rect(stats_x, stats_y, stats_width, stats_height)
+
+        draw_rect(stats_x, stats_y, stats_width, stats_height,
+                            cut_size=20, color=panel_color,
+                            cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'],
+                            outline_color=settings.PANEL_OUTLINE)
+    elif ((hold_height + stats_height) < total_board_px):
+        stats_panel_rect = pygame.Rect(stats_x, stats_y, stats_width, stats_height)
+
+        draw_rect(stats_x, stats_y, stats_width, stats_height,
+                            cut_size=20, color=panel_color,
+                            cut_corners=['top-left', 'bottom-left'],
+                            outline_color=settings.PANEL_OUTLINE)
 
     # Save the background so we can restore it before updating text
     saved_stats_bg = MAIN_SCREEN.subsurface(stats_panel_rect).copy()
@@ -502,7 +573,7 @@ def draw_stats_panel_text(PPS='50.2', TIME_S='3:28', TIME_MS='3:28', CLEARED="69
 
 def draw_score_panel(level="50", score="50,000"):
     """Draw a rectangular section aligned to the bottom of the board with text."""
-    panel_height = int(settings.WINDOW_HEIGHT * 0.05)
+    panel_height = int(settings.CELL_SIZE * 1.5)
     total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
     x = engine.BOARD_PX_OFFSET_X
     y = engine.BOARD_PX_OFFSET_Y + total_board_px
@@ -517,13 +588,37 @@ def draw_score_panel(level="50", score="50,000"):
         outline_color=settings.PANEL_OUTLINE
     )
 
-    # Fonts relative to panel height
-    fontbig = pygame.font.Font(settings.font_dir, max(1, int(panel_height * 1.07)))
-    font = pygame.font.Font(settings.font_dir, max(1, int(panel_height * 0.35)))
-
     padding_x = int(0.02 * width)  # 2% of panel width
-    right_padding_x = int(0.08 * width) 
-    padding_y = int(0.1 * height)  # 10% of panel height from top
+    right_padding_x = int(0.08 * width)
+    padding_y = int(0.15 * height)  # 10% of panel height from top
+
+    # Fonts relative to panel height
+    # start with default font sizes
+    big_size = max(1, int(panel_height * 1.07))
+    small_size = max(1, int(panel_height * 0.35))
+
+    fontbig = pygame.font.Font(settings.font_dir, big_size)
+    font = pygame.font.Font(settings.font_dir, small_size)
+
+    # shrink fonts if text doesn't fit
+    def total_text_width():
+        return (
+            padding_x +
+            font.size("Level:")[0] + 5 +
+            fontbig.size(level)[0] +
+            padding_x +
+            int(0.3 * height) +  # separator width
+            padding_x +
+            font.size("Score:")[0] + 5 +
+            fontbig.size(score)[0] +
+            right_padding_x
+        )
+
+    while total_text_width() > width and big_size > 1:
+        big_size -= 1
+        small_size = max(1, int(big_size * 0.35))
+        fontbig = pygame.font.Font(settings.font_dir, big_size)
+        font = pygame.font.Font(settings.font_dir, small_size)
 
     # Draw Level
     draw_text(MAIN_SCREEN, "Level:", font, settings.TEXT_COLOR, x + padding_x, y + padding_y)

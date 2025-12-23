@@ -155,7 +155,7 @@ timer = Timer()
 def load_gamemode(gamemode):
     global das_threshold, arr_threshold, sdr_threshold, are_threshold
     global pieces_dict, piece_types, piece_inversions, piece_size
-    global hold_pieces_count 
+    global hold_pieces_count
     for attr, value in vars(gamemode).items():
         globals()[attr] = value
     # regenerate the bags
