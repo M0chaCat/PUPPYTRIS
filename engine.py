@@ -153,6 +153,16 @@ class Timer:
 
 timer = Timer()
 
+def load_gamemode(gamemode):
+    global das_threshold, arr_threshold, sdr_threshold, are_threshold
+    global pieces_dict, piece_types, piece_inversions, piece_size
+    global hold_pieces_count
+    for attr, value in vars(gamemode).items():
+        globals()[attr] = value
+    # regenerate the bags
+    piece_bags[0] = generate_bag(piece_gen_type)
+    piece_bags[1] = generate_bag(piece_gen_type)
+
 def update_starting_coords():
     global piece_size, piece_x, piece_y, starting_x, starting_y, piece_rotation
     piece_shape = pieces_dict[piece_bags[0][0]]["shapes"][STARTING_ROTATION]
@@ -164,11 +174,20 @@ def update_starting_coords():
     piece_y = starting_y
     piece_rotation = STARTING_ROTATION
 
-def update_pps():
-    global pps
-    total_time = timer.get_seconds()
-    pps = pieces_placed / total_time
-    pps = round(pps, 2)
+def spawn_piece():
+    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_used, game_state_changed
+    queue_spawn_piece = False
+    update_starting_coords()
+    holds_used = 0
+    game_state_changed = True
+
+    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
+    gen_next_boards()
+    gen_topout_board()
+    update_ghost_piece()
+    # top-out check
+    if check_collisions(0, 0, piece_board):
+        top_out()
 
 def generate_bag(type="BAG"):
     global bag_count
@@ -224,26 +243,6 @@ def generate_bag(type="BAG"):
 
     return generated_bag
 
-def spawn_piece():
-    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_used, game_state_changed
-    queue_spawn_piece = False
-    update_starting_coords()
-    holds_used = 0
-    game_state_changed = True
-
-    piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
-    gen_next_boards()
-    gen_topout_board()
-    update_ghost_piece()
-    # top-out check
-    if check_collisions(0, 0, piece_board):
-        top_out()
-
-def update_game_board(new_board):
-    global game_board, game_state_changed
-    game_state_changed = True
-    game_board = new_board.copy()
-
 def update_history():
     global history_index, game_history
 
@@ -297,43 +296,29 @@ def undo(amount):
         gen_next_boards()
         update_ghost_piece()
 
-def gen_topout_board():
-    global topout_board
-    extra_height = settings.BOARD_EXTRA_HEIGHT
-    topout_board = numpy.zeros((piece_size, piece_size), dtype=numpy.int8)
-    next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][STARTING_ROTATION]
+def add_mino(x, y): # used for drawing directly on the board and other whatever else might add a single mino
+    game_board[x, y] == -2
 
-    # create the two boards to compare
-    top_rows = extra_height + math.floor(settings.BOARD_HEIGHT/8) + 2 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
-    top_rows = game_board[:top_rows].copy()
-    top_mask = top_rows.copy()
-    full_rows_index = extra_height + piece_size - 3 # min index of rows that should be all 1
-    for i, row in enumerate(top_mask):
-        if i < full_rows_index:
-            top_mask[i] = 1
-        else:
-            top_mask[i][0:i-full_rows_index] = 0
-            top_mask[i][i-full_rows_index:settings.BOARD_WIDTH-(i-full_rows_index)] = 1
-            top_mask[i][settings.BOARD_WIDTH-(i-full_rows_index):settings.BOARD_WIDTH] = 0
-    if numpy.any((top_rows != 0) & (top_mask != 0)):
-        topout_board = next_shape
-    else:
-        topout_board = None
+def move_piece(move_x, move_y):
+    global piece_x, piece_y, piece_rotation, piece_board, game_state_changed
+    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    move_dir_x = int((move_x > 0) - (move_x < 0)) # treats bools like integers then converts to int to get direction
+    move_dir_y = int((move_y > 0) - (move_y < 0))
+    steps_to_move = max(abs(move_x), abs(move_y), 1)
+    remaining_steps = 0 # set to zero as default
 
-def update_ghost_piece(): # make sure piece_board has been updated before calling this function
-    global ghost_piece_x, ghost_piece_y, ghost_board, piece_y
-    if settings.ONEKF_ENABLED: # return an empty board if 1kf is enabled
-        ghost_board = numpy.zeros_like(ghost_board)
-        return
-    # calculate the coords
-    ghost_piece_x = piece_x
-    ghost_piece_y = piece_y # STARTS at piece y and looks from there
-    for _ in range(piece_y, settings.BOARD_HEIGHT):
-        if not check_collisions(0, 1, piece_board, ghost_piece=True): # fourth param for ghost pieces
-            ghost_piece_y += 1
-        else: break
-    # update the board
-    ghost_board = piece_board.copy()
+    for step in range(steps_to_move): # loops over whichever number is farther from 0 (the most moves), min 1
+        if not check_collisions(move_dir_x, move_dir_y, current_shape): # only goes through with the movement if no collisions occur
+            piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
+            piece_y = move_dir_y + piece_y
+            game_state_changed = True # this is set multiple times, but its fiiiine
+        else: # break when first collision happens
+            remaining_steps = steps_to_move - step
+            break
+
+    piece_board = current_shape * piece_bags[0][0]
+    if move_x != 0: update_ghost_piece()
+    return remaining_steps
 
 def check_collisions(target_move_x, target_move_y, target_shape, ghost_piece = False):
     if ghost_piece:
@@ -366,6 +351,107 @@ def check_touching_ground():
         elif game_board[coords[0] + piece_y + 1, piece_x + coords[1]]: # check if its touching any minos below it
             return True
     return False # return false if nothing found
+
+def handle_movement(keys):
+    global running, das_timer, arr_timer, das_started, arr_started, das_reset_timer, das_reset_started, last_move_dir
+
+    # find which horizontal input the user pressed (0 if none)
+    if keys[settings.MOVE_LEFT] and not keys[settings.MOVE_RIGHT]:
+        move_dir = -1
+    elif keys[settings.MOVE_RIGHT] and not keys[settings.MOVE_LEFT]:
+        move_dir = 1
+    else:
+        move_dir = 0
+
+    # handle horizontal movement according to DAS and ARR rules
+    if move_dir != 0:
+        if (last_move_dir != move_dir and settings.DAS_RESET_THRESHOLD <= 0): # if switching movement direction (and DAS_RESET_THRESHOLD is set to 0), reset DAS and ARR
+            das_timer = 0                                           # last_move_dir is set to 0 by default so it will reset for the first movement, but that doesn't matter because it starts that way anyways
+            das_started = False
+            arr_timer = 0
+            arr_started = False
+
+        last_move_dir = move_dir
+
+        if not das_started:
+            move_piece(move_dir, 0)
+            das_started = True # start the DAS timer
+            das_timer = 0
+            das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
+
+        else:
+            das_timer += das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
+
+            if (das_timer > das_threshold):
+                if not arr_started and arr_threshold != 0:
+                    move_piece(move_dir, 0)
+                    arr_started = True # start the ARR timer
+                    arr_timer = 0
+                    arr_clock.tick()
+                else:
+                    arr_timer += arr_clock.tick()
+                    if arr_timer >= arr_threshold:
+                        if arr_threshold == 0: # avoids divide by 0 error
+                            steps_to_move = settings.BOARD_WIDTH
+                        else:
+                            steps_to_move = int(arr_timer / arr_threshold)
+                        move_piece(steps_to_move * move_dir, 0)
+                        if arr_threshold == 0: # avoids divide by 0 error
+                            arr_timer = 0
+                        else:
+                            arr_timer = arr_timer % arr_threshold
+
+    elif das_started: # saves performance by only checking this stuff when das_timer is still running
+        if not das_reset_started:
+            das_reset_timer = 0
+            das_reset_clock.tick()
+            das_reset_started = True
+
+        else:
+            das_reset_timer += das_reset_clock.tick()
+
+        if (das_reset_timer >= settings.DAS_RESET_THRESHOLD): # if das reset timer goes through, then reset all timers
+            das_timer = 0
+            das_started = False
+            das_reset_timer = 0
+            das_reset_started = False
+
+        arr_timer = 0 # reset the ARR timer only to keep things clean
+        arr_started = False
+
+def unpack_1kf_binds():
+    global onekf_key_array
+    for row, col in numpy.ndindex((4, 10)): # indexes through all coordinates in a 4x10 array
+        string_index = (row * 10) + col
+        onekf_key_array[row][col] = pygame.key.key_code(settings.ONEKF_STRING[string_index : string_index + 1])
+
+def handle_1kf(key, keydir = "DOWN"):
+    global piece_rotation, game_state_changed
+    key_row, key_col = numpy.where(onekf_key_array == key)
+    # converts keyboard rows into their rotation states
+    match key_row:
+        case 0:
+            piece_rotation = 2
+        case 1:
+            piece_rotation = 3
+        case 2:
+            piece_rotation = 0
+        case 3:
+            piece_rotation = 1
+
+    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
+    rightmost_point = numpy.max(numpy.where(current_shape != 0)[1]) # gets the distance between piece_x and the rightmost point of the piece
+    leftmost_point = numpy.min(numpy.where(current_shape != 0)[1]) # this is usually 0, but needed for O piece
+
+    if key_col < 5:
+        steps_to_move = int(key_col - piece_x - leftmost_point) # cast to int since numpy.where always returns an array for some reason
+    else:
+        steps_to_move = int(key_col - piece_x - rightmost_point) # cast to int since numpy.where always returns an array for some reason
+
+    game_state_changed = True
+    move_piece(steps_to_move, 0) # done in two steps because otherwise it stops early when colliding with the wall
+    move_piece(0, settings.BOARD_HEIGHT)
+    lock_piece()
 
 def rotate_piece(amount):
     global piece_rotation, piece_board, piece_x, piece_y, game_state_changed
@@ -493,65 +579,6 @@ def hold_guideline(infinite_holds = False):
         if check_collisions(0, 0, piece_board):
             top_out()
 
-def move_piece(move_x, move_y):
-    global piece_x, piece_y, piece_rotation, piece_board, game_state_changed
-    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
-    move_dir_x = int((move_x > 0) - (move_x < 0)) # treats bools like integers then converts to int to get direction
-    move_dir_y = int((move_y > 0) - (move_y < 0))
-    steps_to_move = max(abs(move_x), abs(move_y), 1)
-    remaining_steps = 0 # set to zero as default
-
-    for step in range(steps_to_move): # loops over whichever number is farther from 0 (the most moves), min 1
-        if not check_collisions(move_dir_x, move_dir_y, current_shape): # only goes through with the movement if no collisions occur
-            piece_x = move_dir_x + piece_x # int(move_x > 0) returns 0 if move_x is 0, and 1 otherwise
-            piece_y = move_dir_y + piece_y
-            game_state_changed = True # this is set multiple times, but its fiiiine
-        else: # break when first collision happens
-            remaining_steps = steps_to_move - step
-            break
-
-    piece_board = current_shape * piece_bags[0][0]
-    if move_x != 0: update_ghost_piece()
-    return remaining_steps
-
-def gen_next_boards():
-    global next_boards
-
-    next_boards = []
-    next_list = (piece_bags[0] + piece_bags[1])[1:next_queue_size + 1] # gets a truncated next_pieces list
-
-    print(next_list)
-    for piece_id in next_list:
-        piece_shape = pieces_dict[piece_id]["shapes"][0]
-        board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
-        for coords in numpy.argwhere(piece_shape != 0):
-            board[coords[0], coords[1]] = piece_id
-        next_boards.append(board)
-
-def gen_hold_boards():
-    global hold_boards
-
-    hold_boards = []
-
-    for piece_id in hold_pieces:
-        piece_shape = pieces_dict[piece_id]["shapes"][0]
-        board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
-        for coords in numpy.argwhere(piece_shape != 0):
-            board[coords[0], coords[1]] = piece_id
-        hold_boards.append(board)
-
-def clear_lines():
-    global game_board, lines_cleared
-    # returns a 1d array of booleans for each line, true if its completed, false if not
-    lines_to_clear = numpy.all(game_board != 0, axis=1)
-    line_clear_count = numpy.where(lines_to_clear)[0].size
-    if line_clear_count > 0:
-        lines_cleared += line_clear_count
-        board_mask = game_board[~lines_to_clear] # masks the board, removing lines where the mask returned true
-        new_lines = numpy.zeros((line_clear_count, settings.BOARD_WIDTH), dtype=numpy.int8)
-        new_board = numpy.vstack((new_lines, board_mask), dtype=numpy.int8)
-        update_game_board(new_board)
-
 def lockdown(type, frametime):
     global lockdown_timer, prevent_harddrop_timer, prevent_harddrop_clock, prevent_harddrop_started
     global lockdown_start_x, lockdown_start_y, lockdown_start_rotation, lockdown_resets
@@ -620,113 +647,90 @@ def lock_piece():
     # this has to happen at the very end
     update_history()
 
-def add_mino(x, y): # used for drawing directly on the board and other whatever else might add a single mino
-    game_board[x, y] == -2
-
-def handle_movement(keys):
-    global running, das_timer, arr_timer, das_started, arr_started, das_reset_timer, das_reset_started, last_move_dir
-
-    # find which horizontal input the user pressed (0 if none)
-    if keys[settings.MOVE_LEFT] and not keys[settings.MOVE_RIGHT]:
-        move_dir = -1
-    elif keys[settings.MOVE_RIGHT] and not keys[settings.MOVE_LEFT]:
-        move_dir = 1
-    else:
-        move_dir = 0
-
-    # handle horizontal movement according to DAS and ARR rules
-    if move_dir != 0:
-        if (last_move_dir != move_dir and settings.DAS_RESET_THRESHOLD <= 0): # if switching movement direction (and DAS_RESET_THRESHOLD is set to 0), reset DAS and ARR
-            das_timer = 0                                           # last_move_dir is set to 0 by default so it will reset for the first movement, but that doesn't matter because it starts that way anyways
-            das_started = False
-            arr_timer = 0
-            arr_started = False
-
-        last_move_dir = move_dir
-
-        if not das_started:
-            move_piece(move_dir, 0)
-            das_started = True # start the DAS timer
-            das_timer = 0
-            das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
-
-        else:
-            das_timer += das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
-
-            if (das_timer > das_threshold):
-                if not arr_started and arr_threshold != 0:
-                    move_piece(move_dir, 0)
-                    arr_started = True # start the ARR timer
-                    arr_timer = 0
-                    arr_clock.tick()
-                else:
-                    arr_timer += arr_clock.tick()
-                    if arr_timer >= arr_threshold:
-                        if arr_threshold == 0: # avoids divide by 0 error
-                            steps_to_move = settings.BOARD_WIDTH
-                        else:
-                            steps_to_move = int(arr_timer / arr_threshold)
-                        move_piece(steps_to_move * move_dir, 0)
-                        if arr_threshold == 0: # avoids divide by 0 error
-                            arr_timer = 0
-                        else:
-                            arr_timer = arr_timer % arr_threshold
-
-    elif das_started: # saves performance by only checking this stuff when das_timer is still running
-        if not das_reset_started:
-            das_reset_timer = 0
-            das_reset_clock.tick()
-            das_reset_started = True
-
-        else:
-            das_reset_timer += das_reset_clock.tick()
-
-        if (das_reset_timer >= settings.DAS_RESET_THRESHOLD): # if das reset timer goes through, then reset all timers
-            das_timer = 0
-            das_started = False
-            das_reset_timer = 0
-            das_reset_started = False
-
-        arr_timer = 0 # reset the ARR timer only to keep things clean
-        arr_started = False
-
-def unpack_1kf_binds():
-    global onekf_key_array
-    for row, col in numpy.ndindex((4, 10)): # indexes through all coordinates in a 4x10 array
-        string_index = (row * 10) + col
-        onekf_key_array[row][col] = pygame.key.key_code(settings.ONEKF_STRING[string_index : string_index + 1])
-
-def handle_1kf(key, keydir = "DOWN"):
-    global piece_rotation, game_state_changed
-    key_row, key_col = numpy.where(onekf_key_array == key)
-    # converts keyboard rows into their rotation states
-    match key_row:
-        case 0:
-            piece_rotation = 2
-        case 1:
-            piece_rotation = 3
-        case 2:
-            piece_rotation = 0
-        case 3:
-            piece_rotation = 1
-
-    current_shape = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation]
-    rightmost_point = numpy.max(numpy.where(current_shape != 0)[1]) # gets the distance between piece_x and the rightmost point of the piece
-    leftmost_point = numpy.min(numpy.where(current_shape != 0)[1]) # this is usually 0, but needed for O piece
-
-    if key_col < 5:
-        steps_to_move = int(key_col - piece_x - leftmost_point) # cast to int since numpy.where always returns an array for some reason
-    else:
-        steps_to_move = int(key_col - piece_x - rightmost_point) # cast to int since numpy.where always returns an array for some reason
-
-    game_state_changed = True
-    move_piece(steps_to_move, 0) # done in two steps because otherwise it stops early when colliding with the wall
-    move_piece(0, settings.BOARD_HEIGHT)
-    lock_piece()
+def clear_lines():
+    global game_board, lines_cleared
+    # returns a 1d array of booleans for each line, true if its completed, false if not
+    lines_to_clear = numpy.all(game_board != 0, axis=1)
+    line_clear_count = numpy.where(lines_to_clear)[0].size
+    if line_clear_count > 0:
+        lines_cleared += line_clear_count
+        board_mask = game_board[~lines_to_clear] # masks the board, removing lines where the mask returned true
+        new_lines = numpy.zeros((line_clear_count, settings.BOARD_WIDTH), dtype=numpy.int8)
+        new_board = numpy.vstack((new_lines, board_mask), dtype=numpy.int8)
+        update_game_board(new_board)
 
 def top_out():
-    # can add extra functionality later like displaying a score panel at the end
+    # TODO: add extra functionality later like displaying a score panel at the end
     reset_game()
+
+def update_game_board(new_board):
+    global game_board, game_state_changed
+    game_state_changed = True
+    game_board = new_board.copy()
+
+def gen_topout_board():
+    global topout_board
+    extra_height = settings.BOARD_EXTRA_HEIGHT
+    topout_board = numpy.zeros((piece_size, piece_size), dtype=numpy.int8)
+    next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][STARTING_ROTATION]
+
+    # create the two boards to compare
+    top_rows = extra_height + math.floor(settings.BOARD_HEIGHT/8) + 2 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
+    top_rows = game_board[:top_rows].copy()
+    top_mask = top_rows.copy()
+    full_rows_index = extra_height + piece_size - 3 # min index of rows that should be all 1
+    for i, row in enumerate(top_mask):
+        if i < full_rows_index:
+            top_mask[i] = 1
+        else:
+            top_mask[i][0:i-full_rows_index] = 0
+            top_mask[i][i-full_rows_index:settings.BOARD_WIDTH-(i-full_rows_index)] = 1
+            top_mask[i][settings.BOARD_WIDTH-(i-full_rows_index):settings.BOARD_WIDTH] = 0
+    if numpy.any((top_rows != 0) & (top_mask != 0)):
+        topout_board = next_shape
+    else:
+        topout_board = None
+
+def update_ghost_piece(): # make sure piece_board has been updated before calling this function
+    global ghost_piece_x, ghost_piece_y, ghost_board, piece_y
+    if settings.ONEKF_ENABLED: # return an empty board if 1kf is enabled
+        ghost_board = numpy.zeros_like(ghost_board)
+        return
+    # calculate the coords
+    ghost_piece_x = piece_x
+    ghost_piece_y = piece_y # STARTS at piece y and looks from there
+    for _ in range(piece_y, settings.BOARD_HEIGHT):
+        if not check_collisions(0, 1, piece_board, ghost_piece=True): # fourth param for ghost pieces
+            ghost_piece_y += 1
+        else: break
+    # update the board
+    ghost_board = piece_board.copy()
+
+def gen_next_boards():
+    global next_boards
+
+    next_boards = []
+    next_list = (piece_bags[0] + piece_bags[1])[1:next_queue_size + 1] # gets a truncated next_pieces list
+
+    print(next_list)
+    for piece_id in next_list:
+        piece_shape = pieces_dict[piece_id]["shapes"][0]
+        board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
+        for coords in numpy.argwhere(piece_shape != 0):
+            board[coords[0], coords[1]] = piece_id
+        next_boards.append(board)
+
+def gen_hold_boards():
+    global hold_boards
+
+    hold_boards = []
+
+    for piece_id in hold_pieces:
+        piece_shape = pieces_dict[piece_id]["shapes"][0]
+        board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
+        for coords in numpy.argwhere(piece_shape != 0):
+            board[coords[0], coords[1]] = piece_id
+        hold_boards.append(board)
 
 def reset_game():
     global game_board, game_history, piece_board, piece_bags, hold_pieces, bag_count, holds_used
@@ -777,7 +781,7 @@ def reset_game():
 
 def handle_sonic_drop(keys):
     global softdrop_overrides, game_state_changed
-    if keys[settings.MOVE_SONICDROP and allow_sonic_drop]:
+    if keys[settings.MOVE_SONICDROP] and allow_sonic_drop:
         softdrop_overrides = True
         return move_piece(0, settings.BOARD_HEIGHT)
     return 0

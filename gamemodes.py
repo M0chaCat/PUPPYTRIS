@@ -19,7 +19,7 @@ class TetraminoBase():
     pieces_dict = pieces.tetra_dict
     piece_types = pieces.PIECE_TYPES_TETRA
     piece_inversions = pieces.TETRA_INVERSIONS
-    hold_pieces_count = 1   
+    hold_pieces_count = 1
     piece_size = 4
     allow_mirror = False
 
