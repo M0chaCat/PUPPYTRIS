@@ -1,6 +1,6 @@
 """
 main.py handles the main gameloop.
-Loads the game, handles all gameloop functions in order, then does the rendering.
+Loads the game, handles all gameloop functions in order, then does rendering.
 """
 
 import pygame
