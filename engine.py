@@ -86,6 +86,7 @@ spawn_y_offset = 0
 infinite_holds = False
 starting_gravity = 0 # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency)
 piece_size = 4
+mino_count = piece_size
 piece_types = 7
 
 holds_used = 0
@@ -907,3 +908,5 @@ def load_gamemode(gamemode):
     # regenerate the bags
     piece_bags[0] = generate_bag(piece_gen_type)
     piece_bags[1] = generate_bag(piece_gen_type)
+    # redefine the piece constant
+    mino_count = piece_size
