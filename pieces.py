@@ -779,14 +779,20 @@ penta_dict = {
         "skin": 17 # rubyish?
     }
 }
-other_skins = []
 
+other_skins = []
 
 def init_skins():
     """
     Lazy loader for skin textures.
     Replaces placeholders with surfaces from the arrays already declared in skinloader.py
     """
+    global other_skins 
+    other_skins = [] # clear the list
+    skinloader.set_tetra_skins()
+    skinloader.set_penta_skins()
+    skinloader.set_other_skins()
+
     for i, piece in penta_dict.items():
         piece["skin"] = skinloader.penta_skins[i-1]
     for i, piece in tetra_dict.items():

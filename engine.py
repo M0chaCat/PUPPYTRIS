@@ -18,26 +18,10 @@ import pieces, settings
 pygame.init()
 
 STATE = 0
-
 running = True # so we can turn the game loop on and off
-
-BOARD_WIDTH_PX = settings.CELL_SIZE * settings.BOARD_WIDTH
-BOARD_HEIGHT_PX = settings.CELL_SIZE * (settings.BOARD_HEIGHT - settings.BOARD_EXTRA_HEIGHT)
-
-BOARD_PX_OFFSET_X = (settings.WINDOW_WIDTH - BOARD_WIDTH_PX)/2
-BOARD_PX_OFFSET_Y = (settings.WINDOW_HEIGHT - BOARD_HEIGHT_PX-(settings.WINDOW_HEIGHT * 0.05))/2 - (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 skins_dir = os.path.join(script_dir, "skin")
-
-# --- Load tetra skins (top-left column) ---
-tetra_skins = []
-
-# --- Load penta skins (top-right column) ---
-penta_skins = []
-
-# --- Load other skins (top middle area?) ---
-other_skins = []
 
 frametime_clock = pygame.time.Clock()
 arr_clock = pygame.time.Clock()
@@ -155,13 +139,15 @@ timer = Timer()
 
 def load_gamemode(gamemode):
     global das_threshold, arr_threshold, sdr_threshold, are_threshold
-    global pieces_dict, piece_types, piece_inversions, piece_size
-    global hold_pieces_count
+    global pieces_dict, piece_types, piece_inversions, piece_size, mino_count
+    global hold_pieces_count 
     for attr, value in vars(gamemode).items():
         globals()[attr] = value
     # regenerate the bags
     piece_bags[0] = generate_bag(piece_gen_type)
     piece_bags[1] = generate_bag(piece_gen_type)
+    # redefine the piece constant
+    mino_count = piece_size
 
 def update_starting_coords():
     global piece_size, piece_x, piece_y, starting_x, starting_y, piece_rotation
@@ -174,10 +160,10 @@ def update_starting_coords():
     piece_y = starting_y
     piece_rotation = STARTING_ROTATION
     
-    starting_x = 0
-    piece_x = starting_x
-    piece_y = 1
-    starting_y = piece_y
+    # starting_x = 0
+    # piece_x = starting_x
+    # piece_y = 1
+    # starting_y = piece_y
 
 def spawn_piece():
     global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_used, game_state_changed
@@ -236,7 +222,6 @@ def generate_bag(type="BAG"):
             elif i == 0:
                 prev_pieces = (piece_bags[0] + piece_bags[1])[:4]
             else:
-                print(generated_bag)
                 prev_pieces.append(generated_bag[0])
                 prev_pieces.pop(0)
             piece = random.randint(1, piece_types)
@@ -717,7 +702,6 @@ def gen_next_boards():
     next_boards = []
     next_list = (piece_bags[0] + piece_bags[1])[1:next_queue_size + 1] # gets a truncated next_pieces list
 
-    print(next_list)
     for piece_id in next_list:
         piece_shape = pieces_dict[piece_id]["shapes"][0]
         board = numpy.zeros((5, 5), dtype=numpy.int8)  # 5x5 board for hold piece
@@ -838,39 +822,6 @@ def hard_drop():
     prevent_harddrop_clock.tick()
     prevent_harddrop_started = False # remove the timer flag
 
-def handle_events():
-    global running, STATE, game_state_changed
-    for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            if not settings.ONEKF_ENABLED:
-                if event.key == settings.KEY_HOLD:
-                    hold_guideline(infinite_holds)
-                if event.key == settings.ROTATE_180:
-                    if allow_180: rotate_piece(2)
-                if event.key == settings.ROTATE_CW:
-                    rotate_piece(1)
-                if event.key == settings.ROTATE_CCW:
-                    rotate_piece(3)
-                if event.key == settings.ROTATE_MIRROR:
-                    if allow_mirror: mirror_piece()
-                if event.key == settings.MOVE_HARDDROP:
-                    hard_drop()
-                if event.key == settings.KEY_RESET:
-                    reset_game()
-                if event.key == settings.KEY_EXIT:
-                    if STATE == 0: running = False
-                    else: STATE -= 1
-                if event.key == settings.KEY_UNDO:
-                    undo(1)
-            else:
-                if numpy.isin(event.key, onekf_key_array):
-                    handle_1kf(event.key)
-                if event.key == settings.ONEKF_HOLD:
-                    hold_guideline()
-
-        if event.type == pygame.QUIT:
-            running = False
-
 def do_gravity(frametime):
     global gravity_timer, current_gravity, game_state_changed
 
@@ -913,15 +864,3 @@ def update_pps():
     total_time = timer.get_seconds()
     pps = pieces_placed / total_time
     pps = round(pps, 2)
-
-def load_gamemode(gamemode):
-    global das_threshold, arr_threshold, sdr_threshold, are_threshold
-    global pieces_dict, piece_types, piece_inversions, piece_size
-    global hold_pieces_count 
-    for attr, value in vars(gamemode).items():
-        globals()[attr] = value
-    # regenerate the bags
-    piece_bags[0] = generate_bag(piece_gen_type)
-    piece_bags[1] = generate_bag(piece_gen_type)
-    # redefine the piece constant
-    mino_count = piece_size

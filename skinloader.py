@@ -33,40 +33,48 @@ else:
 
 cell_spacing = 1
 
-# --- Load tetra skins (top-left column) ---
 tetra_skins = []
-for i in range(settings.PIECE_TYPES_TETRA):
-    cell_x = (cell_size_tetra + cell_spacing) * i
-    cell_rect = pygame.Rect((cell_x, 0), (cell_size_tetra, cell_size_tetra))
-    raw_skin = sprite_sheet.subsurface(cell_rect)
-    scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
-    tetra_skins.append(scaled_skin)
+penta_skins = []
+other_skins = []
+
+# --- Load tetra skins (top-left column) ---
+def set_tetra_skins():
+    global tetra_skins
+    tetra_skins = []
+    for i in range(settings.PIECE_TYPES_TETRA):
+        cell_x = (cell_size_tetra + cell_spacing) * i
+        cell_y = 0
+        cell_rect = pygame.Rect((cell_x, cell_y), (cell_size_tetra, cell_size_tetra))
+        raw_skin = sprite_sheet.subsurface(cell_rect)
+        scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
+        tetra_skins.append(scaled_skin)
 
 # --- Load penta skins (top-right column) ---
-penta_skins = []
-if has_penta:
-    for i in range(settings.PIECE_TYPES_PENTA):
-        # second column: x = cell_size_penta + spacing?
-        cell_x = (cell_size_penta + cell_spacing) * i
-        cell_y = cell_size_penta + cell_spacing  # second row
-        cell_rect = pygame.Rect((cell_x, cell_y), (cell_size_penta, cell_size_penta))
-        raw_skin = sprite_sheet.subsurface(cell_rect)
-        scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
-        penta_skins.append(scaled_skin)
+def set_penta_skins():
+    global penta_skins
+    penta_skins = []
+    if has_penta:
+        for i in range(settings.PIECE_TYPES_PENTA):
+            # second column: x = cell_size_penta + spacing?
+            cell_x = (cell_size_penta + cell_spacing) * i
+            cell_y = cell_size_penta + cell_spacing  # second row
+            cell_rect = pygame.Rect((cell_x, cell_y), (cell_size_penta, cell_size_penta))
+            raw_skin = sprite_sheet.subsurface(cell_rect)
+            scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
+            penta_skins.append(scaled_skin)
+
 # --- Load other skins (right of top-left column) preserving original transparency ---
-other_skins = []
 def set_other_skins():
+    global other_skins
+    other_skins = []
     for i in range(5):
         cell_x = (cell_size_tetra + cell_spacing) * (settings.PIECE_TYPES_TETRA + i)  # skip tetraminos
-        cell_rect = pygame.Rect((cell_x, 0), (cell_size_tetra, cell_size_tetra))
-
-        # Extract and scale the sprite
+        cell_y = 0
+        cell_rect = pygame.Rect((cell_x, cell_y), (cell_size_tetra, cell_size_tetra))
         raw_skin = sprite_sheet.subsurface(cell_rect)
         scaled_skin = pygame.transform.scale(raw_skin, (settings.CELL_SIZE, settings.CELL_SIZE))
-
         # Keep per-pixel alpha from PNG
         scaled_skin = scaled_skin.convert_alpha()
-
         other_skins.append(scaled_skin)
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
