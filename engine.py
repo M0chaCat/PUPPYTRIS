@@ -173,6 +173,11 @@ def update_starting_coords():
     piece_x = starting_x
     piece_y = starting_y
     piece_rotation = STARTING_ROTATION
+    
+    starting_x = 0
+    piece_x = starting_x
+    piece_y = 1
+    starting_y = piece_y
 
 def spawn_piece():
     global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_used, game_state_changed
@@ -902,6 +907,12 @@ def handle_entry_delay(frametime, threshold = are_threshold): # currently buggy.
         are_timer = 0
         queue_spawn_piece = False
         spawn_piece()
+
+def update_pps():
+    global pps
+    total_time = timer.get_seconds()
+    pps = pieces_placed / total_time
+    pps = round(pps, 2)
 
 def load_gamemode(gamemode):
     global das_threshold, arr_threshold, sdr_threshold, are_threshold
