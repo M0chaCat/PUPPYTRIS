@@ -166,11 +166,12 @@ def update_starting_coords():
     # starting_y = piece_y
 
 def spawn_piece():
-    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_used, game_state_changed
+    global piece_x, piece_y, piece_rotation, next_boards, topout_board, piece_board, queue_spawn_piece, holds_used, game_state_changed, board_state_changed
     queue_spawn_piece = False
     update_starting_coords()
     holds_used = 0
     game_state_changed = True
+    board_state_changed = False
 
     piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
     gen_next_boards()
@@ -255,7 +256,7 @@ def update_history():
 def undo(amount):
     global game_board, pieces_placed, lines_cleared, piece_bags, hold_pieces, rng_state, pps, bag_count
     global piece_x, piece_y, piece_rotation, holds_used, piece_board, queue_spawn_piece
-    global game_state_changed, history_index
+    global game_state_changed, board_state_changed, history_index
     if pieces_placed - amount >= 0:
         game_state_changed = True
         history_index -= amount
