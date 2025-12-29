@@ -122,8 +122,6 @@ def draw_board():
             if engine.game_board[row, col] != 0:
                 x = grid_start_x + col * cell_size
                 y = grid_start_y + row * cell_size
-                print("row, col: ", row, col)
-                print(engine.pieces_dict[engine.game_board[row, col]]["skin"])
                 BOARD_SURFACE.blit(engine.pieces_dict[engine.game_board[row, col]]["skin"], (x, y))
 
 def draw_piece_board():

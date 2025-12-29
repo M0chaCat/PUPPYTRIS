@@ -10,7 +10,7 @@ import time
 
 os.environ['SDL_VIDEO_WINDOW_POS'] = str(settings.WINDOW_WIDTH / 2) + "," + str(settings.WINDOW_HEIGHT / 2)
 os.environ['SDL_VIDEO_CENTERED'] = '1'
-ctypes.windll.shcore.SetProcessDpiAwareness(2) # disable shitty DPI scaling on Windows
+if os.name == "nt": ctypes.windll.shcore.SetProcessDpiAwareness(2) # disable shitty DPI scaling on Windows
 
 pygame.init()
 pygame.display.set_caption("puppytris!!!!!")
@@ -20,7 +20,6 @@ pygame.display.set_window_position((settings.WINDOW_POS_X, settings.WINDOW_POS_Y
 def handle_events():
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
-
             if event.key == settings.KEY_EXIT:
                 if engine.STATE == 0: engine.running = False
                 else: engine.STATE -= 1
@@ -51,6 +50,10 @@ def handle_events():
                     engine.hold_guideline()
         if event.type == pygame.QUIT:
             engine.running = False
+        if event.type == pygame.ACTIVEEVENT:
+            if event.state & pygame.APPACTIVE > 0 and event.gain == 1: # weird bitwise stuff because activity is represented as bits in an integer
+                engine.game_state_changed = True
+                engine.board_state_changed = True
 
 def toggle_fullscreen(is_fullscreen):
     if is_fullscreen:
@@ -68,8 +71,10 @@ def toggle_fullscreen(is_fullscreen):
     # update the surfaces
     ui.MAIN_SCREEN = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
     ui.BACKGROUND_SURFACE = pygame.Surface((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+    ui.BOARD_SURFACE = pygame.Surface((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT), pygame.SRCALPHA)
     # move the window to the new coords
     pygame.display.set_window_position((settings.WINDOW_POS_X, settings.WINDOW_POS_Y))
+    pygame.display.toggle_fullscreen()
     # update the cell size
     if settings.BOARD_WIDTH / new_width < settings.BOARD_HEIGHT / new_height:
         settings.CELL_SIZE = new_height//(settings.BOARD_HEIGHT - settings.BOARD_EXTRA_HEIGHT + settings.BOARD_PADDING) # +10 so its not too zoomed in
@@ -85,25 +90,25 @@ def toggle_fullscreen(is_fullscreen):
 
     ui.draw_background()
     ui.draw_board()
-    # ui.MAIN_SCREEN.blit(ui.BACKGROUND_SURFACE)
-    # ui.draw_board_background()
-    # ui.draw_grid_lines()
-    # ui.draw_ghost_board()
-    # ui.MAIN_SCREEN.blit(ui.BOARD_SURFACE)
-    # ui.draw_piece_board()
-    # ui.draw_topout_board()
-    # ui.draw_stats_panel_bg()
-    # ui.draw_next_panel()
-    # if engine.hold_pieces_count > 0: ui.draw_hold_panel()
-    # ui.draw_score_panel(level="99", score="99,999")
+    ui.MAIN_SCREEN.blit(ui.BACKGROUND_SURFACE)
+    ui.draw_board_background()
+    ui.draw_grid_lines()
+    ui.draw_ghost_board()
+    ui.MAIN_SCREEN.blit(ui.BOARD_SURFACE)
+    ui.draw_piece_board()
+    ui.draw_topout_board()
+    ui.draw_stats_panel_bg()
+    ui.draw_next_panel()
+    if engine.hold_pieces_count > 0: ui.draw_hold_panel()
+    ui.draw_score_panel(level="99", score="99,999")
 
-    # mins_secs, dot_ms = engine.timer.split_strings()
-    # ui.draw_stats_panel_text(
-    #     PPS=str(engine.pps),
-    #     TIME_S=mins_secs,
-    #     TIME_MS=dot_ms,
-    #     CLEARED=str(engine.lines_cleared)
-    # )
+    mins_secs, dot_ms = engine.timer.split_strings()
+    ui.draw_stats_panel_text(
+        PPS=str(engine.pps),
+        TIME_S=mins_secs,
+        TIME_MS=dot_ms,
+        CLEARED=str(engine.lines_cleared)
+    )
 
 # pre game stuff
 def load_game(): # all this stuff is done twice after reset_game has called. it should be smarter.
