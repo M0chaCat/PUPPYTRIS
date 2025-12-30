@@ -82,6 +82,7 @@ def draw_menu():
     def start_tetra():
         engine.reset_game()
         engine.load_gamemode(gamemodes.TetraminoBase)
+        engine.load_gamemode(gamemodes.Teeny)
         engine.STATE = 2
 
     def start_penta():

@@ -48,8 +48,12 @@ class Classic():
 class BetterArcade():
     piece_gen_type = "4MEMR6"
     next_queue_size = 2
-    das_threshold = 233 # PLACEHOLDER, DAS in TGM is framerate dependent
+    das_threshold = 233 # PLACEHOLDER, DAS in TGM is gravity dependent
     arr_threshold = 16.6666666
     sdr_threshold = 16.6666666
     entry_delay = 350
     allow_sonic_drop = False
+
+class Teeny():
+    das_threshold = 0
+    arr_threshold = 0
