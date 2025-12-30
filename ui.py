@@ -296,7 +296,7 @@ def draw_next_panel():
         next_x = BOARD_PX_OFFSET_X + board_width_px + 50
 
         # --- Vertical alignment: center of screen ---
-        next_y = (settings.DESIGN_WINDOW_HEIGHT - next_height) / 2
+        next_y = (settings.WINDOW_HEIGHT - next_height) / 2
 
         draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
 
