@@ -210,6 +210,7 @@ def generate_bag(type="BAG"):
             if (piece == 0 or piece == prev_piece):
                 piece = random.randint(1, piece_types)
             generated_bag.insert(0, piece)
+
     elif type.startswith("4MEMR"): # ANY 4 memory, reroll 6 times is TGM2 style
         reroll_count = int(type[-1]) # gets the last character
         prev_pieces = [1, 1, 1, 1] # placeholder
@@ -356,7 +357,7 @@ def handle_movement(keys):
     # handle horizontal movement according to DAS and ARR rules
     if move_dir != 0:
         if (last_move_dir != move_dir and settings.DAS_RESET_THRESHOLD <= 0): # if switching movement direction (and DAS_RESET_THRESHOLD is set to 0), reset DAS and ARR
-            das_timer = 0                                           # last_move_dir is set to 0 by default so it will reset for the first movement, but that doesn't matter because it starts that way anyways
+            das_timer = 0 # last_move_dir is set to 0 by default so it will reset for the first movement, but that doesn't matter because it starts that way anyways
             das_started = False
             arr_timer = 0
             arr_started = False
@@ -372,24 +373,24 @@ def handle_movement(keys):
         else:
             das_timer += das_clock.tick_busy_loop() # use tick_busy_loop for more precise ticking for das timer. causes performance issues
 
-            if (das_timer > das_threshold):
-                if not arr_started and arr_threshold != 0:
-                    move_piece(move_dir, 0)
-                    arr_started = True # start the ARR timer
-                    arr_timer = 0
-                    arr_clock.tick()
-                else:
-                    arr_timer += arr_clock.tick()
-                    if arr_timer >= arr_threshold:
-                        if arr_threshold == 0: # avoids divide by 0 error
-                            steps_to_move = settings.BOARD_WIDTH
-                        else:
-                            steps_to_move = int(arr_timer / arr_threshold)
-                        move_piece(steps_to_move * move_dir, 0)
-                        if arr_threshold == 0: # avoids divide by 0 error
-                            arr_timer = 0
-                        else:
-                            arr_timer = arr_timer % arr_threshold
+        if (das_timer >= das_threshold):
+            if not arr_started and arr_threshold != 0:
+                move_piece(move_dir, 0)
+                arr_started = True # start the ARR timer
+                arr_timer = 0
+                arr_clock.tick()
+            else:
+                arr_timer += arr_clock.tick()
+                if arr_timer >= arr_threshold:
+                    if arr_threshold == 0: # avoids divide by 0 error
+                        steps_to_move = settings.BOARD_WIDTH
+                    else:
+                        steps_to_move = int(arr_timer / arr_threshold)
+                    move_piece(steps_to_move * move_dir, 0)
+                    if arr_threshold == 0: # avoids divide by 0 error
+                        arr_timer = 0
+                    else:
+                        arr_timer = arr_timer % arr_threshold
 
     elif das_started: # saves performance by only checking this stuff when das_timer is still running
         if not das_reset_started:
@@ -665,7 +666,7 @@ def gen_topout_board():
     next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][STARTING_ROTATION]
 
     # create the two boards to compare
-    top_rows = extra_height + math.floor(settings.BOARD_HEIGHT/16) + 2 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
+    top_rows = extra_height + math.floor(settings.BOARD_HEIGHT/16) + 10 # 1 row less for boards < 24 high, and 2 less for boards < 8 high TODO: NO LONGER TRUE
     top_rows = game_board[:top_rows].copy()
     top_mask = top_rows.copy()
     full_rows_index = extra_height + piece_size - 3 # min index of rows that should be all 1
