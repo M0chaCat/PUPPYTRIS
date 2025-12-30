@@ -131,9 +131,9 @@ def game_loop():
             engine.handle_movement(keys)
         engine.do_leftover_gravity(remaining_grav)
 
-    if engine.board_state_changed or True:
+    if engine.board_state_changed:
         ui.draw_board() # if the board state has changed, update the board surface
-    if engine.game_state_changed or True:
+    if engine.game_state_changed:
         ui.MAIN_SCREEN.blit(ui.BACKGROUND_SURFACE) # TODO: offset is being drawn into the surface itself, instead of using blit(cordx, cordy, surface)
         ui.draw_board_background()
         ui.draw_grid_lines()
