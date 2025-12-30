@@ -87,28 +87,10 @@ def toggle_fullscreen(is_fullscreen):
     ui.BOARD_PX_OFFSET_Y = (settings.WINDOW_HEIGHT - ui.BOARD_HEIGHT_PX-(settings.WINDOW_HEIGHT * 0.05))/2 - (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
     # update the skins
     pieces.init_skins()
-
+    # make sure it draws everything
+    engine.game_state_changed = True
+    engine.board_state_changed = True
     ui.draw_background()
-    ui.draw_board()
-    ui.MAIN_SCREEN.blit(ui.BACKGROUND_SURFACE)
-    ui.draw_board_background()
-    ui.draw_grid_lines()
-    ui.draw_ghost_board()
-    ui.MAIN_SCREEN.blit(ui.BOARD_SURFACE)
-    ui.draw_piece_board()
-    ui.draw_topout_board()
-    ui.draw_stats_panel_bg()
-    ui.draw_next_panel()
-    if engine.hold_pieces_count > 0: ui.draw_hold_panel()
-    ui.draw_score_panel(level="99", score="99,999")
-
-    mins_secs, dot_ms = engine.timer.split_strings()
-    ui.draw_stats_panel_text(
-        PPS=str(engine.pps),
-        TIME_S=mins_secs,
-        TIME_MS=dot_ms,
-        CLEARED=str(engine.lines_cleared)
-    )
 
 # pre game stuff
 def load_game(): # all this stuff is done twice after reset_game has called. it should be smarter.
@@ -129,6 +111,8 @@ ui.draw_background()
 
 engine.timer.start()
 
+engine.game_board[9][0] = 1
+
 def game_loop():
     global mouse_was_down
     frametime = engine.frametime_clock.get_time()
@@ -147,9 +131,9 @@ def game_loop():
             engine.handle_movement(keys)
         engine.do_leftover_gravity(remaining_grav)
 
-    if engine.board_state_changed:
+    if engine.board_state_changed or True:
         ui.draw_board() # if the board state has changed, update the board surface
-    if engine.game_state_changed:
+    if engine.game_state_changed or True:
         ui.MAIN_SCREEN.blit(ui.BACKGROUND_SURFACE) # TODO: offset is being drawn into the surface itself, instead of using blit(cordx, cordy, surface)
         ui.draw_board_background()
         ui.draw_grid_lines()
@@ -162,6 +146,7 @@ def game_loop():
         if engine.hold_pieces_count > 0: ui.draw_hold_panel()
         ui.draw_score_panel(level="99", score="99,999")
     engine.game_state_changed = False # reset it for next frame
+    engine.board_state_changed = False
 
     mins_secs, dot_ms = engine.timer.split_strings()
     engine.update_pps()

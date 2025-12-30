@@ -140,7 +140,7 @@ timer = Timer()
 def load_gamemode(gamemode):
     global das_threshold, arr_threshold, sdr_threshold, are_threshold
     global pieces_dict, piece_types, piece_inversions, piece_size, mino_count
-    global hold_pieces_count 
+    global hold_pieces_count
     for attr, value in vars(gamemode).items():
         globals()[attr] = value
     # regenerate the bags
@@ -171,7 +171,6 @@ def spawn_piece():
     update_starting_coords()
     holds_used = 0
     game_state_changed = True
-    board_state_changed = False
 
     piece_board = pieces_dict[piece_bags[0][0]]["shapes"][piece_rotation] * piece_bags[0][0]
     gen_next_boards()
@@ -666,7 +665,7 @@ def gen_topout_board():
     next_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][STARTING_ROTATION]
 
     # create the two boards to compare
-    top_rows = extra_height + math.floor(settings.BOARD_HEIGHT/8) + 2 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
+    top_rows = extra_height + math.floor(settings.BOARD_HEIGHT/16) + 2 # 1 row less for boards < 24 high, and 2 less for boards < 8 high
     top_rows = game_board[:top_rows].copy()
     top_mask = top_rows.copy()
     full_rows_index = extra_height + piece_size - 3 # min index of rows that should be all 1

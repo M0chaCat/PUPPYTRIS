@@ -10,7 +10,7 @@ import os
 import json
 import pygame
 
-DISPLAY_WIDTH = 3440 # for fullscreen? implement this later!!!
+DISPLAY_WIDTH = 3440
 DISPLAY_HEIGHT = 1440
 
 BOARD_WIDTH = 5
