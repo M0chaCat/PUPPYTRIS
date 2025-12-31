@@ -1,5 +1,5 @@
 """
-settings.py declares (and a, a bit, calculates)
+settings.py declares (and calculates a bit)
 defaults/placeholders for the player settings,
 as well as developer constants like lockdown_resets_count.
 It then loads the settings.json file, and replaces
@@ -22,8 +22,8 @@ BOARD_PADDING = 10
 WINDOWED_WIDTH = 1400 # resolution used last time game was in windowed mode
 WINDOWED_HEIGHT = 1000
 
-WINDOW_WIDTH = 1400
-WINDOW_HEIGHT = 1000
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 720
 
 MAX_FRAMERATE = 60
 
@@ -64,7 +64,7 @@ ROTATE_MIRROR = pygame.K_s
 KEY_UNDO = pygame.K_LCTRL
 KEY_RESET = pygame.K_r
 KEY_EXIT = pygame.K_ESCAPE
-KEY_FULLSCREEN = pygame.K_F11
+KEY_FULLSCREEN = pygame.K_BACKSLASH
 
 TRANSPARENCY_MAIN = 230
 TRANSPARENCY_BOARD = 220

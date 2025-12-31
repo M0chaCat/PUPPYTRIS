@@ -3,6 +3,7 @@ menu.py has UI functions and stuff for the menu I guess (kity put more info here
 """
 
 import pygame
+import math
 
 import ui, engine, settings, gamemodes
 
@@ -43,16 +44,16 @@ class Button:
                 self.callback()
 
 def draw_menu():
-    # --- Percentage of screen size ---
-    width_pct = 0.7
-    height_pct = 0.8
+    # --- Percentage of screen size for foreground---
+    foreground_width_pct = 0.7
+    foreground_height_pct = 0.8
 
-    width = int(settings.WINDOW_WIDTH * width_pct)
-    height = int(settings.WINDOW_HEIGHT * height_pct)
+    foreground_width = int(settings.WINDOW_WIDTH * foreground_width_pct)
+    foreground_height = int(settings.WINDOW_HEIGHT * foreground_height_pct)
 
     # --- Center horizontally & vertically ---
-    x = (settings.WINDOW_WIDTH - width) // 2
-    y = (settings.WINDOW_HEIGHT - height) // 2
+    foreground_x = (settings.WINDOW_WIDTH - foreground_width) // 2
+    foreground_y = (settings.WINDOW_HEIGHT - foreground_height) // 2
 
     panel_color = settings.BOARD_COLOR
 
@@ -65,7 +66,7 @@ def draw_menu():
 
     # Draw the menu panel
     draw_rect(
-        x, y, width, height,
+        foreground_x, foreground_y, foreground_width, foreground_height,
         color=panel_color,
         cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'],
         outline_color=settings.PANEL_OUTLINE,
@@ -77,18 +78,17 @@ def draw_menu():
     # --- Button setup ---
     button_width = 200
     button_height = 60
-    spacing = 20  # vertical space between buttons
+    button_spacing = 20  # vertical space between buttons
 
     def start_tetra():
         engine.reset_game()
         engine.load_gamemode(gamemodes.TetraminoBase)
-        engine.load_gamemode(gamemodes.Teeny)
-        engine.STATE = 2
+        engine.STATE = 1
 
     def start_penta():
         engine.reset_game()
         engine.load_gamemode(gamemodes.PentominoBase)
-        engine.STATE = 2
+        engine.STATE = 1
 
     button_data = [
         ("Start Tetris", start_tetra),
@@ -99,15 +99,15 @@ def draw_menu():
     buttons = []
 
     # Compute vertical starting point to center all buttons in the panel
-    total_height = len(button_data) * button_height + (len(button_data) - 1) * spacing
-    start_y = y + (height - total_height) // 2
+    total_height = len(button_data) * button_height + (len(button_data) - 1) * button_spacing
+    start_y = foreground_y + (foreground_height - total_height) // 2
 
-    for i, (label, cb) in enumerate(button_data):
-        bx = x + (width - button_width) // 2
-        by = start_y + i * (button_height + spacing)
+    for i, (label, callback) in enumerate(button_data):
+        button_x = foreground_x + (foreground_width - button_width) // 2
+        button_y = start_y + i * (button_height + button_spacing)
 
         btn = Button(
-            bx, by, button_width, button_height,
+            button_x, button_y, button_width, button_height,
             text=label,
             color=settings.PANEL_COLOR,
             hover_color=settings.PANEL_COLOR_HOVER,
@@ -115,7 +115,7 @@ def draw_menu():
             outline_color=settings.PANEL_OUTLINE,
             cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'],
             font=font,
-            callback=cb
+            callback=callback
         )
         buttons.append(btn)
 
@@ -128,3 +128,112 @@ def draw_menu():
     # Draw buttons
     for btn in buttons:
         btn.draw(ui.MAIN_SCREEN)
+
+        
+def draw_mod_screen():
+    # --- Percentage of screen size for foreground---
+    foreground_width_pct = 0.7
+    foreground_height_pct = 0.8
+    
+    foreground_width = int(settings.WINDOW_WIDTH * foreground_width_pct)
+    foreground_height = int(settings.WINDOW_HEIGHT * foreground_height_pct)
+    
+    # --- Center horizontally & vertically ---
+    foreground_x = (settings.WINDOW_WIDTH - foreground_width) // 2
+    foreground_y = (settings.WINDOW_HEIGHT - foreground_height) // 2
+    
+    panel_color = settings.BOARD_COLOR
+    
+    # wipe screen
+    draw_rect(
+        0, 0, settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT,
+        color=settings.BACKGROUND_COLOR,
+        cut_corners=[],
+    )
+    
+    # Draw the menu panel
+    draw_rect(
+        foreground_x, foreground_y, foreground_width, foreground_height,
+        color=panel_color,
+        cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'],
+        outline_color=settings.PANEL_OUTLINE,
+        cut_size=30,
+    )
+    
+    font = pygame.font.Font(None, 36)
+    
+    # --- Button grid config ---
+    button_width = 200
+    button_height = 60
+    spacing_x = 20
+    spacing_y = 20
+    
+    grid_cols = 3  # number of buttons per row
+    
+    def Guideline():
+        engine.load_gamemode(gamemodes.Guideline)
+        engine.STATE = 2
+        
+    def Classic():
+        engine.load_gamemode(gamemodes.Classic)
+        engine.STATE = 2
+        
+    def Arcade():
+        engine.load_gamemode(gamemodes.BetterArcade)
+        engine.STATE = 2
+        
+    def Teeny():
+        engine.load_gamemode(gamemodes.Teeny)
+        engine.STATE = 2
+    
+    button_data = [
+        ("Guideline", Guideline),
+        ("Classic", Classic),
+        ("PPAM", Arcade), #Puppys Pretty Arcade Mode
+        ("Teeny", Teeny),
+    ]
+    
+    buttons = []
+    
+    # Auto-calc rows
+    grid_rows = math.ceil(len(button_data) / grid_cols)
+    
+    # Total grid size
+    grid_width = grid_cols * button_width + (grid_cols - 1) * spacing_x
+    grid_height = grid_rows * button_height + (grid_rows - 1) * spacing_y
+    
+    # Center grid in panel
+    start_x = foreground_x + (foreground_width - grid_width) // 2
+    start_y = foreground_y + (foreground_height - grid_height) // 2
+    
+    for i, (label, callback) in enumerate(button_data):
+        col = i % grid_cols
+        row = i // grid_cols
+        
+        button_x = start_x + col * (button_width + spacing_x)
+        button_y = start_y + row * (button_height + spacing_y)
+        
+        btn = Button(
+            button_x, button_y,
+            button_width, button_height,
+            text=label,
+            color=settings.PANEL_COLOR,
+            hover_color=settings.PANEL_COLOR_HOVER,
+            text_color=settings.TEXT_COLOR,
+            outline_color=settings.PANEL_OUTLINE,
+            cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'],
+            font=font,
+            callback=callback
+        )
+        buttons.append(btn)
+        
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            engine.running = False
+        for btn in buttons:
+            btn.handle_event(event)
+            
+    # Draw buttons
+    for btn in buttons:
+        btn.draw(ui.MAIN_SCREEN)
+        
