@@ -1,5 +1,5 @@
 """
-settings.py declares (and a, a bit, calculates)
+settings.py declares (and calculates a bit)
 defaults/placeholders for the player settings,
 as well as developer constants like lockdown_resets_count.
 It then loads the settings.json file, and replaces
