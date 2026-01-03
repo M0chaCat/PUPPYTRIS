@@ -766,6 +766,32 @@ def reset_game():
     update_ghost_piece()
     update_history()
 
+def reset_gamemode():
+    global pieces_dict, piece_inversions, piece_gen_type, lockdown_type, next_queue_size, das_threshold, arr_threshold, sdr_threshold, are_threshold
+    global allow_sonic_drop, allow_180, allow_mirror, entry_delay, hold_pieces_count, spawn_y_offset, infinite_holds, starting_gravity, mino_count, piece_types
+
+    # reset gamemode specific vars (defaults)
+    pieces_dict = pieces.tetra_dict
+    piece_inversions = pieces.TETRA_INVERSIONS
+    piece_gen_type = "BAG"
+    lockdown_type = "GUIDELINE"
+    next_queue_size = 4 # next pieces count is the user settings max
+                        # next_queue_size will sometimes be smaller than the max depending on the gamemode
+    das_threshold = settings.DAS_THRESHOLD # 266.6666666
+    arr_threshold = settings.ARR_THRESHOLD # 100
+    sdr_threshold = settings.SDR_THRESHOLD # 33.33333333
+    are_threshold = 1000
+    allow_sonic_drop = True
+    allow_180 = True
+    allow_mirror = False
+    entry_delay = 0
+    hold_pieces_count = 0
+    spawn_y_offset = 0
+    infinite_holds = False
+    starting_gravity = 0 # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency)
+    mino_count = 4
+    piece_types = 7
+
 def handle_sonic_drop(keys):
     global softdrop_overrides, game_state_changed
     if keys[settings.MOVE_SONICDROP] and allow_sonic_drop:
