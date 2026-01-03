@@ -382,7 +382,7 @@ def draw_hold_panel():
 
     hold_height_per_piece = cell_size_scaled * 3
     hold_height_top = cell_size_scaled * 1
-    hold_height = (engine.hold_pieces_count * cell_size_scaled * engine.mino_count) + hold_height_top
+    hold_height = (engine.max_hold_pieces * cell_size_scaled * engine.mino_count) + hold_height_top
 
     too_big = False
 
@@ -493,11 +493,11 @@ def draw_stats_panel_bg():
     vertical_pct = 0.7
     stats_y = BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
     stats_x = BOARD_PX_OFFSET_X - stats_width
-    hold_height = (engine.hold_pieces_count * cell_size_scaled * 4) + (cell_size_scaled)
+    hold_height = (engine.max_hold_pieces * cell_size_scaled * 4) + (cell_size_scaled)
     panel_color = settings.CRUST_COLOR
 
     if ((hold_height + stats_height) >= total_board_px):
-        vertical_pct = 0.7 + (0.15 * engine.hold_pieces_count)
+        vertical_pct = 0.7 + (0.15 * engine.max_hold_pieces)
         stats_x = stats_x - 50
         stats_y = int(vertical_pct * total_board_px)
         stats_panel_rect = pygame.Rect(stats_x, stats_y, stats_width, stats_height)

@@ -65,7 +65,7 @@ allow_180 = True
 allow_mirror = False
 are_threshold = 1000
 entry_delay = 0
-hold_pieces_count = 0
+max_hold_pieces = 1
 spawn_y_offset = 0
 infinite_holds = False
 starting_gravity = 0 # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency)
@@ -76,7 +76,7 @@ piece_size = mino_count
 holds_used = 0
 current_gravity = starting_gravity
 
-hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
+hold_boards = numpy.zeros((max_hold_pieces, 5, 5), dtype=numpy.int8)
 next_boards = numpy.zeros((next_queue_size, 5, 5), dtype=numpy.int8)
 topout_board = numpy.zeros((5, 5), dtype=numpy.int8)
 
@@ -140,7 +140,7 @@ timer = Timer()
 def load_gamemode(gamemode):
     global das_threshold, arr_threshold, sdr_threshold, are_threshold
     global pieces_dict, piece_types, piece_inversions, mino_count
-    global hold_pieces_count
+    global max_hold_pieces
     for attr, value in vars(gamemode).items():
         globals()[attr] = value
     # regenerate the bags
@@ -507,7 +507,7 @@ def hold_puppy():
     global piece_bags, hold_pieces, hold_boards, next_boards, piece_board, game_state_changed
     game_state_changed = True
 
-    if len(hold_pieces) >= hold_pieces_count: # if hold bag is full
+    if len(hold_pieces) >= max_hold_pieces: # if hold bag is full
         new_shape = pieces_dict[hold_pieces[0]]["shapes"][piece_rotation] # returns the next piece in the hold queue
     else:
         new_shape = pieces_dict[(piece_bags[0] + piece_bags[1])[1]]["shapes"][piece_rotation] # returns the next piece in the next queue
@@ -517,7 +517,7 @@ def hold_puppy():
         piece_bags[0].pop(0) # remove the current piece from piece bag
 
         # if hold queue is full (enforce max hold pieces)
-        if len(hold_pieces) > hold_pieces_count:
+        if len(hold_pieces) > max_hold_pieces:
             piece_bags[0].insert(0, hold_pieces[0]) # insert the next hold piece as the new current piece
             hold_pieces.pop(0) # remove the inserted hold piece from the hold queue
         else:
@@ -539,12 +539,12 @@ def hold_guideline(infinite_holds = False):
     global piece_x, piece_y, piece_rotation, piece_board
     game_state_changed = True
 
-    if holds_used < hold_pieces_count or infinite_holds:
+    if holds_used < max_hold_pieces or infinite_holds:
         hold_pieces.append(piece_bags[0][0]) # take the current piece and add it to hold queue
         piece_bags[0].pop(0) # remove the current piece from piece bag
 
         # if hold queue is full (enforce max hold pieces)
-        if len(hold_pieces) > hold_pieces_count:
+        if len(hold_pieces) > max_hold_pieces:
             piece_bags[0].insert(0, hold_pieces[0]) # insert the next hold piece as the new current piece
             hold_pieces.pop(0) # remove the inserted hold piece from the hold queue
         else:
@@ -749,7 +749,7 @@ def reset_game():
     board_state_changed = True
 
     # Reset hold
-    hold_boards = numpy.zeros((hold_pieces_count, 5, 5), dtype=numpy.int8)
+    hold_boards = numpy.zeros((max_hold_pieces, 5, 5), dtype=numpy.int8)
     hold_pieces = []
     holds_used = 0
 
@@ -769,7 +769,7 @@ def reset_game():
 
 def reset_gamemode():
     global pieces_dict, piece_inversions, piece_gen_type, lockdown_type, next_queue_size, das_threshold, arr_threshold, sdr_threshold, are_threshold
-    global allow_sonic_drop, allow_180, allow_mirror, entry_delay, hold_pieces_count, spawn_y_offset, infinite_holds, starting_gravity, mino_count, piece_types
+    global allow_sonic_drop, allow_180, allow_mirror, entry_delay, max_hold_pieces, spawn_y_offset, infinite_holds, starting_gravity, mino_count, piece_types
 
     # reset gamemode specific vars (defaults)
     pieces_dict = pieces.tetra_dict
@@ -786,7 +786,7 @@ def reset_gamemode():
     allow_180 = True
     allow_mirror = False
     entry_delay = 0
-    hold_pieces_count = 0
+    max_hold_pieces = 1
     spawn_y_offset = 0
     infinite_holds = False
     starting_gravity = 0 # measured in G (1g = 1 fall/frame, 20g = max speed at 60fps (should jump to like 200g though for more consistency)
