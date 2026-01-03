@@ -163,8 +163,8 @@ def menu_loop():
     # handle menu input, maybe transition to next state
 
 def mod_screen_loop(): # doesnt exist :3
-    engine.STATE -= 1
-    #ui.draw_mod_screen()
+    #engine.STATE -= 1
+    menu.draw_mod_screen()
 
 def go_back():
     engine.STATE -= 1

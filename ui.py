@@ -17,7 +17,7 @@ BOARD_WIDTH_PX = settings.CELL_SIZE * settings.BOARD_WIDTH
 BOARD_HEIGHT_PX = settings.CELL_SIZE * (settings.BOARD_HEIGHT - settings.BOARD_EXTRA_HEIGHT)
 
 BOARD_PX_OFFSET_X = (settings.WINDOW_WIDTH - BOARD_WIDTH_PX)/2
-BOARD_PX_OFFSET_Y = (settings.WINDOW_HEIGHT - BOARD_HEIGHT_PX-(settings.WINDOW_HEIGHT * 0.05))/2 - (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
+BOARD_PX_OFFSET_Y = (settings.WINDOW_HEIGHT - BOARD_HEIGHT_PX)/2
 
 if settings.WALLPAPER_PATH:
     settings.WALLPAPER = pygame.image.load(settings.WALLPAPER_PATH).convert_alpha()
@@ -106,14 +106,13 @@ def draw_background():
 def draw_board():
     """
     Draw the full board including the extra hidden rows.
-    After drawing pieces, call draw_board_corners() to mask triangular cuts.
     """
 
     BOARD_SURFACE.fill((0, 0, 0, 0)) # clear the board
 
     cell_size = settings.CELL_SIZE
     grid_start_x = BOARD_PX_OFFSET_X
-    grid_start_y = BOARD_PX_OFFSET_Y
+    grid_start_y = BOARD_PX_OFFSET_Y - (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
     board_rows = engine.game_board.shape[0]
     board_cols = engine.game_board.shape[1]
 
@@ -130,7 +129,7 @@ def draw_piece_board():
     """
     cell_size= settings.CELL_SIZE
     grid_start_x = BOARD_PX_OFFSET_X + (engine.piece_x * cell_size)
-    grid_start_y = BOARD_PX_OFFSET_Y + (engine.piece_y * cell_size)
+    grid_start_y = BOARD_PX_OFFSET_Y + (engine.piece_y * cell_size)  - (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
     total_rows = engine.piece_board.shape[0]
     total_cols = engine.piece_board.shape[1]
 
@@ -149,7 +148,7 @@ def draw_board_background(cut_size=None):
         cut_size = settings.CELL_SIZE
 
     grid_start_x = BOARD_PX_OFFSET_X
-    grid_start_y = BOARD_PX_OFFSET_Y + (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
+    grid_start_y = BOARD_PX_OFFSET_Y
 
     draw_rect(grid_start_x, grid_start_y, BOARD_WIDTH_PX, BOARD_HEIGHT_PX,
                         color=settings.BOARD_COLOR,
@@ -161,7 +160,7 @@ def draw_grid_lines():
         including a diagonal line across each cut.
     """
     board_px_offset_x = BOARD_PX_OFFSET_X
-    board_px_offset_y = BOARD_PX_OFFSET_Y + (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
+    board_px_offset_y = BOARD_PX_OFFSET_Y
     cell_size = settings.CELL_SIZE
     cut_size = cell_size # full cell cut
 
@@ -224,7 +223,7 @@ def draw_ghost_board():
 
     # Main board top-left (include extra hidden rows if any)
     grid_start_x = BOARD_PX_OFFSET_X
-    grid_start_y = BOARD_PX_OFFSET_Y
+    grid_start_y = BOARD_PX_OFFSET_Y - (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
 
     # Compute horizontal alignment in board cells
     start_col = engine.ghost_piece_x # piece_starting x is the regular piece offset
@@ -250,8 +249,8 @@ def draw_topout_board():
 
     # Main board top-left (include extra hidden rows if any)
     grid_start_x = BOARD_PX_OFFSET_X
-    grid_start_y = BOARD_PX_OFFSET_Y + settings.BOARD_EXTRA_HEIGHT * cell_size
-
+    grid_start_y = BOARD_PX_OFFSET_Y
+    
     # Calculate the piece spawning offset (code copied from engine.py)
     next_piece = (engine.piece_bags[0] + engine.piece_bags[1])[1]
     piece_shape = engine.pieces_dict[next_piece]["shapes"][engine.STARTING_ROTATION]
@@ -275,18 +274,17 @@ def draw_next_panel():
     shrink_factor = 0.95  # shrink entire area by 5%
 
     # precompute scaled cell size
-    cell_size_scaled = int(cell_size* base_scale * shrink_factor)
+    cell_size_scaled = int(cell_size * base_scale * shrink_factor)
 
-    total_board_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
     board_width_px = BOARD_WIDTH_PX
-    board_height_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT # vertical pixels
+    board_height_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT
 
-    next_width = int(cell_size_scaled * (4 + 1))
+    next_width = int(cell_size_scaled * (engine.mino_count + 1))
 
     next_height_per_piece = cell_size_scaled * 3
     next_height_top = cell_size_scaled * 1
     # next_height = (next_height_per_piece * engine.next_queue_size) + next_height_top
-    next_height = (len(engine.next_boards) * cell_size_scaled * 4) + next_height_top
+    next_height = (len(engine.next_boards) * cell_size_scaled * engine.mino_count) + next_height_top
     panel_color = settings.PANEL_COLOR
 
     too_big = False
@@ -301,13 +299,13 @@ def draw_next_panel():
         draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
 
         too_big = True
-    elif (next_height < board_height_px):
+    else:
         # --- Horizontal alignment: stick to the board ---
         next_x = BOARD_PX_OFFSET_X + board_width_px
 
         # --- Vertical alignment: start at a % down the board ---
-        vertical_pct = 0.3  # change this: 0.0 = top of board, 1.0 = bottom
-        next_y = BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
+        vertical_pct = 0.3  # 0.0 = top of board, 1.0 = bottom
+        next_y = BOARD_PX_OFFSET_Y + int(vertical_pct * board_height_px)
 
         draw_rect(next_x, next_y, next_width, next_height, color=panel_color, cut_size=20, cut_corners=['top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
 
@@ -380,11 +378,11 @@ def draw_hold_panel():
     board_width_px = BOARD_WIDTH_PX
     board_height_px = settings.CELL_SIZE * settings.BOARD_MAIN_HEIGHT # vertical pixels
 
-    hold_width = int(cell_size_scaled * (4 + 0.5))
+    hold_width = int(cell_size_scaled * (engine.mino_count + 0.5))
 
     hold_height_per_piece = cell_size_scaled * 3
     hold_height_top = cell_size_scaled * 1
-    hold_height = (engine.hold_pieces_count * cell_size_scaled * 4) + hold_height_top
+    hold_height = (engine.hold_pieces_count * cell_size_scaled * engine.mino_count) + hold_height_top
 
     too_big = False
 
@@ -394,7 +392,7 @@ def draw_hold_panel():
 
         # --- Vertical alignment: start at a % down the screen ---
         vertical_pct = 0.3  # 0.0 = top, 1.0 = bottom
-        hold_y = int(vertical_pct * total_board_px)
+        hold_y = int(vertical_pct * board_height_px)
 
         panel_color = settings.PANEL_COLOR
         draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left', 'top-right', 'bottom-right'], outline_color=settings.PANEL_OUTLINE)
@@ -405,7 +403,7 @@ def draw_hold_panel():
 
         # --- Vertical alignment: start at a % down the board ---
         vertical_pct = 0.3  # 0.0 = top, 1.0 = bottom
-        hold_y = BOARD_PX_OFFSET_Y + int(vertical_pct * total_board_px)
+        hold_y = BOARD_PX_OFFSET_Y + int(vertical_pct * board_height_px)
 
         panel_color = settings.PANEL_COLOR
         draw_rect(hold_x, hold_y, hold_width, hold_height, color=panel_color, cut_size=20, cut_corners=['top-left', 'bottom-left'], outline_color=settings.PANEL_OUTLINE)
@@ -561,7 +559,7 @@ def draw_score_panel(level="50", score="50,000"):
     panel_height = int(settings.CELL_SIZE * 1.5)
     total_board_px = settings.CELL_SIZE * settings.BOARD_HEIGHT
     x = BOARD_PX_OFFSET_X
-    y = BOARD_PX_OFFSET_Y + total_board_px
+    y = BOARD_PX_OFFSET_Y + total_board_px - (settings.BOARD_EXTRA_HEIGHT * settings.CELL_SIZE)
     width = BOARD_WIDTH_PX
     height = panel_height
 
