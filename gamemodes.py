@@ -12,7 +12,7 @@ class PentominoBase():
     piece_types = pieces.PIECE_TYPES_PENTA
     piece_inversions = pieces.PENTA_INVERSIONS
     hold_pieces_count = 2
-    piece_size = 5
+    mino_count = 5
     allow_mirror = True
 
 class TetraminoBase():
@@ -20,7 +20,7 @@ class TetraminoBase():
     piece_types = pieces.PIECE_TYPES_TETRA
     piece_inversions = pieces.TETRA_INVERSIONS
     hold_pieces_count = 1
-    piece_size = 4
+    mino_count = 4
     allow_mirror = False
 
 class Guideline():
