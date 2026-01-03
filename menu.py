@@ -170,6 +170,11 @@ def draw_mod_screen():
     
     grid_cols = 3  # number of buttons per row
     
+    def Default():
+        engine.reset_game()
+        engine.reset_gamemode()
+        engine.STATE = 2
+    
     def Guideline():
         engine.reset_game()
         engine.reset_gamemode()
@@ -195,6 +200,7 @@ def draw_mod_screen():
         engine.STATE = 2
     
     button_data = [
+        ("Default", Default),
         ("Guideline", Guideline),
         ("Classic", Classic),
         ("PPAM", Arcade), #Puppys Pretty Arcade Mode
