@@ -72,6 +72,7 @@ starting_gravity = 0 # measured in G (1g = 1 fall/frame, 20g = max speed at 60fp
 mino_count = 4
 piece_types = 7
 
+piece_size = mino_count
 holds_used = 0
 current_gravity = starting_gravity
 
