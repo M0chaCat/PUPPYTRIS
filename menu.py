@@ -171,18 +171,26 @@ def draw_mod_screen():
     grid_cols = 3  # number of buttons per row
     
     def Guideline():
+        engine.reset_game()
+        engine.reset_gamemode()
         engine.load_gamemode(gamemodes.Guideline)
         engine.STATE = 2
         
     def Classic():
+        engine.reset_game()
+        engine.reset_gamemode()
         engine.load_gamemode(gamemodes.Classic)
         engine.STATE = 2
         
     def Arcade():
+        engine.reset_game()
+        engine.reset_gamemode()
         engine.load_gamemode(gamemodes.BetterArcade)
         engine.STATE = 2
         
     def Teeny():
+        engine.reset_game()
+        engine.reset_gamemode()
         engine.load_gamemode(gamemodes.Teeny)
         engine.STATE = 2
     
