@@ -158,12 +158,11 @@ def game_loop():
     )
 
 def menu_loop():
-    handle_events() # make sure this doesn't break anything!!!
+    handle_events()
     menu.draw_menu()
-    # handle menu input, maybe transition to next state
 
-def mod_screen_loop(): # doesnt exist :3
-    #engine.STATE -= 1
+def mod_screen_loop():
+    handle_events()
     menu.draw_mod_screen()
 
 def go_back():
