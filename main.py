@@ -17,43 +17,8 @@ pygame.display.set_caption("puppytris!!!!!")
 # trying all three things because what works depends on window manager?
 pygame.display.set_window_position((settings.WINDOW_POS_X, settings.WINDOW_POS_Y)) 
 
-def handle_events():
-    for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            if event.key == settings.KEY_EXIT:
-                if engine.STATE == 0: engine.running = False
-                else: engine.STATE -= 1
-            if event.key == settings.KEY_FULLSCREEN:
-                toggle_fullscreen(False)
-
-            if not settings.ONEKF_ENABLED:
-                if event.key == settings.KEY_HOLD:
-                    engine.hold_guideline(engine.infinite_holds)
-                if event.key == settings.ROTATE_180:
-                    if engine.allow_180: engine.rotate_piece(2)
-                if event.key == settings.ROTATE_CW:
-                    engine.rotate_piece(1)
-                if event.key == settings.ROTATE_CCW:
-                    engine.rotate_piece(3)
-                if event.key == settings.ROTATE_MIRROR:
-                    if engine.allow_mirror: engine.mirror_piece()
-                if event.key == settings.MOVE_HARDDROP:
-                    engine.hard_drop()
-                if event.key == settings.KEY_RESET:
-                    engine.reset_game()
-                if event.key == settings.KEY_UNDO: # TODO: NEED TO MAKE ALT UNDO KEYS AND RESET KEYS FOR 1KF
-                    engine.undo(1)
-            else:
-                if numpy.isin(event.key, engine.onekf_key_array):
-                    engine.handle_1kf(event.key)
-                if event.key == settings.ONEKF_HOLD:
-                    engine.hold_guideline()
-        if event.type == pygame.QUIT:
-            engine.running = False
-        if event.type == pygame.ACTIVEEVENT:
-            if event.state & pygame.APPACTIVE > 0 and event.gain == 1: # weird bitwise stuff because activity is represented as bits in an integer
-                engine.game_state_changed = True
-                engine.board_state_changed = True
+def get_events():
+    return pygame.event.get()
 
 def toggle_fullscreen(is_fullscreen):
     if is_fullscreen:
@@ -113,8 +78,43 @@ engine.timer.start()
 
 engine.game_board[9][0] = 1
 
-def game_loop():
-    global mouse_was_down
+def game_loop(events):    for event in events:
+        if event.type == pygame.KEYDOWN:
+            if event.key == settings.KEY_EXIT:
+                if engine.STATE == 0: engine.running = False
+                else: engine.STATE -= 1
+            if event.key == settings.KEY_FULLSCREEN:
+                toggle_fullscreen(False)
+                
+            if not settings.ONEKF_ENABLED:
+                if event.key == settings.KEY_HOLD:
+                    engine.hold_guideline(engine.infinite_holds)
+                if event.key == settings.ROTATE_180:
+                    if engine.allow_180: engine.rotate_piece(2)
+                if event.key == settings.ROTATE_CW:
+                    engine.rotate_piece(1)
+                if event.key == settings.ROTATE_CCW:
+                    engine.rotate_piece(3)
+                if event.key == settings.ROTATE_MIRROR:
+                    if engine.allow_mirror: engine.mirror_piece()
+                if event.key == settings.MOVE_HARDDROP:
+                    engine.hard_drop()
+                if event.key == settings.KEY_RESET:
+                    engine.reset_game()
+                if event.key == settings.KEY_UNDO: # TODO: NEED TO MAKE ALT UNDO KEYS AND RESET KEYS FOR 1KF
+                    engine.undo(1)
+            else:
+                if numpy.isin(event.key, engine.onekf_key_array):
+                    engine.handle_1kf(event.key)
+                if event.key == settings.ONEKF_HOLD:
+                    engine.hold_guideline()
+        if event.type == pygame.QUIT:
+            engine.running = False
+        if event.type == pygame.ACTIVEEVENT:
+            if event.state & pygame.APPACTIVE > 0 and event.gain == 1: # weird bitwise stuff because activity is represented as bits in an integer
+                engine.game_state_changed = True
+                engine.board_state_changed = True
+
     frametime = engine.frametime_clock.get_time()
     keys = pygame.key.get_pressed()
     if engine.queue_spawn_piece:
@@ -157,13 +157,11 @@ def game_loop():
         CLEARED=str(engine.lines_cleared)
     )
 
-def menu_loop():
-    handle_events()
-    menu.draw_menu()
+def menu_loop(events):
+    menu.draw_menu(events)
 
-def mod_screen_loop():
-    handle_events()
-    menu.draw_mod_screen()
+def mod_screen_loop(events):
+    menu.draw_mod_screen(events)
 
 def go_back():
     engine.STATE -= 1
@@ -179,7 +177,8 @@ while engine.running:
     fps = str(int(engine.frametime_clock.get_fps()))
 
     # Run current state’s logic
-    state_funcs[engine.STATE]()
+    events = get_events()
+    state_funcs[engine.STATE](events)
 
     # Draw FPS (universal part)
     ui.draw_fps(fps)
@@ -189,3 +188,4 @@ while engine.running:
     if not engine.running: # wait for the main loop to finish running to quit properly
 
         pygame.quit()
+    

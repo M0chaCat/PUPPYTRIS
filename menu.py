@@ -43,7 +43,7 @@ class Button:
             if self.rect.collidepoint(event.pos) and self.callback:
                 self.callback()
 
-def draw_menu():
+def draw_menu(events):
     # --- Percentage of screen size for foreground---
     foreground_width_pct = 0.7
     foreground_height_pct = 0.8
@@ -119,18 +119,22 @@ def draw_menu():
         )
         buttons.append(btn)
 
-    for event in pygame.event.get():
+    for event in events:
         if event.type == pygame.QUIT:
             engine.running = False
         for btn in buttons:
             btn.handle_event(event)
+        if event.type == pygame.KEYDOWN:
+            if event.key == settings.KEY_EXIT:
+                if engine.STATE == 0: engine.running = False
+                else: engine.STATE -= 1
 
     # Draw buttons
     for btn in buttons:
         btn.draw(ui.MAIN_SCREEN)
 
         
-def draw_mod_screen():
+def draw_mod_screen(events):
     # --- Percentage of screen size for foreground---
     foreground_width_pct = 0.7
     foreground_height_pct = 0.8
@@ -241,11 +245,15 @@ def draw_mod_screen():
         )
         buttons.append(btn)
         
-    for event in pygame.event.get():
+    for event in events:
         if event.type == pygame.QUIT:
             engine.running = False
         for btn in buttons:
             btn.handle_event(event)
+        if event.type == pygame.KEYDOWN:
+            if event.key == settings.KEY_EXIT:
+                if engine.STATE == 0: engine.running = False
+                else: engine.STATE -= 1
             
     # Draw buttons
     for btn in buttons:
