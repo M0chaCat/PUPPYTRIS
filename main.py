@@ -122,7 +122,6 @@ def game_loop(events):    for event in events:
     remaining_grav = engine.handle_soft_drop(keys, frametime)
     remaining_grav += engine.handle_sonic_drop(keys)
     remaining_grav += engine.do_gravity(frametime) # this logic works the same as max() would, since one of them is always bound to be zero
-    handle_events()
     if engine.check_touching_ground():
         engine.lockdown(engine.lockdown_type, frametime)
 
